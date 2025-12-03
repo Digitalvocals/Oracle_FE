@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-matrix-dark text-matrix-green font-mono;
+  }
+}
+
+@layer components {
+  .matrix-card {
+    @apply bg-matrix-light border-2 border-matrix-green rounded-lg p-6 transition-all duration-300;
+  }
+  
+  .matrix-card:hover {
+    @apply border-matrix-green-bright shadow-lg shadow-matrix-green/20 transform scale-[1.02];
+  }
+  
+  .matrix-button {
+    @apply bg-matrix-green text-matrix-dark font-bold py-2 px-6 rounded transition-all duration-200;
+  }
+  
+  .matrix-button:hover {
+    @apply bg-matrix-green-bright shadow-lg shadow-matrix-green/50;
+  }
+  
+  .matrix-badge {
+    @apply inline-block bg-matrix-green text-matrix-dark text-xs font-bold px-3 py-1 rounded-full;
+  }
+  
+  .score-excellent {
+    @apply text-matrix-green;
+  }
+  
+  .score-good {
+    @apply text-matrix-green-bright;
+  }
+  
+  .score-moderate {
+    @apply text-yellow-400;
+  }
+  
+  .score-poor {
+    @apply text-red-500;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #39ff14;
+}
+
+/* Matrix rain animation background (optional) */
+.matrix-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.05;
+  z-index: -1;
+}
