@@ -40,15 +40,9 @@ export default function Home() {
   const [selectedGame, setSelectedGame] = useState<GameOpportunity | null>(null)
   const [countdown, setCountdown] = useState<number>(0)
 
-  // Helper function to create Twitch directory URL
+  // Helper function to create Twitch search URL
   const getTwitchUrl = (gameName: string) => {
-    const slug = gameName
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens with single
-      .trim()
-    return `https://www.twitch.tv/directory/category/${slug}`
+    return `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`
   }
 
   useEffect(() => {
@@ -121,7 +115,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-[1600px] mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="mb-8">
           <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-glow">
@@ -148,8 +142,8 @@ export default function Home() {
 
         {/* Main Content with Sidebar */}
         <div className="flex gap-8">
-          {/* Main Game Grid - Takes up remaining space */}
-          <main className="flex-1 min-w-0">
+          {/* Main Game Grid - Full Width */}
+          <main className="w-full">
             <div className="grid gap-4">
               {data?.top_opportunities.map((game) => (
                 <div 
@@ -277,35 +271,6 @@ export default function Home() {
               ))}
             </div>
           </main>
-
-          {/* Right Sidebar - Desktop Only */}
-          <aside className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-4 space-y-4">
-              {/* Ad Space 1 - 300x250 */}
-              <div className="border-2 border-matrix-green/50 rounded-lg p-4 bg-black/50">
-                <div className="text-center text-matrix-green-dim text-sm mb-2">
-                  [ ADVERTISEMENT ]
-                </div>
-                <div className="w-full h-64 bg-matrix-green/10 rounded flex items-center justify-center border border-matrix-green/30">
-                  <div className="text-matrix-green-dim text-xs text-center p-4">
-                    Ad Space<br/>300x250
-                  </div>
-                </div>
-              </div>
-
-              {/* Ad Space 2 - 300x600 */}
-              <div className="border-2 border-matrix-green/50 rounded-lg p-4 bg-black/50">
-                <div className="text-center text-matrix-green-dim text-sm mb-2">
-                  [ ADVERTISEMENT ]
-                </div>
-                <div className="w-full h-[600px] bg-matrix-green/10 rounded flex items-center justify-center border border-matrix-green/30">
-                  <div className="text-matrix-green-dim text-xs text-center p-4">
-                    Ad Space<br/>300x600
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
         </div>
 
         {/* Footer */}
