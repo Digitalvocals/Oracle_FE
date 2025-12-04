@@ -42,31 +42,19 @@ export default function Home() {
 
   useEffect(() => {
     fetchData()
-    // Refresh every 15 minutes
     const interval = setInterval(fetchData, 15 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
 
-  // Countdown timer
   useEffect(() => {
-    if (!data) return
-
-    // Set initial countdown
-    setCountdown(data.cache_expires_in_seconds)
-
-    // Update countdown every second
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          fetchData() // Auto-refresh when countdown hits 0
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [data?.timestamp]) // Reset when new data arrives
+    if (data) {
+      setCountdown(data.cache_expires_in_seconds)
+      const timer = setInterval(() => {
+        setCountdown((prev) => Math.max(0, prev - 1))
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [data])
 
   const fetchData = async () => {
     try {
@@ -112,10 +100,7 @@ export default function Home() {
         <div className="matrix-card max-w-md text-center">
           <div className="text-3xl mb-4">❌ ERROR</div>
           <div className="text-matrix-green-dim">{error}</div>
-          <button 
-            onClick={fetchData}
-            className="matrix-button mt-6"
-          >
+          <button onClick={fetchData} className="matrix-button mt-6">
             RETRY
           </button>
         </div>
@@ -125,161 +110,193 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      {/* Header */}
-      <header className="max-w-7xl mx-auto mb-12">
-        <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-glow">
-          [ TWITCH STREAMING OPPORTUNITIES ]
-        </h1>
-        <p className="text-xl text-matrix-green-dim mb-6">
-          Find the BEST games to stream RIGHT NOW • Real-time analysis • Top 75 Games
-        </p>
-        
-        {data && (
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="matrix-badge">
-              🎮 {data.total_games_analyzed} GAMES ANALYZED
+      <div className="max-w-[1600px] mx-auto">
+        {/* Header */}
+        <header className="mb-8">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-glow">
+            [ TWITCH STREAMING OPPORTUNITIES ]
+          </h1>
+          <p className="text-xl text-matrix-green-dim mb-6">
+            Find the BEST games to stream RIGHT NOW • Real-time analysis • Top 75 Games
+          </p>
+          
+          {data && (
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="matrix-badge">
+                🎮 {data.total_games_analyzed} GAMES ANALYZED
+              </div>
+              <div className="matrix-badge">
+                ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
+              </div>
+              <div className="matrix-badge">
+                🔄 NEXT UPDATE: {formatCountdown(countdown)}
+              </div>
             </div>
-            <div className="matrix-badge">
-              ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
-            </div>
-            <div className="matrix-badge">
-              🔄 NEXT UPDATE: {formatCountdown(countdown)}
-            </div>
-          </div>
-        )}
-      </header>
+          )}
+        </header>
 
-      {/* Game Grid */}
-      <main className="max-w-7xl mx-auto">
-        <div className="grid gap-4">
-          {data?.top_opportunities.map((game) => (
-            <div 
-              key={game.rank} 
-              className="matrix-card cursor-pointer"
-              onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
-            >
-              <div className="flex items-start gap-4">
-                {/* Game Cover Image */}
-                {game.box_art_url && (
-                  <div className="flex-shrink-0">
-                    <img 
-                      src={game.box_art_url} 
-                      alt={game.name}
-                      className="w-32 h-44 object-cover rounded border-2 border-matrix-green/50"
-                      onError={(e) => {
-                        // Hide image if it fails to load
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
-                  </div>
-                )}
-                
-                {/* Main Content */}
-                <div className="flex-1 flex items-start justify-between gap-4">
-                  {/* Left: Rank & Game Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="text-4xl font-bold text-matrix-green-bright">
-                        #{game.rank}
+        {/* Main Content with Sidebar */}
+        <div className="flex gap-8">
+          {/* Main Game Grid - Takes up remaining space */}
+          <main className="flex-1 min-w-0">
+            <div className="grid gap-4">
+              {data?.top_opportunities.map((game) => (
+                <div 
+                  key={game.rank} 
+                  className="matrix-card cursor-pointer"
+                  onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Game Cover Image */}
+                    {game.box_art_url && (
+                      <div className="flex-shrink-0">
+                        <img 
+                          src={game.box_art_url} 
+                          alt={game.name}
+                          className="w-32 h-44 object-cover rounded border-2 border-matrix-green/50"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
                       </div>
-                      <div>
-                        <h2 className="text-2xl font-bold">{game.name}</h2>
-                        <div className="text-sm text-matrix-green-dim mt-1">
-                          👁 {game.viewers.toLocaleString()} viewers • 
-                          📺 {game.channels} channels • 
-                          📊 {game.avg_viewers_per_channel} avg/ch
+                    )}
+                    
+                    {/* Main Content */}
+                    <div className="flex-1 flex items-start justify-between gap-4">
+                      {/* Left: Rank & Game Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="text-4xl font-bold text-matrix-green-bright">
+                            #{game.rank}
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold">{game.name}</h2>
+                            <div className="text-sm text-matrix-green-dim">
+                              {game.viewers.toLocaleString()} viewers • {game.channels} channels
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Purchase Links */}
+                        {(game.purchase_links.steam || game.purchase_links.epic) && (
+                          <div className="flex gap-2 mt-3">
+                            {game.purchase_links.steam && (
+                              <a
+                                href={game.purchase_links.steam}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="matrix-button-small"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                🎮 Buy on Steam
+                              </a>
+                            )}
+                            {game.purchase_links.epic && (
+                              <a
+                                href={game.purchase_links.epic}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="matrix-button-small"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                🎮 Buy on Epic
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Score */}
+                      <div className="text-right flex-shrink-0">
+                        <div className={`text-5xl font-bold ${getScoreColor(game.overall_score)}`}>
+                          {game.overall_score.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-matrix-green-dim mt-1">
+                          {game.trend} {game.recommendation}
                         </div>
                       </div>
-                      <div className="text-3xl">{game.trend}</div>
-                    </div>
-                    
-                    {/* Purchase Links */}
-                    <div className="flex gap-3 mt-3">
-                      {game.purchase_links.free ? (
-                        <span className="text-sm font-bold text-matrix-green-bright">
-                          ✨ FREE TO PLAY
-                        </span>
-                      ) : (
-                        <>
-                          {game.purchase_links.steam && (
-                            <a
-                              href={game.purchase_links.steam}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-sm underline hover:text-matrix-green-bright transition-colors"
-                            >
-                              🎮 Buy on Steam
-                            </a>
-                          )}
-                          {game.purchase_links.epic && (
-                            <a
-                              href={game.purchase_links.epic}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-sm underline hover:text-matrix-green-bright transition-colors"
-                            >
-                              🎮 Buy on Epic
-                            </a>
-                          )}
-                        </>
-                      )}
                     </div>
                   </div>
 
-                  {/* Right: Score */}
-                  <div className="text-center">
-                    <div className={`text-5xl font-bold ${getScoreColor(game.overall_score)}`}>
-                      {game.overall_score.toFixed(2)}
+                  {/* Expanded Details */}
+                  {selectedGame?.rank === game.rank && (
+                    <div className="mt-4 pt-4 border-t border-matrix-green/30">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="matrix-stat">
+                          <div className="text-matrix-green-dim text-xs">DISCOVERABILITY</div>
+                          <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
+                            {game.discoverability_score.toFixed(3)}
+                          </div>
+                        </div>
+                        <div className="matrix-stat">
+                          <div className="text-matrix-green-dim text-xs">VIABILITY</div>
+                          <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
+                            {game.viability_score.toFixed(3)}
+                          </div>
+                        </div>
+                        <div className="matrix-stat">
+                          <div className="text-matrix-green-dim text-xs">ENGAGEMENT</div>
+                          <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
+                            {game.engagement_score.toFixed(3)}
+                          </div>
+                        </div>
+                        <div className="matrix-stat">
+                          <div className="text-matrix-green-dim text-xs">AVG VIEWERS/CHANNEL</div>
+                          <div className="text-2xl font-bold text-matrix-green">
+                            {game.avg_viewers_per_channel.toFixed(1)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 text-sm text-matrix-green-dim text-center">
+                        Click card again to collapse
+                      </div>
                     </div>
-                    <div className="text-xs text-matrix-green-dim mt-1">SCORE</div>
-                    <div className="text-xs mt-2 font-bold">
-                      {game.recommendation}
-                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </main>
+
+          {/* Right Sidebar - Desktop Only */}
+          <aside className="hidden lg:block w-80 flex-shrink-0">
+            <div className="sticky top-4 space-y-4">
+              {/* Ad Space 1 - 300x250 */}
+              <div className="border-2 border-matrix-green/50 rounded-lg p-4 bg-black/50">
+                <div className="text-center text-matrix-green-dim text-sm mb-2">
+                  [ ADVERTISEMENT ]
+                </div>
+                <div className="w-full h-64 bg-matrix-green/10 rounded flex items-center justify-center border border-matrix-green/30">
+                  <div className="text-matrix-green-dim text-xs text-center p-4">
+                    Ad Space<br/>300x250
                   </div>
                 </div>
               </div>
 
-              {/* Expanded Details */}
-              {selectedGame?.rank === game.rank && (
-                <div className="mt-6 pt-6 border-t border-matrix-green/30">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold">{game.discoverability_score.toFixed(3)}</div>
-                      <div className="text-xs text-matrix-green-dim">DISCOVERABILITY</div>
-                      <div className="text-xs mt-1">(45% weight)</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold">{game.viability_score.toFixed(3)}</div>
-                      <div className="text-xs text-matrix-green-dim">VIABILITY</div>
-                      <div className="text-xs mt-1">(35% weight)</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold">{game.engagement_score.toFixed(3)}</div>
-                      <div className="text-xs text-matrix-green-dim">ENGAGEMENT</div>
-                      <div className="text-xs mt-1">(20% weight)</div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 text-sm text-matrix-green-dim text-center">
-                    Click card again to collapse
+              {/* Ad Space 2 - 300x600 */}
+              <div className="border-2 border-matrix-green/50 rounded-lg p-4 bg-black/50">
+                <div className="text-center text-matrix-green-dim text-sm mb-2">
+                  [ ADVERTISEMENT ]
+                </div>
+                <div className="w-full h-[600px] bg-matrix-green/10 rounded flex items-center justify-center border border-matrix-green/30">
+                  <div className="text-matrix-green-dim text-xs text-center p-4">
+                    Ad Space<br/>300x600
                   </div>
                 </div>
-              )}
+              </div>
             </div>
-          ))}
+          </aside>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="max-w-7xl mx-auto mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
-        <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span></p>
-        <p className="mt-2">Data updates every 15 minutes • Powered by Twitch API</p>
-        <p className="mt-2">
-          Affiliate Disclosure: We may earn a commission from game purchases through our links.
-        </p>
-      </footer>
+        {/* Footer */}
+        <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
+          <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span></p>
+          <p className="mt-2">Data updates every 15 minutes • Powered by Twitch API</p>
+          <p className="mt-2">
+            Affiliate Disclosure: We may earn a commission from game purchases through our links.
+          </p>
+        </footer>
+      </div>
     </div>
   )
 }
