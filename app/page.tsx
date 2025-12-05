@@ -152,14 +152,15 @@ export default function Home() {
                   className="matrix-card cursor-pointer"
                   onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
                 >
-                  <div className="flex flex-col md:flex-row items-start gap-4">
-                    {/* Game Cover Image */}
+                  {/* Mobile and Desktop Layout */}
+                  <div className="flex gap-4">
+                    {/* Game Cover Image - Left Side */}
                     {game.box_art_url && (
                       <div className="flex-shrink-0">
                         <img 
                           src={game.box_art_url} 
                           alt={game.game_name}
-                          className="w-24 h-32 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
+                          className="w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none'
                           }}
@@ -167,71 +168,77 @@ export default function Home() {
                       </div>
                     )}
                     
-                    {/* Main Content */}
-                    <div className="flex-1 w-full">
-                      {/* Top: Rank, Title, and Score (flex on mobile) */}
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div className="text-3xl md:text-4xl font-bold text-matrix-green-bright flex-shrink-0">
-                            #{game.rank}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h2 className="text-lg md:text-2xl font-bold truncate">{game.game_name}</h2>
-                            <div className="text-xs md:text-sm text-matrix-green-dim">
-                              {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
-                            </div>
+                    {/* Content - Right Side */}
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      {/* Header Row: Rank + Title + Score */}
+                      <div className="flex items-start gap-2 mb-2">
+                        {/* Rank */}
+                        <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-matrix-green-bright flex-shrink-0">
+                          #{game.rank}
+                        </div>
+                        
+                        {/* Title (flex-grow to push score right) */}
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
+                            {game.game_name}
+                          </h2>
+                          <div className="text-xs sm:text-sm text-matrix-green-dim mt-1">
+                            {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
                           </div>
                         </div>
                         
-                        {/* Score - always visible on right */}
-                        <div className="text-right flex-shrink-0">
-                          <div className={`text-3xl md:text-5xl font-bold ${getScoreColor(game.overall_score)}`}>
+                        {/* Score - Always Visible */}
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${getScoreColor(game.overall_score)}`}>
                             {game.overall_score.toFixed(2)}
                           </div>
-                          <div className="text-xs text-matrix-green-dim mt-1 whitespace-nowrap">
-                            {game.trend} {game.recommendation}
+                          <div className="text-[10px] sm:text-xs text-matrix-green-dim mt-1 whitespace-nowrap">
+                            {game.trend}
+                          </div>
+                          <div className="text-[9px] sm:text-xs text-matrix-green-dim whitespace-nowrap">
+                            {game.recommendation}
                           </div>
                         </div>
                       </div>
 
-                        {/* Purchase Links */}
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {/* Twitch Directory Link */}
+                      {/* Purchase Links */}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {/* Twitch Directory Link */}
+                        <a
+                          href={getTwitchUrl(game.game_name)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500 text-xs sm:text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          📺 Twitch
+                        </a>
+                        
+                        {game.purchase_links.steam && (
                           <a
-                            href={getTwitchUrl(game.game_name)}
+                            href={game.purchase_links.steam}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500"
+                            className="matrix-button-small text-xs sm:text-sm"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            📺 View on Twitch
+                            🎮 Steam
                           </a>
-                          
-                          {game.purchase_links.steam && (
-                            <a
-                              href={game.purchase_links.steam}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="matrix-button-small"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              🎮 Buy on Steam
-                            </a>
-                          )}
-                          {game.purchase_links.epic && (
-                            <a
-                              href={game.purchase_links.epic}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="matrix-button-small"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              🎮 Buy on Epic
-                            </a>
-                          )}
-                        </div>
+                        )}
+                        {game.purchase_links.epic && (
+                          <a
+                            href={game.purchase_links.epic}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="matrix-button-small text-xs sm:text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            🎮 Epic
+                          </a>
+                        )}
                       </div>
                     </div>
+                  </div>
 
                   {/* Expanded Details */}
                   {selectedGame?.rank === game.rank && (
