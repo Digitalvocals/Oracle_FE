@@ -177,7 +177,7 @@ export default function Home() {
                           <div>
                             <h2 className="text-2xl font-bold">{game.name}</h2>
                             <div className="text-sm text-matrix-green-dim">
-                              {game.viewers.toLocaleString()} viewers • {game.channels} channels
+                              {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
                             </div>
                           </div>
                         </div>
