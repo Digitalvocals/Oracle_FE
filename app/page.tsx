@@ -119,10 +119,10 @@ export default function Home() {
         {/* Header */}
         <header className="mb-8">
           <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-glow">
-            [ TWITCH STREAMING OPPORTUNITIES ]
+            [ STREAMSCOUT ]
           </h1>
           <p className="text-xl text-matrix-green-dim mb-6">
-            Find the BEST games to stream RIGHT NOW • Real-time analysis • Top Opportunities
+            Find the BEST games to stream RIGHT NOW • Real-time analysis • 120+ Opportunities
           </p>
           
           {data && (
