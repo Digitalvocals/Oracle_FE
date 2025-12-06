@@ -22,22 +22,23 @@ export const metadata: Metadata = {
     url: 'https://streamscout.gg',
     siteName: 'StreamScout',
     title: 'StreamScout - Find Your Best Twitch Streaming Opportunities',
-    description: 'Real-time analysis of 500+ Twitch games. Discover hidden streaming opportunities with low competition and high discoverability.',
+    description: 'Real-time analysis of 500+ Twitch games. Discover hidden streaming opportunities for small streamers.',
     images: [
       {
-        url: '/streamscout-logo.jpg',
-        width: 1024,
-        height: 341,
+        url: 'https://streamscout.gg/og-image.png',
+        width: 1200,
+        height: 630,
         alt: 'StreamScout - Find Your Audience. Grow Your Channel.',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
+    site: '@StreamScoutGG',
+    creator: '@StreamScoutGG',
     title: 'StreamScout - Find Your Best Twitch Streaming Opportunities',
     description: 'Real-time analysis of 500+ Twitch games. Discover hidden streaming opportunities for small streamers.',
-    images: ['/streamscout-logo.jpg'],
-    creator: '@StreamScoutGG',
+    images: ['https://streamscout.gg/og-image.png'],
   },
   robots: {
     index: true,
@@ -66,7 +67,6 @@ export default function RootLayout({
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-X5JXBGFR5Z"
@@ -80,7 +80,6 @@ export default function RootLayout({
             gtag('config', 'G-X5JXBGFR5Z');
           `}
         </Script>
-        
         {/* Google AdSense */}
         <Script
           async
