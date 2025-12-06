@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'StreamScout - Find Your Best Twitch Streaming Opportunities',
-  description: 'Real-time analysis of 120+ Twitch games. Discover hidden streaming opportunities with low competition and high discoverability. Free forever.',
+  description: 'Real-time analysis of 500+ Twitch games. Discover hidden streaming opportunities with low competition and high discoverability. Free forever.',
   keywords: 'twitch streaming, best games to stream, twitch analytics, streaming opportunities, grow twitch channel, small streamer tips, twitch growth, stream discoverability',
   authors: [{ name: 'StreamScout' }],
   creator: 'StreamScout',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     url: 'https://streamscout.gg',
     siteName: 'StreamScout',
     title: 'StreamScout - Find Your Best Twitch Streaming Opportunities',
-    description: 'Real-time analysis of 120+ Twitch games. Discover hidden streaming opportunities with low competition and high discoverability.',
+    description: 'Real-time analysis of 500+ Twitch games. Discover hidden streaming opportunities with low competition and high discoverability.',
     images: [
       {
         url: '/streamscout-logo.jpg',
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'StreamScout - Find Your Best Twitch Streaming Opportunities',
-    description: 'Real-time analysis of 120+ Twitch games. Discover hidden streaming opportunities for small streamers.',
+    description: 'Real-time analysis of 500+ Twitch games. Discover hidden streaming opportunities for small streamers.',
     images: ['/streamscout-logo.jpg'],
     creator: '@StreamScoutGG',
   },
