@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
+import Link from 'next/link'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -480,9 +481,16 @@ export default function Home() {
           <p className="mt-2">
             Affiliate Disclosure: We may earn a commission from game purchases through our links.
           </p>
+          <div className="mt-4 flex justify-center gap-4">
+            <Link href="/about" className="hover:text-matrix-green transition-colors">About</Link>
+            <span>•</span>
+            <Link href="/contact" className="hover:text-matrix-green transition-colors">Contact</Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-matrix-green transition-colors">Privacy Policy</Link>
+          </div>
+          <p className="mt-4">© {new Date().getFullYear()} StreamScout. All rights reserved.</p>
         </footer>
       </div>
     </div>
   )
 }
-// force rebuild
