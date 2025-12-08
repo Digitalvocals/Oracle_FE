@@ -433,7 +433,7 @@ export default function Home() {
                           }`}>
                             {game.is_filtered && game.discoverability_rating !== undefined
                               ? `${game.discoverability_rating}/10`
-                              : game.overall_score.toFixed(2)
+                              : `${(game.overall_score * 10).toFixed(1)}/10`
                             }
                           </div>
                           <div className="text-[10px] sm:text-xs text-matrix-green-dim mt-1">
@@ -493,19 +493,19 @@ export default function Home() {
                         <div className="matrix-stat">
                           <div className="text-matrix-green-dim text-xs">DISCOVERABILITY</div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
-                            {game.discoverability_score.toFixed(3)}
+                            {(game.discoverability_score * 10).toFixed(1)}/10
                           </div>
                         </div>
                         <div className="matrix-stat">
                           <div className="text-matrix-green-dim text-xs">VIABILITY</div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
-                            {game.viability_score.toFixed(3)}
+                            {(game.viability_score * 10).toFixed(1)}/10
                           </div>
                         </div>
                         <div className="matrix-stat">
                           <div className="text-matrix-green-dim text-xs">ENGAGEMENT</div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
-                            {game.engagement_score.toFixed(3)}
+                            {(game.engagement_score * 10).toFixed(1)}/10
                           </div>
                         </div>
                         <div className="matrix-stat">
