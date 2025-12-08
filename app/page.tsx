@@ -16,6 +16,7 @@ interface GameOpportunity {
   viability_score: number
   engagement_score: number
   overall_score: number
+  discoverability_rating?: number
   recommendation: string
   trend: string
   box_art_url: string | null
@@ -25,6 +26,10 @@ interface GameOpportunity {
     epic: string | null
     free: boolean
   }
+  is_filtered?: boolean
+  warning_flags?: string[]
+  warning_text?: string | null
+  dominance_ratio?: number
 }
 
 interface AnalysisData {
@@ -57,7 +62,7 @@ export default function Home() {
   const [isWarmingUp, setIsWarmingUp] = useState(false)
   const [warmupStatus, setWarmupStatus] = useState<string>('Initializing...')
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
-  
+  const [searchQuery, setSearchQuery] = useState<string>('')
   // Available genre filters
   const GENRE_OPTIONS = [
     'Action', 'Adventure', 'Battle Royale', 'Card Game', 'FPS', 'Fighting',
@@ -74,8 +79,13 @@ export default function Home() {
     )
   }
 
-  // Filter opportunities by selected genres
+  // Filter opportunities by selected genres AND search query
   const filteredOpportunities = data?.top_opportunities?.filter(game => {
+    // Search filter
+    if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false
+    }
+    // Genre filter
     if (selectedGenres.length === 0) return true
     return game.genres?.some(g => selectedGenres.includes(g))
   }) || []
@@ -288,6 +298,17 @@ export default function Home() {
         <div className="flex gap-8">
           {/* Main Game Grid - Full Width */}
           <main className="w-full">
+            {/* Search Box */}
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search for any game (e.g., Fortnite, League of Legends)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 bg-black/50 border border-matrix-green/30 rounded-lg text-matrix-green placeholder-matrix-green/40 focus:outline-none focus:border-matrix-green/60 focus:ring-1 focus:ring-matrix-green/30"
+              />
+            </div>
+            
             {/* Genre Filter Chips */}
             <div className="mb-6">
               <div className="flex flex-wrap gap-2 items-center">
@@ -319,19 +340,44 @@ export default function Home() {
                   Showing {filteredOpportunities.length} of {data?.top_opportunities?.length || 0} games
                 </div>
               )}
+              {searchQuery && (
+                <div className="text-matrix-green/50 text-sm mt-2">
+                  Search results for "{searchQuery}": {filteredOpportunities.length} games found
+                </div>
+              )}
             </div>
 
             <div className="grid gap-4">
-              {filteredOpportunities.length === 0 && selectedGenres.length > 0 ? (
+              {filteredOpportunities.length === 0 && (selectedGenres.length > 0 || searchQuery) ? (
                 <div className="text-center py-12 text-matrix-green/50">
-                  No games found matching selected genres. Try different filters.
+                  {searchQuery 
+                    ? `No games found matching "${searchQuery}". Try a different search.`
+                    : 'No games found matching selected genres. Try different filters.'
+                  }
                 </div>
               ) : filteredOpportunities.map((game) => (
                 <div 
                   key={game.rank} 
-                  className="matrix-card cursor-pointer"
+                  className={`matrix-card cursor-pointer ${
+                    game.is_filtered 
+                      ? 'border-red-500/50 bg-red-900/10' 
+                      : ''
+                  }`}
                   onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
                 >
+                  {/* Warning Banner for Filtered Games */}
+                  {game.is_filtered && game.warning_text && (
+                    <div className="bg-red-500/20 border border-red-500/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
+                      <span className="text-red-400 font-bold text-sm">AVOID</span>
+                      <span className="text-red-300/80 text-xs">{game.warning_text}</span>
+                      {game.discoverability_rating !== undefined && (
+                        <span className="ml-auto text-red-400 font-bold text-sm">
+                          {game.discoverability_rating}/10
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
                   {/* Mobile and Desktop Layout */}
                   <div className="flex gap-4">
                     {/* Game Cover Image - Left Side */}
@@ -382,14 +428,21 @@ export default function Home() {
                         
                         {/* Score - Always Visible */}
                         <div className="text-right flex-shrink-0 ml-2 pr-1">
-                          <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${getScoreColor(game.overall_score)}`}>
-                            {game.overall_score.toFixed(2)}
+                          <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
+                            game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
+                          }`}>
+                            {game.is_filtered && game.discoverability_rating !== undefined
+                              ? `${game.discoverability_rating}/10`
+                              : game.overall_score.toFixed(2)
+                            }
                           </div>
                           <div className="text-[10px] sm:text-xs text-matrix-green-dim mt-1">
-                            {game.trend}
+                            {game.is_filtered ? 'POOR' : game.trend}
                           </div>
-                          <div className="text-[8px] sm:text-[10px] text-matrix-green-dim leading-tight max-w-[80px] sm:max-w-none">
-                            {game.recommendation}
+                          <div className={`text-[8px] sm:text-[10px] leading-tight max-w-[80px] sm:max-w-none ${
+                            game.is_filtered ? 'text-red-400' : 'text-matrix-green-dim'
+                          }`}>
+                            {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
                           </div>
                         </div>
                       </div>
