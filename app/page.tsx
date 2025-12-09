@@ -95,98 +95,129 @@ export default function Home() {
     return `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`
   }
 
+  // 🎯 EXTERNAL CLICK TRACKING - Added Dec 9, 2025
+  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch', game: GameOpportunity) => {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      const score = game.discoverability_rating !== undefined 
+        ? game.discoverability_rating 
+        : (game.overall_score * 10);
+      
+      (window as any).gtag('event', `${linkType}_click`, {
+        'game_name': game.game_name,
+        'game_score': score,
+        'game_rank': game.rank,
+        'event_category': 'external_link',
+        'event_label': game.game_name
+      });
+      
+      console.log(`✅ [TRACK] ${linkType}_click: ${game.game_name} (${score.toFixed(1)}/10)`);
+    }
+  }
+
   // Check status endpoint for warmup progress
   const checkStatus = useCallback(async () => {
     try {
-      const response = await axios.get<StatusData>(`${API_URL}/api/v1/status`)
-      const status = response.data
-      
-      if (status.worker.is_refreshing) {
-        setWarmupStatus('Fetching stream data from Twitch API...')
-      } else if (status.cache.has_data) {
-        setWarmupStatus('Data ready!')
-        return true // Has data
-      } else {
-        setWarmupStatus('Waiting for initial data fetch...')
+      const response = await axios.get(`${API_URL}/api/v1/status`)
+      const statusData: StatusData = response.data
+
+      if (statusData.worker.is_refreshing) {
+        setIsWarmingUp(true)
+        setWarmupStatus('Analyzing games...')
+      } else if (statusData.cache.has_data) {
+        setIsWarmingUp(false)
+        setCountdown(statusData.cache.next_refresh_seconds)
       }
-      return false
     } catch (err) {
-      setWarmupStatus('Connecting to server...')
-      return false
+      console.error('Status check error:', err)
     }
   }, [])
 
-  const fetchData = useCallback(async () => {
+  // Load data
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)
-      
-      // Check if warming up (202 status or warming_up status)
-      if (response.status === 202 || response.data.status === 'warming_up') {
-        setIsWarmingUp(true)
-        setData(null)
-        return false
-      }
-      
-      setIsWarmingUp(false)
-      setData(response.data)
       setError(null)
-      
-      // Set countdown from whichever field exists
-      const refreshSeconds = response.data.next_refresh_in_seconds ?? 
-                            response.data.cache_expires_in_seconds ?? 
-                            600
-      setCountdown(refreshSeconds)
-      
-      return true
-    } catch (err: any) {
-      // 202 comes as an error with axios sometimes
-      if (err.response?.status === 202 || err.response?.data?.status === 'warming_up') {
+
+      // First check if we need warmup
+      const statusResponse = await axios.get(`${API_URL}/api/v1/status`)
+      const statusData: StatusData = statusResponse.data
+
+      if (!statusData.cache.has_data) {
+        // No cache, need warmup
         setIsWarmingUp(true)
-        setData(null)
-        return false
+        setWarmupStatus('First-time setup: Warming up analysis engine...')
+        
+        // Poll status every 2 seconds
+        const pollInterval = setInterval(async () => {
+          try {
+            const pollResponse = await axios.get(`${API_URL}/api/v1/status`)
+            const pollData: StatusData = pollResponse.data
+            
+            if (pollData.cache.has_data && !pollData.worker.is_refreshing) {
+              clearInterval(pollInterval)
+              setIsWarmingUp(false)
+              // Now fetch the actual data
+              const dataResponse = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)
+              setData(dataResponse.data)
+              setLoading(false)
+              setCountdown(dataResponse.data.next_refresh_in_seconds || 
+                          dataResponse.data.cache_expires_in_seconds || 
+                          600)
+            } else if (pollData.worker.is_refreshing) {
+              setWarmupStatus('Analyzing 500+ games... This takes about 2 minutes.')
+            }
+          } catch (err) {
+            console.error('Poll error:', err)
+          }
+        }, 2000)
+
+        // Safety timeout after 3 minutes
+        setTimeout(() => {
+          clearInterval(pollInterval)
+          if (isWarmingUp) {
+            setError('Warmup took too long. Please refresh the page.')
+            setIsWarmingUp(false)
+            setLoading(false)
+          }
+        }, 180000)
+        
+        return
       }
-      setError('Failed to load data. Please try again later.')
-      console.error(err)
-      return false
-    } finally {
+
+      // Cache exists, load normally
+      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)
+      setData(response.data)
       setLoading(false)
+
+      // Set countdown
+      const secondsToRefresh = response.data.next_refresh_in_seconds || 
+                              response.data.cache_expires_in_seconds || 
+                              600
+      setCountdown(secondsToRefresh)
+
+    } catch (err: any) {
+      setError(err.response?.data?.error || err.message || 'Failed to load data')
+      setLoading(false)
+      setIsWarmingUp(false)
     }
-  }, [])
+  }, [isWarmingUp])
 
-  // Initial load
+  // Effect for initial load
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    loadData()
+  }, [loadData])
 
-  // Warmup polling - check status every 3 seconds while warming up
+  // Effect for countdown timer
   useEffect(() => {
-    if (!isWarmingUp) return
-
-    const pollStatus = async () => {
-      const hasData = await checkStatus()
-      if (hasData) {
-        // Data is ready, fetch it
-        await fetchData()
-      }
-    }
-
-    // Start polling
-    pollStatus()
-    const interval = setInterval(pollStatus, 3000)
-    
-    return () => clearInterval(interval)
-  }, [isWarmingUp, checkStatus, fetchData])
-
-  // Countdown timer
-  useEffect(() => {
-    if (!data || countdown <= 0) return
+    if (countdown <= 0 && !loading && !isWarmingUp) return
 
     const timer = setInterval(() => {
-      setCountdown((prev) => {
+      setCountdown(prev => {
         if (prev <= 1) {
-          // Countdown hit 0 - fetch fresh data
-          fetchData()
+          // Time to refresh - reload data
+          if (!isWarmingUp) {
+            loadData()
+          }
           return 0
         }
         return prev - 1
@@ -194,259 +225,237 @@ export default function Home() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [data, countdown, fetchData])
+  }, [countdown, loading, isWarmingUp, loadData])
 
-  // Also poll for updates every 60 seconds (in case countdown drifts)
+  // Effect for periodic status checks
   useEffect(() => {
-    if (!data) return
-    
-    const interval = setInterval(() => {
-      fetchData()
-    }, 60 * 1000)
-    
-    return () => clearInterval(interval)
-  }, [data, fetchData])
+    const statusInterval = setInterval(checkStatus, 5000)
+    return () => clearInterval(statusInterval)
+  }, [checkStatus])
 
-  const formatCountdown = (seconds: number) => {
+  // Format time remaining
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  const getScoreColor = (score: number) => {
-    if (score >= 0.80) return 'score-excellent'
-    if (score >= 0.65) return 'score-good'
-    if (score >= 0.50) return 'score-moderate'
-    return 'score-poor'
+  if (loading && !isWarmingUp) {
+    return (
+      <main className="min-h-screen bg-black text-matrix-green p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="matrix-loading mb-4"></div>
+          <p className="text-xl font-mono">Analyzing opportunities...</p>
+        </div>
+      </main>
+    )
   }
 
-  // Warmup screen
-  if (isWarmingUp || (loading && !data)) {
+  if (isWarmingUp) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl sm:text-6xl mb-4 animate-glow">[ WARMING UP ]</div>
-          <div className="text-matrix-green-dim mb-4">{warmupStatus}</div>
-          <div className="flex justify-center">
-            <div className="w-8 h-8 border-2 border-matrix-green border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <div className="text-matrix-green-dim mt-4 text-sm">
-            First load takes ~30 seconds. Auto-refreshing...
+      <main className="min-h-screen bg-black text-matrix-green p-8 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="matrix-loading mb-6"></div>
+          <h2 className="text-2xl font-bold mb-4 font-mono">StreamScout Initializing</h2>
+          <p className="text-lg mb-2 font-mono">{warmupStatus}</p>
+          <p className="text-sm text-gray-400 font-mono">Please wait...</p>
+          <div className="mt-6 text-xs text-gray-500 font-mono">
+            <p>⏱️ First-time setup takes ~2 minutes</p>
+            <p>📊 Analyzing 500+ games for best opportunities</p>
           </div>
         </div>
-      </div>
+      </main>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="matrix-card max-w-md text-center">
-          <div className="text-3xl mb-4">❌ ERROR</div>
-          <div className="text-matrix-green-dim">{error}</div>
-          <button onClick={fetchData} className="matrix-button mt-6">
-            RETRY
+      <main className="min-h-screen bg-black text-red-500 p-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl font-mono mb-4">⚠️ {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="matrix-button font-mono"
+          >
+            Retry
           </button>
         </div>
-      </div>
+      </main>
     )
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="mb-8">
-          <div className="flex justify-center mb-4">
-            <img 
-              src="/streamscout-logo.jpg" 
-              alt="StreamScout - Find Your Audience. Grow Your Channel."
-              className="w-full max-w-2xl h-auto"
-            />
-          </div>
-          
-          {/* What is StreamScout? */}
-          <div className="max-w-2xl mx-auto text-center mb-6 px-4">
-            <h2 className="text-lg sm:text-xl font-bold text-matrix-green mb-2">What is StreamScout?</h2>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed">
-              Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
-            </p>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed mt-2">
-              We show you where small streamers can actually compete.
-            </p>
-            <p className="text-base sm:text-lg font-bold text-matrix-green mt-3">
-              No guesswork. Just data.
-            </p>
-          </div>
-          
-          {data && (
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="matrix-badge">
-                🎮 {data.total_games_analyzed} GAMES ANALYZED
-              </div>
-              <div className="matrix-badge">
-                ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
-              </div>
-              <div className="matrix-badge">
-                🔄 NEXT UPDATE: {formatCountdown(countdown)}
-              </div>
-            </div>
-          )}
-        </header>
-
-        {/* Main Content with Sidebar */}
-        <div className="flex gap-8">
-          {/* Main Game Grid - Full Width */}
-          <main className="w-full">
-            {/* Search Box */}
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Search for any game (e.g., Fortnite, League of Legends)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 bg-black/50 border border-matrix-green/30 rounded-lg text-matrix-green placeholder-matrix-green/40 focus:outline-none focus:border-matrix-green/60 focus:ring-1 focus:ring-matrix-green/30"
-              />
+    <main className="min-h-screen bg-black text-matrix-green">
+      {/* Header */}
+      <header className="border-b border-matrix-green/30 bg-black/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <h1 className="text-3xl sm:text-5xl font-bold matrix-text mb-2">
+                <Link href="/" className="hover:text-matrix-green-bright transition-colors">
+                  STREAMSCOUT
+                </Link>
+              </h1>
+              <p className="text-sm sm:text-base text-matrix-green/80 font-mono">
+                Find Your Best Twitch Streaming Opportunities
+              </p>
             </div>
             
-            {/* Genre Filter Chips */}
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-matrix-green/70 text-sm mr-2">Filter by genre:</span>
-                {GENRE_OPTIONS.map(genre => (
-                  <button
-                    key={genre}
-                    onClick={() => toggleGenre(genre)}
-                    className={`px-3 py-1 rounded-full text-sm transition-all ${
-                      selectedGenres.includes(genre)
-                        ? 'bg-matrix-green text-black font-semibold'
-                        : 'bg-matrix-green/10 text-matrix-green border border-matrix-green/30 hover:bg-matrix-green/20'
-                    }`}
-                  >
-                    {genre}
-                  </button>
-                ))}
-                {selectedGenres.length > 0 && (
-                  <button
-                    onClick={() => setSelectedGenres([])}
-                    className="px-3 py-1 rounded-full text-sm bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 ml-2"
-                  >
-                    Clear All
-                  </button>
-                )}
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-xs sm:text-sm font-mono text-matrix-green/60">
+                <span className="hidden sm:inline">Real-time analysis of </span>
+                <span className="text-matrix-green-bright font-bold">
+                  {data?.total_games_analyzed || 500}+ games
+                </span>
+                <span className="hidden sm:inline"> • Updated every 10 minutes</span>
               </div>
-              {selectedGenres.length > 0 && (
-                <div className="text-matrix-green/50 text-sm mt-2">
-                  Showing {filteredOpportunities.length} of {data?.top_opportunities?.length || 0} games
-                </div>
-              )}
-              {searchQuery && (
-                <div className="text-matrix-green/50 text-sm mt-2">
-                  Search results for "{searchQuery}": {filteredOpportunities.length} games found
+              {countdown > 0 && (
+                <div className="text-xs font-mono text-matrix-green/60">
+                  GAMES ANALYZED: <span className="text-matrix-green-bright font-bold">{data?.total_games_analyzed || 0}</span>
+                  {' • '}
+                  NEXT UPDATE: <span className="text-matrix-green-bright font-bold">{formatTime(countdown)}</span>
+                  {' • '}
+                  SHOWING: <span className="text-matrix-green-bright font-bold">{filteredOpportunities.length} games</span>
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="grid gap-4">
-              {filteredOpportunities.length === 0 && (selectedGenres.length > 0 || searchQuery) ? (
-                <div className="text-center py-12 text-matrix-green/50">
-                  {searchQuery 
-                    ? `No games found matching "${searchQuery}". Try a different search.`
-                    : 'No games found matching selected genres. Try different filters.'
-                  }
-                </div>
-              ) : filteredOpportunities.map((game) => (
-                <div 
-                  key={game.rank} 
-                  className={`matrix-card cursor-pointer ${
-                    game.is_filtered 
-                      ? 'border-red-500/50 bg-red-900/10' 
-                      : ''
-                  }`}
-                  onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
-                >
-                  {/* Warning Banner for Filtered Games */}
-                  {game.is_filtered && game.warning_text && (
-                    <div className="bg-red-500/20 border border-red-500/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
-                      <span className="text-red-400 font-bold text-sm">AVOID</span>
-                      <span className="text-red-300/80 text-xs">{game.warning_text}</span>
-                      {game.discoverability_rating !== undefined && (
-                        <span className="ml-auto text-red-400 font-bold text-sm">
-                          {game.discoverability_rating}/10
-                        </span>
-                      )}
+          {/* Search Bar */}
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Search games..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-black border border-matrix-green/30 text-matrix-green px-4 py-2 rounded-lg focus:outline-none focus:border-matrix-green font-mono"
+            />
+          </div>
+
+          {/* Genre Filters */}
+          <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            {GENRE_OPTIONS.map(genre => (
+              <button
+                key={genre}
+                onClick={() => toggleGenre(genre)}
+                className={`px-3 py-1 rounded-lg text-xs sm:text-sm font-mono transition-all ${
+                  selectedGenres.includes(genre)
+                    ? 'bg-matrix-green text-black font-bold'
+                    : 'bg-black border border-matrix-green/30 text-matrix-green hover:border-matrix-green'
+                }`}
+              >
+                {genre}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      {/* Game Cards */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-4">
+          {filteredOpportunities.map((game) => {
+            const score = game.discoverability_rating !== undefined 
+              ? game.discoverability_rating 
+              : (game.overall_score * 10)
+            
+            const isExpanded = selectedGame?.rank === game.rank
+
+            return (
+              <div
+                key={game.rank}
+                className={`matrix-card cursor-pointer transition-all ${
+                  isExpanded ? 'ring-2 ring-matrix-green' : ''
+                } ${game.is_filtered ? 'border-red-500/50 bg-red-900/10' : ''}`}
+                onClick={() => setSelectedGame(isExpanded ? null : game)}
+              >
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {/* Rank Badge */}
+                  <div className="flex-shrink-0 flex sm:flex-col items-center sm:items-start gap-2">
+                    <div className="text-4xl sm:text-6xl font-bold text-matrix-green-bright font-mono">
+                      #{game.rank}
                     </div>
-                  )}
-                  
-                  {/* Mobile and Desktop Layout */}
-                  <div className="flex gap-4">
-                    {/* Game Cover Image - Left Side */}
                     {game.box_art_url && (
-                      <div className="flex-shrink-0">
-                        <img 
-                          src={game.box_art_url} 
-                          alt={game.game_name}
-                          className="w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
+                      <img
+                        src={game.box_art_url}
+                        alt={game.game_name}
+                        className="w-20 h-28 object-cover rounded border border-matrix-green/30"
+                      />
+                    )}
+                  </div>
+
+                  {/* Game Info */}
+                  <div className="flex-grow">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-matrix-green-bright mb-1">
+                          {game.game_name}
+                        </h2>
+                        {game.genres && game.genres.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {game.genres.map(genre => (
+                              <span
+                                key={genre}
+                                className="px-2 py-0.5 bg-matrix-green/10 border border-matrix-green/30 rounded text-xs font-mono"
+                              >
+                                {genre}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-3xl sm:text-4xl font-bold text-matrix-green-bright font-mono">
+                          {score.toFixed(1)}/10
+                        </div>
+                        <div className="text-xs text-matrix-green/60 font-mono mt-1">
+                          {game.recommendation}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Warning Banner */}
+                    {game.is_filtered && game.warning_text && (
+                      <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-3 mb-3">
+                        <p className="text-red-400 text-sm font-mono flex items-start gap-2">
+                          <span className="text-lg">⚠️</span>
+                          <span>{game.warning_text}</span>
+                        </p>
                       </div>
                     )}
-                    
-                    {/* Content - Right Side */}
-                    <div className="flex-1 min-w-0 flex flex-col">
-                      {/* Header Row: Rank + Title + Score */}
-                      <div className="flex items-start gap-2 mb-2">
-                        {/* Rank */}
-                        <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-matrix-green-bright flex-shrink-0">
-                          #{game.rank}
-                        </div>
-                        
-                        {/* Title (flex-grow to push score right) */}
-                        <div className="flex-1 min-w-0">
-                          <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
-                            {game.game_name}
-                          </h2>
-                          <div className="text-xs sm:text-sm text-matrix-green-dim mt-1">
-                            {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
-                          </div>
-                          {/* Genre Tags */}
-                          {game.genres && game.genres.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {game.genres.slice(0, 3).map(genre => (
-                                <span 
-                                  key={genre}
-                                  className="px-2 py-0.5 text-[10px] sm:text-xs rounded bg-matrix-green/10 text-matrix-green/70 border border-matrix-green/20"
-                                >
-                                  {genre}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Score - Always Visible */}
-                        <div className="text-right flex-shrink-0 ml-2 pr-1">
-                          <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
-                            game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
-                          }`}>
-                            {game.is_filtered && game.discoverability_rating !== undefined
-                              ? `${game.discoverability_rating}/10`
-                              : `${(game.overall_score * 10).toFixed(1)}/10`
-                            }
-                          </div>
-                          <div className="text-[10px] sm:text-xs text-matrix-green-dim mt-1">
-                            {game.is_filtered ? 'POOR' : game.trend}
-                          </div>
-                          <div className={`text-[8px] sm:text-[10px] leading-tight max-w-[80px] sm:max-w-none ${
-                            game.is_filtered ? 'text-red-400' : 'text-matrix-green-dim'
-                          }`}>
-                            {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
-                          </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm font-mono mb-3">
+                      <div>
+                        <div className="text-matrix-green/60">Viewers</div>
+                        <div className="text-matrix-green-bright font-bold">
+                          {game.total_viewers.toLocaleString()}
                         </div>
                       </div>
+                      <div>
+                        <div className="text-matrix-green/60">Streamers</div>
+                        <div className="text-matrix-green-bright font-bold">
+                          {game.channels}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-matrix-green/60">Avg/Channel</div>
+                        <div className="text-matrix-green-bright font-bold">
+                          {game.avg_viewers_per_channel.toFixed(1)}
+                        </div>
+                      </div>
+                      {game.dominance_ratio !== undefined && game.dominance_ratio > 0.3 && (
+                        <div>
+                          <div className="text-matrix-green/60">⚠️ Top Heavy</div>
+                          <div className="text-yellow-400 font-bold">
+                            {(game.dominance_ratio * 100).toFixed(0)}%
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
+                    {/* Quick Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       {/* Purchase Links */}
                       <div className="flex flex-wrap gap-2 mt-2">
                         {/* Twitch Directory Link */}
@@ -455,7 +464,10 @@ export default function Home() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500 text-xs sm:text-sm"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackExternalClick('twitch', game);
+                          }}
                         >
                           📺 Twitch
                         </a>
@@ -466,7 +478,10 @@ export default function Home() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="matrix-button-small text-xs sm:text-sm"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('steam', game);
+                            }}
                           >
                             🎮 Steam
                           </a>
@@ -477,7 +492,10 @@ export default function Home() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="matrix-button-small text-xs sm:text-sm"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('epic', game);
+                            }}
                           >
                             🎮 Epic
                           </a>
@@ -485,65 +503,57 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Expanded Details */}
-                  {selectedGame?.rank === game.rank && (
-                    <div className="mt-4 pt-4 border-t border-matrix-green/30">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="matrix-stat">
-                          <div className="text-matrix-green-dim text-xs">DISCOVERABILITY</div>
-                          <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
-                            {(game.discoverability_score * 10).toFixed(1)}/10
-                          </div>
-                        </div>
-                        <div className="matrix-stat">
-                          <div className="text-matrix-green-dim text-xs">VIABILITY</div>
-                          <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
-                            {(game.viability_score * 10).toFixed(1)}/10
-                          </div>
-                        </div>
-                        <div className="matrix-stat">
-                          <div className="text-matrix-green-dim text-xs">ENGAGEMENT</div>
-                          <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
-                            {(game.engagement_score * 10).toFixed(1)}/10
-                          </div>
-                        </div>
-                        <div className="matrix-stat">
-                          <div className="text-matrix-green-dim text-xs">AVG VIEWERS/CHANNEL</div>
-                          <div className="text-2xl font-bold text-matrix-green">
-                            {game.avg_viewers_per_channel.toFixed(1)}
-                          </div>
+                {/* Expanded Details */}
+                {selectedGame?.rank === game.rank && (
+                  <div className="mt-4 pt-4 border-t border-matrix-green/30">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm font-mono">
+                      <div>
+                        <div className="text-matrix-green/60 mb-1">Discoverability</div>
+                        <div className="text-lg text-matrix-green-bright font-bold">
+                          {game.discoverability_score.toFixed(2)}
                         </div>
                       </div>
-                      
-                      <div className="mt-4 text-sm text-matrix-green-dim text-center">
-                        Click card again to collapse
+                      <div>
+                        <div className="text-matrix-green/60 mb-1">Viability</div>
+                        <div className="text-lg text-matrix-green-bright font-bold">
+                          {game.viability_score.toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-matrix-green/60 mb-1">Engagement</div>
+                        <div className="text-lg text-matrix-green-bright font-bold">
+                          {game.engagement_score.toFixed(2)}
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </main>
+                    <div className="mt-4 text-xs text-matrix-green/60 font-mono">
+                      <p className="mb-2">
+                        <span className="text-matrix-green-bright">Discoverability:</span> How easy it is to be found (viewer-to-streamer ratio)
+                      </p>
+                      <p className="mb-2">
+                        <span className="text-matrix-green-bright">Viability:</span> Sufficient viewership to make streaming worthwhile
+                      </p>
+                      <p>
+                        <span className="text-matrix-green-bright">Engagement:</span> Active viewership and community interaction
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
-
-        {/* Footer */}
-        <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
-          <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span></p>
-          <p className="mt-2">Data auto-updates every 10 minutes • Powered by Twitch API</p>
-          <p className="mt-2">
-            Affiliate Disclosure: We may earn a commission from game purchases through our links.
-          </p>
-          <div className="mt-4 flex justify-center gap-4">
-            <Link href="/about" className="hover:text-matrix-green transition-colors">About</Link>
-            <span>•</span>
-            <Link href="/contact" className="hover:text-matrix-green transition-colors">Contact</Link>
-            <span>•</span>
-            <Link href="/privacy" className="hover:text-matrix-green transition-colors">Privacy Policy</Link>
-          </div>
-          <p className="mt-4">© {new Date().getFullYear()} StreamScout. All rights reserved.</p>
-        </footer>
       </div>
-    </div>
+
+      {/* Footer */}
+      <footer className="border-t border-matrix-green/30 mt-12 py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-matrix-green/60 font-mono">
+          <p>Data updates every 10 minutes • {data?.timestamp}</p>
+          <p className="mt-2">Built with 💚 for small streamers</p>
+        </div>
+      </footer>
+    </main>
   )
 }
