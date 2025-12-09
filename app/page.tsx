@@ -95,6 +95,26 @@ export default function Home() {
     return `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`
   }
 
+  // Track external link clicks (Steam, Epic, Twitch) - YOUR MONEY METRIC!
+  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch', game: GameOpportunity) => {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      const score = game.discoverability_rating !== undefined 
+        ? game.discoverability_rating 
+        : (game.overall_score * 10);
+      
+      (window as any).gtag('event', `${linkType}_click`, {
+        'game_name': game.game_name,
+        'game_score': score,
+        'game_rank': game.rank,
+        'event_category': 'external_link',
+        'event_label': game.game_name
+      });
+      
+      // Debug log (you can remove this after testing)
+      console.log(`✅ [TRACK] ${linkType}_click: ${game.game_name} (${score.toFixed(1)}/10)`);
+    }
+  }
+
   // Check status endpoint for warmup progress
   const checkStatus = useCallback(async () => {
     try {
@@ -194,166 +214,147 @@ export default function Home() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [data, countdown, fetchData])
+  }, [countdown, data, fetchData])
 
-  // Also poll for updates every 60 seconds (in case countdown drifts)
-  useEffect(() => {
-    if (!data) return
-    
-    const interval = setInterval(() => {
-      fetchData()
-    }, 60 * 1000)
-    
-    return () => clearInterval(interval)
-  }, [data, fetchData])
-
-  const formatCountdown = (seconds: number) => {
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   const getScoreColor = (score: number) => {
-    if (score >= 0.80) return 'score-excellent'
-    if (score >= 0.65) return 'score-good'
-    if (score >= 0.50) return 'score-moderate'
-    return 'score-poor'
-  }
-
-  // Warmup screen
-  if (isWarmingUp || (loading && !data)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl sm:text-6xl mb-4 animate-glow">[ WARMING UP ]</div>
-          <div className="text-matrix-green-dim mb-4">{warmupStatus}</div>
-          <div className="flex justify-center">
-            <div className="w-8 h-8 border-2 border-matrix-green border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <div className="text-matrix-green-dim mt-4 text-sm">
-            First load takes ~30 seconds. Auto-refreshing...
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="matrix-card max-w-md text-center">
-          <div className="text-3xl mb-4">❌ ERROR</div>
-          <div className="text-matrix-green-dim">{error}</div>
-          <button onClick={fetchData} className="matrix-button mt-6">
-            RETRY
-          </button>
-        </div>
-      </div>
-    )
+    if (score >= 0.8) return 'text-green-400'
+    if (score >= 0.6) return 'text-yellow-400'
+    if (score >= 0.4) return 'text-orange-400'
+    return 'text-red-400'
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-matrix-bg text-matrix-green font-mono">
+      <div className="matrix-background" />
+      
+      <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
-        <header className="mb-8">
-          <div className="flex justify-center mb-4">
-            <img 
-              src="/streamscout-logo.jpg" 
-              alt="StreamScout - Find Your Audience. Grow Your Channel."
-              className="w-full max-w-2xl h-auto"
-            />
-          </div>
-          
-          {/* What is StreamScout? */}
-          <div className="max-w-2xl mx-auto text-center mb-6 px-4">
-            <h2 className="text-lg sm:text-xl font-bold text-matrix-green mb-2">What is StreamScout?</h2>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed">
-              Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
-            </p>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed mt-2">
-              We show you where small streamers can actually compete.
-            </p>
-            <p className="text-base sm:text-lg font-bold text-matrix-green mt-3">
-              No guesswork. Just data.
-            </p>
-          </div>
-          
-          {data && (
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="matrix-badge">
-                🎮 {data.total_games_analyzed} GAMES ANALYZED
-              </div>
-              <div className="matrix-badge">
-                ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
-              </div>
-              <div className="matrix-badge">
-                🔄 NEXT UPDATE: {formatCountdown(countdown)}
-              </div>
-            </div>
-          )}
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold matrix-glitch mb-4" data-text="STREAMSCOUT">
+            STREAMSCOUT
+          </h1>
+          <p className="text-lg md:text-xl text-matrix-green-bright mb-2">
+            Find Your Best Twitch Streaming Opportunities
+          </p>
+          <p className="text-sm md:text-base text-matrix-green-dim">
+            Real-time analysis of 500+ games • Updated every 10 minutes
+          </p>
         </header>
 
-        {/* Main Content with Sidebar */}
-        <div className="flex gap-8">
-          {/* Main Game Grid - Full Width */}
-          <main className="w-full">
-            {/* Search Box */}
-            <div className="mb-4">
+        {/* Warmup Screen */}
+        {isWarmingUp && (
+          <div className="max-w-2xl mx-auto">
+            <div className="matrix-card text-center">
+              <div className="mb-6">
+                <div className="inline-block relative">
+                  <div className="w-16 h-16 border-4 border-matrix-green/30 border-t-matrix-green rounded-full animate-spin"></div>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold mb-4">Initializing StreamScout...</h2>
+              <p className="text-matrix-green-dim mb-2">{warmupStatus}</p>
+              <p className="text-sm text-matrix-green-dim/70">
+                First load may take 30-60 seconds while we fetch fresh data from Twitch
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isWarmingUp && (
+          <div className="max-w-2xl mx-auto">
+            <div className="matrix-card border-red-500/50 bg-red-900/20">
+              <p className="text-red-400 text-center">{error}</p>
+              <button 
+                onClick={fetchData}
+                className="matrix-button mt-4 mx-auto block"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        {!isWarmingUp && data && (
+          <main>
+            {/* Stats Bar */}
+            <div className="mb-6 flex flex-wrap gap-4 justify-center text-center">
+              <div className="matrix-stat-inline">
+                <span className="text-matrix-green-dim text-sm">GAMES ANALYZED:</span>
+                <span className="ml-2 text-matrix-green-bright font-bold text-lg">
+                  {data.total_games_analyzed}
+                </span>
+              </div>
+              <div className="matrix-stat-inline">
+                <span className="text-matrix-green-dim text-sm">NEXT UPDATE:</span>
+                <span className="ml-2 text-matrix-green-bright font-bold text-lg">
+                  {formatTime(countdown)}
+                </span>
+              </div>
+              <div className="matrix-stat-inline">
+                <span className="text-matrix-green-dim text-sm">SHOWING:</span>
+                <span className="ml-2 text-matrix-green-bright font-bold text-lg">
+                  {filteredOpportunities.length} games
+                </span>
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="mb-6 max-w-2xl mx-auto">
               <input
                 type="text"
-                placeholder="Search for any game (e.g., Fortnite, League of Legends)..."
+                placeholder="Search games..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 bg-black/50 border border-matrix-green/30 rounded-lg text-matrix-green placeholder-matrix-green/40 focus:outline-none focus:border-matrix-green/60 focus:ring-1 focus:ring-matrix-green/30"
+                className="w-full px-4 py-3 bg-black/50 border-2 border-matrix-green/50 rounded text-matrix-green placeholder-matrix-green-dim focus:outline-none focus:border-matrix-green-bright"
               />
             </div>
-            
-            {/* Genre Filter Chips */}
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-matrix-green/70 text-sm mr-2">Filter by genre:</span>
-                {GENRE_OPTIONS.map(genre => (
-                  <button
-                    key={genre}
-                    onClick={() => toggleGenre(genre)}
-                    className={`px-3 py-1 rounded-full text-sm transition-all ${
-                      selectedGenres.includes(genre)
-                        ? 'bg-matrix-green text-black font-semibold'
-                        : 'bg-matrix-green/10 text-matrix-green border border-matrix-green/30 hover:bg-matrix-green/20'
-                    }`}
-                  >
-                    {genre}
-                  </button>
-                ))}
-                {selectedGenres.length > 0 && (
-                  <button
-                    onClick={() => setSelectedGenres([])}
-                    className="px-3 py-1 rounded-full text-sm bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 ml-2"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
+
+            {/* Genre Filter Pills */}
+            <div className="mb-6 flex flex-wrap gap-2 justify-center">
+              {GENRE_OPTIONS.map(genre => (
+                <button
+                  key={genre}
+                  onClick={() => toggleGenre(genre)}
+                  className={`px-4 py-2 rounded border-2 transition-all ${
+                    selectedGenres.includes(genre)
+                      ? 'bg-matrix-green text-black border-matrix-green font-bold'
+                      : 'bg-black/30 text-matrix-green border-matrix-green/30 hover:border-matrix-green/60'
+                  }`}
+                >
+                  {genre}
+                </button>
+              ))}
               {selectedGenres.length > 0 && (
-                <div className="text-matrix-green/50 text-sm mt-2">
-                  Showing {filteredOpportunities.length} of {data?.top_opportunities?.length || 0} games
-                </div>
-              )}
-              {searchQuery && (
-                <div className="text-matrix-green/50 text-sm mt-2">
-                  Search results for "{searchQuery}": {filteredOpportunities.length} games found
-                </div>
+                <button
+                  onClick={() => setSelectedGenres([])}
+                  className="px-4 py-2 rounded border-2 bg-red-900/20 text-red-400 border-red-500/50 hover:bg-red-900/40"
+                >
+                  Clear Filters
+                </button>
               )}
             </div>
 
-            <div className="grid gap-4">
-              {filteredOpportunities.length === 0 && (selectedGenres.length > 0 || searchQuery) ? (
-                <div className="text-center py-12 text-matrix-green/50">
-                  {searchQuery 
-                    ? `No games found matching "${searchQuery}". Try a different search.`
-                    : 'No games found matching selected genres. Try different filters.'
-                  }
+            {/* Games List */}
+            <div className="space-y-4">
+              {filteredOpportunities.length === 0 ? (
+                <div className="matrix-card text-center">
+                  <p className="text-matrix-green-dim">No games match your filters.</p>
+                  <button
+                    onClick={() => {
+                      setSelectedGenres([])
+                      setSearchQuery('')
+                    }}
+                    className="matrix-button mt-4"
+                  >
+                    Clear All Filters
+                  </button>
                 </div>
               ) : filteredOpportunities.map((game) => (
                 <div 
@@ -368,7 +369,7 @@ export default function Home() {
                   {/* Warning Banner for Filtered Games */}
                   {game.is_filtered && game.warning_text && (
                     <div className="bg-red-500/20 border border-red-500/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
-                      <span className="text-red-400 font-bold text-sm">AVOID</span>
+                      <span className="text-red-400 font-bold text-sm">⚠️ AVOID</span>
                       <span className="text-red-300/80 text-xs">{game.warning_text}</span>
                       {game.discoverability_rating !== undefined && (
                         <span className="ml-auto text-red-400 font-bold text-sm">
@@ -455,7 +456,10 @@ export default function Home() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500 text-xs sm:text-sm"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackExternalClick('twitch', game);
+                          }}
                         >
                           📺 Twitch
                         </a>
@@ -466,7 +470,10 @@ export default function Home() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="matrix-button-small text-xs sm:text-sm"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('steam', game);
+                            }}
                           >
                             🎮 Steam
                           </a>
@@ -477,7 +484,10 @@ export default function Home() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="matrix-button-small text-xs sm:text-sm"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('epic', game);
+                            }}
                           >
                             🎮 Epic
                           </a>
@@ -525,7 +535,7 @@ export default function Home() {
               ))}
             </div>
           </main>
-        </div>
+        )}
 
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
