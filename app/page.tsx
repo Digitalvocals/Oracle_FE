@@ -284,9 +284,9 @@ export default function Home() {
             />
           </div>
           
-          {/* What is StreamScout? */}
+          {/* What is StreamScout? [TEST] */}
           <div className="max-w-2xl mx-auto text-center mb-6 px-4">
-            <h2 className="text-lg sm:text-xl font-bold text-matrix-green mb-2">What is StreamScout?</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-matrix-green mb-2">What is StreamScout? [TEST]</h2>
             <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed">
               Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
             </p>
