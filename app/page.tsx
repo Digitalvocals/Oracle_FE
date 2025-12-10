@@ -488,7 +488,7 @@ export default function Home() {
                           <div className="flex items-start justify-end gap-1">
                             {/* Info Icon with Tooltip */}
                             <div className="relative group/info mt-1">
-                              <span className="w-5 h-5 rounded-full bg-matrix-green/30 hover:bg-matrix-green/60 text-matrix-green flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
+                              <span className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
                               
                               {/* Tooltip - Positioned Left */}
                               <div className="absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-200 z-50 text-left pointer-events-none">
@@ -500,9 +500,9 @@ export default function Home() {
                                   </div>
                                 ) : (
                                   <div className="text-xs leading-relaxed space-y-2">
-                                    <p className="text-gray-200">{getScoreContext(game).competition} ({game.channels} streamers)</p>
-                                    <p className="text-gray-200">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
-                                    <p className="text-gray-400 text-[10px] mt-2">Click card for detailed breakdown →</p>
+                                    <p className="text-white">{getScoreContext(game).competition} ({game.channels} streamers)</p>
+                                    <p className="text-white">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
+                                    <p className="text-gray-300 text-[10px] mt-2">Click card for detailed breakdown →</p>
                                   </div>
                                 )}
                               </div>
@@ -521,8 +521,8 @@ export default function Home() {
                           <div className="text-[10px] sm:text-xs text-gray-400 mt-1">
                             {game.is_filtered ? 'POOR' : game.trend}
                           </div>
-                          <div className={`text-[8px] sm:text-[10px] leading-tight max-w-[80px] sm:max-w-none font-semibold ${
-                            game.is_filtered ? 'text-red-400' : 'text-matrix-green'
+                          <div className={`text-[8px] sm:text-[10px] leading-tight max-w-[80px] sm:max-w-none font-bold ${
+                            game.is_filtered ? 'text-red-400' : 'text-white'
                           }`}>
                             {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
                           </div>
@@ -536,7 +536,7 @@ export default function Home() {
                           href={getTwitchUrl(game.game_name)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500 text-xs sm:text-sm"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('twitch', game);
@@ -550,7 +550,7 @@ export default function Home() {
                             href={game.purchase_links.steam}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small bg-blue-700 hover:bg-blue-600 border-blue-600 text-xs sm:text-sm"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-[#2a475e] hover:bg-[#3d6a8a] text-white text-xs sm:text-sm font-semibold transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('steam', game);
@@ -564,7 +564,7 @@ export default function Home() {
                             href={game.purchase_links.epic}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small bg-gray-700 hover:bg-gray-600 border-gray-600 text-xs sm:text-sm"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-[#313131] hover:bg-[#444444] border border-gray-600 text-white text-xs sm:text-sm font-semibold transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('epic', game);
@@ -585,14 +585,14 @@ export default function Home() {
                         <div className="matrix-stat relative group/disc">
                           <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                             DISCOVERABILITY
-                            <span className="w-4 h-4 rounded-full bg-matrix-green/40 group-hover/disc:bg-matrix-green/70 text-matrix-green flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/disc:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
                             {(game.discoverability_score * 10).toFixed(1)}/10
                           </div>
                           {/* Tooltip */}
                           <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-gray-200 leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
                           </div>
                         </div>
                         
@@ -600,14 +600,14 @@ export default function Home() {
                         <div className="matrix-stat relative group/viab">
                           <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                             VIABILITY
-                            <span className="w-4 h-4 rounded-full bg-matrix-green/40 group-hover/viab:bg-matrix-green/70 text-matrix-green flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/viab:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
                             {(game.viability_score * 10).toFixed(1)}/10
                           </div>
                           {/* Tooltip */}
                           <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-gray-200 leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
                           </div>
                         </div>
                         
@@ -615,14 +615,14 @@ export default function Home() {
                         <div className="matrix-stat relative group/eng">
                           <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                             ENGAGEMENT
-                            <span className="w-4 h-4 rounded-full bg-matrix-green/40 group-hover/eng:bg-matrix-green/70 text-matrix-green flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/eng:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
                             {(game.engagement_score * 10).toFixed(1)}/10
                           </div>
                           {/* Tooltip */}
                           <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-gray-200 leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
                           </div>
                         </div>
                         
@@ -630,14 +630,14 @@ export default function Home() {
                         <div className="matrix-stat relative group/avg">
                           <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                             AVG VIEWERS/CH
-                            <span className="w-4 h-4 rounded-full bg-matrix-green/40 group-hover/avg:bg-matrix-green/70 text-matrix-green flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/avg:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className="text-2xl font-bold text-matrix-green">
                             {game.avg_viewers_per_channel.toFixed(1)}
                           </div>
                           {/* Tooltip */}
                           <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-gray-200 leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
                           </div>
                         </div>
                       </div>
