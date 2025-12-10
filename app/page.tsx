@@ -239,6 +239,35 @@ export default function Home() {
     return 'score-poor'
   }
 
+  // Generate "Why This Score?" explanation
+  const getScoreExplanation = (game: GameOpportunity) => {
+    const channels = game.channels
+    const viewers = game.total_viewers
+    const avgViewers = game.avg_viewers_per_channel
+    
+    // Competition level
+    let competition = ''
+    if (channels < 50) competition = 'Very low competition'
+    else if (channels < 150) competition = 'Low competition'
+    else if (channels < 300) competition = 'Moderate competition'
+    else competition = 'High competition'
+    
+    // Viewership level
+    let viewership = ''
+    if (viewers < 500) viewership = 'small but focused audience'
+    else if (viewers < 2000) viewership = 'decent viewer pool'
+    else if (viewers < 10000) viewership = 'healthy viewer base'
+    else viewership = 'large audience'
+    
+    // Avg viewers assessment
+    let avgAssess = ''
+    if (avgViewers > 50) avgAssess = 'Viewers spread well across streamers'
+    else if (avgViewers > 20) avgAssess = 'Good viewer distribution'
+    else avgAssess = 'Concentrated viewership'
+    
+    return { competition, viewership, avgAssess }
+  }
+
   // Warmup screen
   if (isWarmingUp || (loading && !data)) {
     return (
@@ -445,9 +474,9 @@ export default function Home() {
                           )}
                         </div>
                         
-                        {/* Score - Always Visible */}
-                        <div className="text-right flex-shrink-0 ml-2 pr-1">
-                          <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
+                        {/* Score - Always Visible - With Tooltip */}
+                        <div className="text-right flex-shrink-0 ml-2 pr-1 relative group/score">
+                          <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none cursor-help ${
                             game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
                           }`}>
                             {game.is_filtered && game.discoverability_rating !== undefined
@@ -462,6 +491,30 @@ export default function Home() {
                             game.is_filtered ? 'text-red-400' : 'text-matrix-green-dim'
                           }`}>
                             {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
+                          </div>
+                          
+                          {/* Why This Score? Tooltip */}
+                          <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-200 z-50 text-left">
+                            <div className="text-matrix-green font-bold text-sm mb-2">Why this score?</div>
+                            {game.is_filtered ? (
+                              <div className="text-red-400 text-xs">
+                                <p className="mb-1">{game.warning_text || 'This category is oversaturated.'}</p>
+                                <p>Small streamers get buried in categories this large.</p>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="text-xs text-matrix-green-dim space-y-1">
+                                  <p>{getScoreExplanation(game).competition} ({game.channels} channels)</p>
+                                  <p>{getScoreExplanation(game).viewership} ({game.total_viewers.toLocaleString()} viewers)</p>
+                                  <p>{getScoreExplanation(game).avgAssess}</p>
+                                </div>
+                                <div className="mt-2 pt-2 border-t border-matrix-green/20 text-[10px] text-matrix-green/60">
+                                  <div className="flex justify-between"><span>Discoverability:</span><span>{(game.discoverability_score * 10).toFixed(1)}/10</span></div>
+                                  <div className="flex justify-between"><span>Viability:</span><span>{(game.viability_score * 10).toFixed(1)}/10</span></div>
+                                  <div className="flex justify-between"><span>Engagement:</span><span>{(game.engagement_score * 10).toFixed(1)}/10</span></div>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
