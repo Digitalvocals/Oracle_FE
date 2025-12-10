@@ -655,7 +655,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
-          <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span></p>
+          <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span> (digitalvocalstv@gmail.com)</p>
           <p className="mt-2">Data auto-updates every 10 minutes • Powered by Twitch API</p>
           <p className="mt-2">
             Affiliate Disclosure: We may earn a commission from game purchases through our links.
