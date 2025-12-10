@@ -325,10 +325,10 @@ export default function Home() {
           {/* What is StreamScout? */}
           <div className="max-w-2xl mx-auto text-center mb-6 px-4">
             <h2 className="text-lg sm:text-xl font-bold text-matrix-green-bright mb-2">What is StreamScout?</h2>
-            <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
               Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
             </p>
-            <p className="text-sm sm:text-base text-gray-300 leading-relaxed mt-2">
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mt-2">
               We show you where small streamers can actually compete.
             </p>
             <p className="text-base sm:text-lg font-bold text-matrix-green-bright mt-3">
@@ -338,13 +338,13 @@ export default function Home() {
           
           {data && (
             <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 🎮 {data.total_games_analyzed} GAMES ANALYZED
               </div>
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
               </div>
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 🔄 NEXT UPDATE: {formatCountdown(countdown)}
               </div>
             </div>
@@ -522,7 +522,7 @@ export default function Home() {
                             {game.is_filtered ? 'POOR' : game.trend}
                           </div>
                           <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
-                            game.is_filtered ? 'text-red-400' : 'text-green-400'
+                            game.is_filtered ? 'text-red-400' : 'text-amber-400'
                           }`}>
                             {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
                           </div>
