@@ -494,7 +494,7 @@ export default function Home() {
                           </div>
                           
                           {/* Why This Score? Tooltip */}
-                          <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-200 z-50 text-left">
+                          <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-200 z-50 text-left">
                             <div className="text-matrix-green font-bold text-sm mb-2">Why this score?</div>
                             {game.is_filtered ? (
                               <div className="text-red-400 text-xs">
