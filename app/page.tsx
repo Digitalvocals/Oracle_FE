@@ -488,7 +488,7 @@ export default function Home() {
                           <div className="flex items-start justify-end gap-1">
                             {/* Info Icon with Tooltip */}
                             <div className="relative group/info mt-1">
-                              <span className="text-matrix-green/40 hover:text-matrix-green cursor-help text-sm">ⓘ</span>
+                              <span className="w-5 h-5 rounded-full bg-matrix-green/30 hover:bg-matrix-green/60 text-matrix-green flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
                               
                               {/* Tooltip - Positioned Left */}
                               <div className="absolute right-full top-0 mr-2 w-56 p-3 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-200 z-50 text-left pointer-events-none">
@@ -585,7 +585,7 @@ export default function Home() {
                         <div className="matrix-stat relative group/disc">
                           <div className="text-matrix-green-dim text-xs flex items-center gap-1 cursor-help">
                             DISCOVERABILITY
-                            <span className="text-matrix-green/40 group-hover/disc:text-matrix-green">ⓘ</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/20 group-hover/disc:bg-matrix-green/50 text-matrix-green/60 group-hover/disc:text-matrix-green flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
                             {(game.discoverability_score * 10).toFixed(1)}/10
@@ -600,7 +600,7 @@ export default function Home() {
                         <div className="matrix-stat relative group/viab">
                           <div className="text-matrix-green-dim text-xs flex items-center gap-1 cursor-help">
                             VIABILITY
-                            <span className="text-matrix-green/40 group-hover/viab:text-matrix-green">ⓘ</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/20 group-hover/viab:bg-matrix-green/50 text-matrix-green/60 group-hover/viab:text-matrix-green flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
                             {(game.viability_score * 10).toFixed(1)}/10
@@ -615,7 +615,7 @@ export default function Home() {
                         <div className="matrix-stat relative group/eng">
                           <div className="text-matrix-green-dim text-xs flex items-center gap-1 cursor-help">
                             ENGAGEMENT
-                            <span className="text-matrix-green/40 group-hover/eng:text-matrix-green">ⓘ</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/20 group-hover/eng:bg-matrix-green/50 text-matrix-green/60 group-hover/eng:text-matrix-green flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
                             {(game.engagement_score * 10).toFixed(1)}/10
@@ -630,7 +630,7 @@ export default function Home() {
                         <div className="matrix-stat relative group/avg">
                           <div className="text-matrix-green-dim text-xs flex items-center gap-1 cursor-help">
                             AVG VIEWERS/CH
-                            <span className="text-matrix-green/40 group-hover/avg:text-matrix-green">ⓘ</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/20 group-hover/avg:bg-matrix-green/50 text-matrix-green/60 group-hover/avg:text-matrix-green flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className="text-2xl font-bold text-matrix-green">
                             {game.avg_viewers_per_channel.toFixed(1)}
