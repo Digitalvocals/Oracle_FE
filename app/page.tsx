@@ -324,14 +324,14 @@ export default function Home() {
           
           {/* What is StreamScout? */}
           <div className="max-w-2xl mx-auto text-center mb-6 px-4">
-            <h2 className="text-lg sm:text-xl font-bold text-matrix-green mb-2">What is StreamScout?</h2>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed">
+            <h2 className="text-lg sm:text-xl font-bold text-matrix-green-bright mb-2">What is StreamScout?</h2>
+            <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
               Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
             </p>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed mt-2">
+            <p className="text-sm sm:text-base text-gray-300 leading-relaxed mt-2">
               We show you where small streamers can actually compete.
             </p>
-            <p className="text-base sm:text-lg font-bold text-matrix-green mt-3">
+            <p className="text-base sm:text-lg font-bold text-matrix-green-bright mt-3">
               No guesswork. Just data.
             </p>
           </div>
@@ -521,8 +521,8 @@ export default function Home() {
                           <div className="text-[10px] sm:text-xs text-gray-400 mt-1">
                             {game.is_filtered ? 'POOR' : game.trend}
                           </div>
-                          <div className={`text-[8px] sm:text-[10px] leading-tight max-w-[80px] sm:max-w-none font-bold ${
-                            game.is_filtered ? 'text-red-400' : 'text-white'
+                          <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
+                            game.is_filtered ? 'text-red-400' : 'text-green-400'
                           }`}>
                             {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
                           </div>
@@ -536,13 +536,13 @@ export default function Home() {
                           href={getTwitchUrl(game.game_name)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-colors"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('twitch', game);
                           }}
                         >
-                          📺 Twitch
+                          <span className="text-sm">📺</span> Twitch
                         </a>
                         
                         {game.purchase_links.steam && (
@@ -550,13 +550,13 @@ export default function Home() {
                             href={game.purchase_links.steam}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-[#2a475e] hover:bg-[#3d6a8a] text-white text-xs sm:text-sm font-semibold transition-colors"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#2a475e] hover:bg-[#3d6a8a] text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('steam', game);
                             }}
                           >
-                            🎮 Steam
+                            <span className="text-sm">🎮</span> Steam
                           </a>
                         )}
                         {game.purchase_links.epic && (
@@ -564,13 +564,13 @@ export default function Home() {
                             href={game.purchase_links.epic}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-[#313131] hover:bg-[#444444] border border-gray-600 text-white text-xs sm:text-sm font-semibold transition-colors"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#313131] hover:bg-[#444444] border border-gray-600 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('epic', game);
                             }}
                           >
-                            🎮 Epic
+                            <span className="text-sm">🎮</span> Epic
                           </a>
                         )}
                       </div>
