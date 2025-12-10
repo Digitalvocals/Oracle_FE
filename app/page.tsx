@@ -95,8 +95,21 @@ export default function Home() {
     return `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`
   }
 
+  // Helper functions for game info URLs
+  const getIGDBUrl = (gameName: string) => {
+    return `https://www.igdb.com/search?type=1&q=${encodeURIComponent(gameName)}`
+  }
+
+  const getYouTubeUrl = (gameName: string) => {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(gameName + ' gameplay trailer')}`
+  }
+
+  const getWikipediaUrl = (gameName: string) => {
+    return `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(gameName + ' video game')}`
+  }
+
   // External click tracking for GA4
-  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch', game: GameOpportunity) => {
+  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia', game: GameOpportunity) => {
     if (typeof window !== 'undefined' && (window as any).gtag) {
       const score = game.discoverability_rating !== undefined 
         ? game.discoverability_rating 
@@ -642,6 +655,49 @@ export default function Home() {
                         </div>
                       </div>
                       
+                      {/* Learn About This Game */}
+                      <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                        <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={getIGDBUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('igdb', game);
+                            }}
+                          >
+                            📖 Game Info (IGDB)
+                          </a>
+                          <a
+                            href={getYouTubeUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800/50 text-gray-200 text-xs font-medium transition-colors border border-red-800/50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('youtube', game);
+                            }}
+                          >
+                            ▶️ Gameplay & Trailers
+                          </a>
+                          <a
+                            href={getWikipediaUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('wikipedia', game);
+                            }}
+                          >
+                            📚 Wikipedia
+                          </a>
+                        </div>
+                      </div>
+                      
                       <div className="mt-4 text-sm text-gray-400 text-center">
                         Click card again to collapse
                       </div>
@@ -660,8 +716,10 @@ export default function Home() {
           <p className="mt-2">
             Affiliate Disclosure: We may earn a commission from game purchases through our links.
           </p>
-          <div className="mt-4 flex justify-center gap-4">
+          <div className="mt-4 flex justify-center gap-4 flex-wrap">
             <Link href="/about" className="hover:text-matrix-green transition-colors">About</Link>
+            <span>•</span>
+            <Link href="/changelog" className="hover:text-matrix-green transition-colors">Changelog</Link>
             <span>•</span>
             <Link href="/contact" className="hover:text-matrix-green transition-colors">Contact</Link>
             <span>•</span>
