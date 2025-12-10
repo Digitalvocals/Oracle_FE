@@ -1,7 +1,5 @@
 'use client'
 
-import { metadata } from './metadata'
-export { metadata }
 
 import { useState, useEffect } from 'react'
 import axios from 'axios'
