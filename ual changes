@@ -1,0 +1,176 @@
+warning: in the working copy of 'app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/app/page.tsx b/app/page.tsx[m
+[1mindex 533e390..29c721e 100644[m
+[1m--- a/app/page.tsx[m
+[1m+++ b/app/page.tsx[m
+[36m@@ -95,7 +95,7 @@[m [mexport default function Home() {[m
+     return `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`[m
+   }[m
+ [m
+[31m-  // Track external link clicks (Steam, Epic, Twitch) - YOUR MONEY METRIC![m
+[32m+[m[32m  // 🎯 EXTERNAL CLICK TRACKING - Added Dec 9, 2025[m
+   const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch', game: GameOpportunity) => {[m
+     if (typeof window !== 'undefined' && (window as any).gtag) {[m
+       const score = game.discoverability_rating !== undefined [m
+[36m@@ -110,7 +110,6 @@[m [mexport default function Home() {[m
+         'event_label': game.game_name[m
+       });[m
+       [m
+[31m-      // Debug log (you can remove this after testing)[m
+       console.log(`✅ [TRACK] ${linkType}_click: ${game.game_name} (${score.toFixed(1)}/10)`);[m
+     }[m
+   }[m
+[36m@@ -118,95 +117,107 @@[m [mexport default function Home() {[m
+   // Check status endpoint for warmup progress[m
+   const checkStatus = useCallback(async () => {[m
+     try {[m
+[31m-      const response = await axios.get<StatusData>(`${API_URL}/api/v1/status`)[m
+[31m-      const status = response.data[m
+[31m-      [m
+[31m-      if (status.worker.is_refreshing) {[m
+[31m-        setWarmupStatus('Fetching stream data from Twitch API...')[m
+[31m-      } else if (status.cache.has_data) {[m
+[31m-        setWarmupStatus('Data ready!')[m
+[31m-        return true // Has data[m
+[31m-      } else {[m
+[31m-        setWarmupStatus('Waiting for initial data fetch...')[m
+[32m+[m[32m      const response = await axios.get(`${API_URL}/api/v1/status`)[m
+[32m+[m[32m      const statusData: StatusData = response.data[m
+[32m+[m
+[32m+[m[32m      if (statusData.worker.is_refreshing) {[m
+[32m+[m[32m        setIsWarmingUp(true)[m
+[32m+[m[32m        setWarmupStatus('Analyzing games...')[m
+[32m+[m[32m      } else if (statusData.cache.has_data) {[m
+[32m+[m[32m        setIsWarmingUp(false)[m
+[32m+[m[32m        setCountdown(statusData.cache.next_refresh_seconds)[m
+       }[m
+[31m-      return false[m
+     } catch (err) {[m
+[31m-      setWarmupStatus('Connecting to server...')[m
+[31m-      return false[m
+[32m+[m[32m      console.error('Status check error:', err)[m
+     }[m
+   }, [])[m
+ [m
+[31m-  const fetchData = useCallback(async () => {[m
+[32m+[m[32m  // Load data[m
+[32m+[m[32m  const loadData = useCallback(async () => {[m
+     try {[m
+       setLoading(true)[m
+[31m-      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)[m
+[31m-      [m
+[31m-      // Check if warming up (202 status or warming_up status)[m
+[31m-      if (response.status === 202 || response.data.status === 'warming_up') {[m
+[31m-        setIsWarmingUp(true)[m
+[31m-        setData(null)[m
+[31m-        return false[m
+[31m-      }[m
+[31m-      [m
+[31m-      setIsWarmingUp(false)[m
+[31m-      setData(response.data)[m
+       setError(null)[m
+[31m-      [m
+[31m-      // Set countdown from whichever field exists[m
+[31m-      const refreshSeconds = response.data.next_refresh_in_seconds ?? [m
+[31m-                            response.data.cache_expires_in_seconds ?? [m
+[31m-                            600[m
+[31m-      setCountdown(refreshSeconds)[m
+[31m-      [m
+[31m-      return true[m
+[31m-    } catch (err: any) {[m
+[31m-      // 202 comes as an error with axios sometimes[m
+[31m-      if (err.response?.status === 202 || err.response?.data?.status === 'warming_up') {[m
+[32m+[m
+[32m+[m[32m      // First check if we need warmup[m
+[32m+[m[32m      const statusResponse = await axios.get(`${API_URL}/api/v1/status`)[m
+[32m+[m[32m      const statusData: StatusData = statusResponse.data[m
+[32m+[m
+[32m+[m[32m      if (!statusData.cache.has_data) {[m
+[32m+[m[32m        // No cache, need warmup[m
+         setIsWarmingUp(true)[m
+[31m-        setData(null)[m
+[31m-        return false[m
+[32m+[m[32m        setWarmupStatus('First-time setup: Warming up analysis engine...')[m
+[32m+[m[41m        [m
+[32m+[m[32m        // Poll status every 2 seconds[m
+[32m+[m[32m        const pollInterval = setInterval(async () => {[m
+[32m+[m[32m          try {[m
+[32m+[m[32m            const pollResponse = await axios.get(`${API_URL}/api/v1/status`)[m
+[32m+[m[32m            const pollData: StatusData = pollResponse.data[m
+[32m+[m[41m            [m
+[32m+[m[32m            if (pollData.cache.has_data && !pollData.worker.is_refreshing) {[m
+[32m+[m[32m              clearInterval(pollInterval)[m
+[32m+[m[32m              setIsWarmingUp(false)[m
+[32m+[m[32m              // Now fetch the actual data[m
+[32m+[m[32m              const dataResponse = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)[m
+[32m+[m[32m              setData(dataResponse.data)[m
+[32m+[m[32m              setLoading(false)[m
+[32m+[m[32m              setCountdown(dataResponse.data.next_refresh_in_seconds ||[m[41m [m
+[32m+[m[32m                          dataResponse.data.cache_expires_in_seconds ||[m[41m [m
+[32m+[m[32m                          600)[m
+[32m+[m[32m            } else if (pollData.worker.is_refreshing) {[m
+[32m+[m[32m              setWarmupStatus('Analyzing 500+ games... This takes about 2 minutes.')[m
+[32m+[m[32m            }[m
+[32m+[m[32m          } catch (err) {[m
+[32m+[m[32m            console.error('Poll error:', err)[m
+[32m+[m[32m          }[m
+[32m+[m[32m        }, 2000)[m
+[32m+[m
+[32m+[m[32m        // Safety timeout after 3 minutes[m
+[32m+[m[32m        setTimeout(() => {[m
+[32m+[m[32m          clearInterval(pollInterval)[m
+[32m+[m[32m          if (isWarmingUp) {[m
+[32m+[m[32m            setError('Warmup took too long. Please refresh the page.')[m
+[32m+[m[32m            setIsWarmingUp(false)[m
+[32m+[m[32m            setLoading(false)[m
+[32m+[m[32m          }[m
+[32m+[m[32m        }, 180000)[m
+[32m+[m[41m        [m
+[32m+[m[32m        return[m
+       }[m
+[31m-      setError('Failed to load data. Please try again later.')[m
+[31m-      console.error(err)[m
+[31m-      return false[m
+[31m-    } finally {[m
+[31m-      setLoading(false)[m
+[31m-    }[m
+[31m-  }, [])[m
+ [m
+[31m-  // Initial load[m
+[31m-  useEffect(() => {[m
+[31m-    fetchData()[m
+[31m-  }, [fetchData])[m
+[32m+[m[32m      // Cache exists, load normally[m
+[32m+[m[32m      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)[m
+[32m+[m[32m      setData(response.data)[m
+[32m+[m[32m      setLoading(false)[m
+ [m
+[31m-  // Warmup polling - check status every 3 seconds while warming up[m
+[31m-  useEffect(() => {[m
+[31m-    if (!isWarmingUp) return[m
+[32m+[m[32m      // Set countdown[m
+[32m+[m[32m      const secondsToRefresh = response.data.next_refresh_in_seconds ||[m[41m [m
+[32m+[m[32m                              response.data.cache_expires_in_seconds ||[m[41m [m
+[32m+[m[32m                              600[m
+[32m+[m[32m      setCountdown(secondsToRefresh)[m
+ [m
+[31m-    const pollStatus = async () => {[m
+[31m-      const hasData = await checkStatus()[m
+[31m-      if (hasData) {[m
+[31m-        // Data is ready, fetch it[m
+[31m-        await fetchData()[m
+[31m-      }[m
+[32m+[m[32m    } catch (err: any) {[m
+[32m+[m[32m      setError(err.response?.data?.error || err.message || 'Failed to load data')[m
+[32m+[m[32m      setLoading(false)[m
+[32m+[m[32m      setIsWarmingUp(false)[m
+     }[m
+[32m+[m[32m  }, [isWarmingUp])[m
+ [m
+[31m-    // Start polling[m
+[31m-    pollStatus()[m
+[31m-    const interval = setInterval(pollStatus, 3000)[m
+[31m-    [m
+[31m-    return () => clearInterval(interval)[m
+[31m-  }, [isWarmingUp, checkStatus, fetchData])[m
+[32m+[m[32m  // Effec

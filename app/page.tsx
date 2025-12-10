@@ -95,8 +95,21 @@ export default function Home() {
     return `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`
   }
 
+  // Helper functions for game info URLs
+  const getIGDBUrl = (gameName: string) => {
+    return `https://www.igdb.com/search?type=1&q=${encodeURIComponent(gameName)}`
+  }
+
+  const getYouTubeUrl = (gameName: string) => {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(gameName + ' gameplay trailer')}`
+  }
+
+  const getWikipediaUrl = (gameName: string) => {
+    return `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(gameName + ' video game')}`
+  }
+
   // External click tracking for GA4
-  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch', game: GameOpportunity) => {
+  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia', game: GameOpportunity) => {
     if (typeof window !== 'undefined' && (window as any).gtag) {
       const score = game.discoverability_rating !== undefined 
         ? game.discoverability_rating 
@@ -239,6 +252,44 @@ export default function Home() {
     return 'score-poor'
   }
 
+  // Generate contextual explanation for the overall score
+  const getScoreContext = (game: GameOpportunity) => {
+    const channels = game.channels
+    const viewers = game.total_viewers
+    
+    let competition = channels < 50 ? 'Very few streamers here' 
+      : channels < 150 ? 'Low streamer count' 
+      : channels < 300 ? 'Moderate competition'
+      : 'Crowded category'
+    
+    let audience = viewers < 500 ? 'Small but focused audience'
+      : viewers < 2000 ? 'Solid viewer pool'
+      : viewers < 10000 ? 'Healthy audience size'
+      : 'Large viewer base'
+    
+    return { competition, audience, channels, viewers }
+  }
+
+  // Metric definitions for tooltips
+  const METRIC_TOOLTIPS = {
+    discoverability: {
+      title: 'Discoverability',
+      description: 'Can viewers find you? Fewer streamers = you appear higher in the browse list. This is weighted highest (45%) because if nobody sees you, nothing else matters.'
+    },
+    viability: {
+      title: 'Viability', 
+      description: 'Is there actually an audience? Sweet spot is enough viewers to matter, but not so many that giants dominate. Too few = dead category, too many = you\'re buried.'
+    },
+    engagement: {
+      title: 'Engagement',
+      description: 'Are people really watching? Higher average viewers per channel means an engaged community, not just background noise.'
+    },
+    avgViewers: {
+      title: 'Avg Viewers/Channel',
+      description: 'Total viewers divided by total streamers. Higher = each streamer gets more eyeballs on average. Below 10 is rough, above 50 is healthy.'
+    }
+  }
+
   // Warmup screen
   if (isWarmingUp || (loading && !data)) {
     return (
@@ -286,27 +337,27 @@ export default function Home() {
           
           {/* What is StreamScout? */}
           <div className="max-w-2xl mx-auto text-center mb-6 px-4">
-            <h2 className="text-lg sm:text-xl font-bold text-matrix-green mb-2">What is StreamScout?</h2>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed">
+            <h2 className="text-lg sm:text-xl font-bold text-matrix-green-bright mb-2">What is StreamScout?</h2>
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
               Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
             </p>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed mt-2">
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mt-2">
               We show you where small streamers can actually compete.
             </p>
-            <p className="text-base sm:text-lg font-bold text-matrix-green mt-3">
+            <p className="text-base sm:text-lg font-bold text-matrix-green-bright mt-3">
               No guesswork. Just data.
             </p>
           </div>
           
           {data && (
             <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 🎮 {data.total_games_analyzed} GAMES ANALYZED
               </div>
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
               </div>
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 🔄 NEXT UPDATE: {formatCountdown(countdown)}
               </div>
             </div>
@@ -427,7 +478,7 @@ export default function Home() {
                           <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
                             {game.game_name}
                           </h2>
-                          <div className="text-xs sm:text-sm text-matrix-green-dim mt-1">
+                          <div className="text-xs sm:text-sm text-gray-300 mt-1">
                             {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
                           </div>
                           {/* Genre Tags */}
@@ -445,21 +496,46 @@ export default function Home() {
                           )}
                         </div>
                         
-                        {/* Score - Always Visible */}
-                        <div className="text-right flex-shrink-0 ml-2 pr-1">
-                          <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
-                            game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
-                          }`}>
-                            {game.is_filtered && game.discoverability_rating !== undefined
-                              ? `${game.discoverability_rating}/10`
-                              : `${(game.overall_score * 10).toFixed(1)}/10`
-                            }
+                        {/* Score - Always Visible - With Info Tooltip */}
+                        <div className="text-right flex-shrink-0 ml-2 pr-1 relative">
+                          <div className="flex items-start justify-end gap-1">
+                            {/* Info Icon with Tooltip */}
+                            <div className="relative group/info mt-1">
+                              <span className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
+                              
+                              {/* Tooltip - Positioned Left */}
+                              <div className="absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                                <div className="text-matrix-green font-bold text-xs mb-2">Why this score?</div>
+                                {game.is_filtered ? (
+                                  <div className="text-red-400 text-xs leading-relaxed">
+                                    <p>{game.warning_text || 'This category is oversaturated.'}</p>
+                                    <p className="mt-2 text-red-300">Small streamers get buried pages deep in categories this large.</p>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs leading-relaxed space-y-2">
+                                    <p className="text-white">{getScoreContext(game).competition} ({game.channels} streamers)</p>
+                                    <p className="text-white">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
+                                    <p className="text-gray-300 text-[10px] mt-2">Click card for detailed breakdown →</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Score Number */}
+                            <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
+                              game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
+                            }`}>
+                              {game.is_filtered && game.discoverability_rating !== undefined
+                                ? `${game.discoverability_rating}/10`
+                                : `${(game.overall_score * 10).toFixed(1)}/10`
+                              }
+                            </div>
                           </div>
-                          <div className="text-[10px] sm:text-xs text-matrix-green-dim mt-1">
+                          <div className="text-[10px] sm:text-xs text-gray-400 mt-1">
                             {game.is_filtered ? 'POOR' : game.trend}
                           </div>
-                          <div className={`text-[8px] sm:text-[10px] leading-tight max-w-[80px] sm:max-w-none ${
-                            game.is_filtered ? 'text-red-400' : 'text-matrix-green-dim'
+                          <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
+                            game.is_filtered ? 'text-red-400' : 'text-amber-400'
                           }`}>
                             {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
                           </div>
@@ -473,13 +549,13 @@ export default function Home() {
                           href={getTwitchUrl(game.game_name)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500 text-xs sm:text-sm"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('twitch', game);
                           }}
                         >
-                          📺 Twitch
+                          <span className="text-sm">📺</span> Twitch
                         </a>
                         
                         {game.purchase_links.steam && (
@@ -487,13 +563,13 @@ export default function Home() {
                             href={game.purchase_links.steam}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small text-xs sm:text-sm"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#2a475e] hover:bg-[#3d6a8a] text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('steam', game);
                             }}
                           >
-                            🎮 Steam
+                            <span className="text-sm">🎮</span> Steam
                           </a>
                         )}
                         {game.purchase_links.epic && (
@@ -501,13 +577,13 @@ export default function Home() {
                             href={game.purchase_links.epic}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small text-xs sm:text-sm"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#313131] hover:bg-[#444444] border border-gray-600 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('epic', game);
                             }}
                           >
-                            🎮 Epic
+                            <span className="text-sm">🎮</span> Epic
                           </a>
                         )}
                       </div>
@@ -518,33 +594,111 @@ export default function Home() {
                   {selectedGame?.rank === game.rank && (
                     <div className="mt-4 pt-4 border-t border-matrix-green/30">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="matrix-stat">
-                          <div className="text-matrix-green-dim text-xs">DISCOVERABILITY</div>
+                        {/* Discoverability */}
+                        <div className="matrix-stat relative group/disc">
+                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                            DISCOVERABILITY
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/disc:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                          </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
                             {(game.discoverability_score * 10).toFixed(1)}/10
                           </div>
+                          {/* Tooltip */}
+                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
+                          </div>
                         </div>
-                        <div className="matrix-stat">
-                          <div className="text-matrix-green-dim text-xs">VIABILITY</div>
+                        
+                        {/* Viability */}
+                        <div className="matrix-stat relative group/viab">
+                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                            VIABILITY
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/viab:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                          </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
                             {(game.viability_score * 10).toFixed(1)}/10
                           </div>
+                          {/* Tooltip */}
+                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
+                          </div>
                         </div>
-                        <div className="matrix-stat">
-                          <div className="text-matrix-green-dim text-xs">ENGAGEMENT</div>
+                        
+                        {/* Engagement */}
+                        <div className="matrix-stat relative group/eng">
+                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                            ENGAGEMENT
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/eng:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                          </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
                             {(game.engagement_score * 10).toFixed(1)}/10
                           </div>
+                          {/* Tooltip */}
+                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
+                          </div>
                         </div>
-                        <div className="matrix-stat">
-                          <div className="text-matrix-green-dim text-xs">AVG VIEWERS/CHANNEL</div>
+                        
+                        {/* Avg Viewers */}
+                        <div className="matrix-stat relative group/avg">
+                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                            AVG VIEWERS/CH
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/avg:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                          </div>
                           <div className="text-2xl font-bold text-matrix-green">
                             {game.avg_viewers_per_channel.toFixed(1)}
+                          </div>
+                          {/* Tooltip */}
+                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="mt-4 text-sm text-matrix-green-dim text-center">
+                      {/* Learn About This Game */}
+                      <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                        <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={getIGDBUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('igdb', game);
+                            }}
+                          >
+                            📖 Game Info (IGDB)
+                          </a>
+                          <a
+                            href={getYouTubeUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800/50 text-gray-200 text-xs font-medium transition-colors border border-red-800/50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('youtube', game);
+                            }}
+                          >
+                            ▶️ Gameplay & Trailers
+                          </a>
+                          <a
+                            href={getWikipediaUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('wikipedia', game);
+                            }}
+                          >
+                            📚 Wikipedia
+                          </a>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 text-sm text-gray-400 text-center">
                         Click card again to collapse
                       </div>
                     </div>
@@ -557,13 +711,15 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
-          <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span></p>
+          <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span> (digitalvocalstv@gmail.com)</p>
           <p className="mt-2">Data auto-updates every 10 minutes • Powered by Twitch API</p>
           <p className="mt-2">
             Affiliate Disclosure: We may earn a commission from game purchases through our links.
           </p>
-          <div className="mt-4 flex justify-center gap-4">
+          <div className="mt-4 flex justify-center gap-4 flex-wrap">
             <Link href="/about" className="hover:text-matrix-green transition-colors">About</Link>
+            <span>•</span>
+            <Link href="/changelog" className="hover:text-matrix-green transition-colors">Changelog</Link>
             <span>•</span>
             <Link href="/contact" className="hover:text-matrix-green transition-colors">Contact</Link>
             <span>•</span>
