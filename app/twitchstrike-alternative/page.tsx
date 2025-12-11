@@ -307,9 +307,14 @@ Find your game → streamscout.gg`;
             </h1>
             
             {/* H2 - The "Why" */}
-            <h2 className="text-center text-gray-400 text-base sm:text-lg mb-6">
+            <h2 className="text-center text-gray-400 text-base sm:text-lg mb-3">
               Real-time game discovery for small streamers. No dead links. No outdated data. Just opportunities.
             </h2>
+            
+            {/* Brand tagline - matches main page */}
+            <p className="text-center text-lg font-bold text-matrix-green mb-6">
+              No guesswork. Just data.
+            </p>
             
             <div className="text-gray-300 leading-relaxed space-y-4 mb-6">
               <p>

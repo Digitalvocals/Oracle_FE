@@ -10,7 +10,7 @@
 
 @layer components {
   .matrix-card {
-    @apply bg-matrix-light border-2 border-matrix-green rounded-lg p-6 transition-all duration-300;
+    @apply bg-[#111111] border-2 border-matrix-green rounded-lg p-6 transition-all duration-300;
   }
   
   .matrix-card:hover {
@@ -18,7 +18,7 @@
   }
   
   .matrix-button {
-    @apply bg-matrix-green text-matrix-dark font-bold py-2 px-6 rounded transition-all duration-200;
+    @apply bg-matrix-green text-matrix-dark font-bold py-2 px-6 rounded-lg transition-all duration-200;
   }
   
   .matrix-button:hover {
@@ -27,7 +27,7 @@
   
   /* Small buttons for action links (Twitch, Steam, Epic, Share) */
   .matrix-button-small {
-    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded font-semibold transition-colors border border-matrix-green/50 bg-matrix-green/20 text-matrix-green;
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-colors border border-matrix-green/50 bg-matrix-green/20 text-matrix-green;
   }
   
   .matrix-button-small:hover {
@@ -40,7 +40,7 @@
   
   /* Stat boxes in expanded game details */
   .matrix-stat {
-    @apply bg-black/30 rounded-lg p-3 text-center;
+    @apply bg-[#0a0a0a] rounded-lg p-3 text-center;
   }
   
   .score-excellent {
