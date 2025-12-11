@@ -316,7 +316,7 @@ Find your game → streamscout.gg`;
           </div>
           
           {/* SEO-focused intro - with solid background */}
-          <div className="max-w-3xl mx-auto mb-6 px-4">
+          <div className="max-w-3xl mx-auto mb-10 px-4">
             <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6 text-center">
               <h1 className="text-2xl sm:text-3xl font-bold text-matrix-green-bright mb-4">
                 Looking for a TwitchStrike Alternative?
