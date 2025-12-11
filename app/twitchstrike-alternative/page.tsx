@@ -315,34 +315,38 @@ Find your game → streamscout.gg`;
             />
           </div>
           
-          {/* SEO-focused intro */}
-          <div className="max-w-3xl mx-auto text-center mb-6 px-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-matrix-green-bright mb-4">
-              Looking for a TwitchStrike Alternative?
-            </h1>
-            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-4">
-              TwitchStrike was a popular tool for finding the best games to stream on Twitch. 
-              Unfortunately, it's no longer maintained and shows outdated data.
-            </p>
-            <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
-              <strong className="text-matrix-green">StreamScout</strong> is the modern replacement — 
-              analyzing <strong>{data?.total_games_analyzed || 500}+ games</strong> in real-time 
-              to find where small streamers can actually get discovered.
-            </p>
+          {/* SEO-focused intro - with solid background */}
+          <div className="max-w-3xl mx-auto mb-6 px-4">
+            <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6 text-center">
+              <h1 className="text-2xl sm:text-3xl font-bold text-matrix-green-bright mb-4">
+                Looking for a TwitchStrike Alternative?
+              </h1>
+              <p className="text-sm sm:text-base text-gray-200 leading-relaxed mb-4">
+                TwitchStrike was a popular tool for finding the best games to stream on Twitch. 
+                Unfortunately, it's no longer maintained and shows outdated data.
+              </p>
+              <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+                <strong className="text-matrix-green">StreamScout</strong> is the modern replacement — 
+                analyzing <strong>{data?.total_games_analyzed || 500}+ games</strong> in real-time 
+                to find where small streamers can actually get discovered.
+              </p>
+            </div>
           </div>
 
-          {/* What is StreamScout? */}
-          <div className="max-w-2xl mx-auto text-center mb-6 px-4">
-            <h2 className="text-lg sm:text-xl font-bold text-matrix-green-bright mb-2">What is StreamScout?</h2>
-            <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
-              Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
-            </p>
-            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mt-2">
-              We show you where small streamers can actually compete.
-            </p>
-            <p className="text-base sm:text-lg font-bold text-matrix-green-bright mt-3">
-              No guesswork. Just data.
-            </p>
+          {/* What is StreamScout? - with solid background */}
+          <div className="max-w-2xl mx-auto mb-6 px-4">
+            <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6 text-center">
+              <h2 className="text-lg sm:text-xl font-bold text-matrix-green-bright mb-2">What is StreamScout?</h2>
+              <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+                Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
+              </p>
+              <p className="text-sm sm:text-base text-gray-200 leading-relaxed mt-2">
+                We show you where small streamers can actually compete.
+              </p>
+              <p className="text-base sm:text-lg font-bold text-matrix-green-bright mt-3">
+                No guesswork. Just data.
+              </p>
+            </div>
           </div>
 
           {/* Comparison Table */}
@@ -729,7 +733,7 @@ Find your game → streamscout.gg`;
             <div className="mt-8 text-center">
               <Link
                 href="/"
-                className="matrix-button text-lg px-8 py-3 inline-block"
+                className="inline-block bg-matrix-green text-matrix-dark font-bold text-lg px-8 py-3 rounded-lg transition-all duration-200 hover:bg-matrix-green-bright hover:shadow-lg hover:shadow-matrix-green/50"
               >
                 Search All {data?.total_games_analyzed || 500} Games →
               </Link>
