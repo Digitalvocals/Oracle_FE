@@ -63,7 +63,6 @@ export default function Home() {
   const [warmupStatus, setWarmupStatus] = useState<string>('Initializing...')
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState<string>('')
-  
   // Available genre filters
   const GENRE_OPTIONS = [
     'Action', 'Adventure', 'Battle Royale', 'Card Game', 'FPS', 'Fighting',
@@ -73,8 +72,8 @@ export default function Home() {
 
   // Toggle genre filter
   const toggleGenre = (genre: string) => {
-    setSelectedGenres(prev => 
-      prev.includes(genre) 
+    setSelectedGenres(prev =>
+      prev.includes(genre)
         ? prev.filter(g => g !== genre)
         : [...prev, genre]
     )
@@ -96,6 +95,19 @@ export default function Home() {
     return `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`
   }
 
+  // Helper functions for game info URLs
+  const getIGDBUrl = (gameName: string) => {
+    return `https://www.igdb.com/search?type=1&q=${encodeURIComponent(gameName)}`
+  }
+
+  const getYouTubeUrl = (gameName: string) => {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(gameName + ' gameplay trailer')}`
+  }
+
+  const getWikipediaUrl = (gameName: string) => {
+    return `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(gameName + ' video game')}`
+  }
+
   // Generate Twitter share URL
   const getTwitterShareUrl = (game: GameOpportunity) => {
     const score = game.discoverability_rating !== undefined 
@@ -112,12 +124,12 @@ Find your game → streamscout.gg`;
   }
 
   // External click tracking for GA4
-  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch' | 'share_twitter', game: GameOpportunity) => {
+  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia' | 'share_twitter', game: GameOpportunity) => {
     if (typeof window !== 'undefined' && (window as any).gtag) {
-      const score = game.discoverability_rating !== undefined 
-        ? game.discoverability_rating 
+      const score = game.discoverability_rating !== undefined
+        ? game.discoverability_rating
         : (game.overall_score * 10);
-      
+
       (window as any).gtag('event', `${linkType}_click`, {
         'game_name': game.game_name,
         'game_score': score,
@@ -125,7 +137,7 @@ Find your game → streamscout.gg`;
         'event_category': linkType === 'share_twitter' ? 'share' : 'external_link',
         'event_label': game.game_name
       });
-      
+
       console.log(`[TRACK] ${linkType}_click: ${game.game_name} (${score.toFixed(1)}/10)`);
     }
   }
@@ -135,7 +147,7 @@ Find your game → streamscout.gg`;
     try {
       const response = await axios.get<StatusData>(`${API_URL}/api/v1/status`)
       const status = response.data
-      
+
       if (status.worker.is_refreshing) {
         setWarmupStatus('Fetching stream data from Twitch API...')
       } else if (status.cache.has_data) {
@@ -155,24 +167,24 @@ Find your game → streamscout.gg`;
     try {
       setLoading(true)
       const response = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)
-      
+
       // Check if warming up (202 status or warming_up status)
       if (response.status === 202 || response.data.status === 'warming_up') {
         setIsWarmingUp(true)
         setData(null)
         return false
       }
-      
+
       setIsWarmingUp(false)
       setData(response.data)
       setError(null)
-      
+
       // Set countdown from whichever field exists
-      const refreshSeconds = response.data.next_refresh_in_seconds ?? 
-                            response.data.cache_expires_in_seconds ?? 
+      const refreshSeconds = response.data.next_refresh_in_seconds ??
+                            response.data.cache_expires_in_seconds ??
                             600
       setCountdown(refreshSeconds)
-      
+
       return true
     } catch (err: any) {
       // 202 comes as an error with axios sometimes
@@ -209,7 +221,7 @@ Find your game → streamscout.gg`;
     // Start polling
     pollStatus()
     const interval = setInterval(pollStatus, 3000)
-    
+
     return () => clearInterval(interval)
   }, [isWarmingUp, checkStatus, fetchData])
 
@@ -234,11 +246,11 @@ Find your game → streamscout.gg`;
   // Also poll for updates every 60 seconds (in case countdown drifts)
   useEffect(() => {
     if (!data) return
-    
+
     const interval = setInterval(() => {
       fetchData()
     }, 60 * 1000)
-    
+
     return () => clearInterval(interval)
   }, [data, fetchData])
 
@@ -259,17 +271,17 @@ Find your game → streamscout.gg`;
   const getScoreContext = (game: GameOpportunity) => {
     const channels = game.channels
     const viewers = game.total_viewers
-    
-    let competition = channels < 50 ? 'Very few streamers here' 
-      : channels < 150 ? 'Low streamer count' 
+
+    let competition = channels < 50 ? 'Very few streamers here'
+      : channels < 150 ? 'Low streamer count'
       : channels < 300 ? 'Moderate competition'
       : 'Crowded category'
-    
+
     let audience = viewers < 500 ? 'Small but focused audience'
       : viewers < 2000 ? 'Solid viewer pool'
       : viewers < 10000 ? 'Healthy audience size'
       : 'Large viewer base'
-    
+
     return { competition, audience, channels, viewers }
   }
 
@@ -280,7 +292,7 @@ Find your game → streamscout.gg`;
       description: 'Can viewers find you? Fewer streamers = you appear higher in the browse list. This is weighted highest (45%) because if nobody sees you, nothing else matters.'
     },
     viability: {
-      title: 'Viability', 
+      title: 'Viability',
       description: 'Is there actually an audience? Sweet spot is enough viewers to matter, but not so many that giants dominate. Too few = dead category, too many = you\'re buried.'
     },
     engagement: {
@@ -331,36 +343,36 @@ Find your game → streamscout.gg`;
         {/* Header */}
         <header className="mb-8">
           <div className="flex justify-center mb-4">
-            <img 
-              src="/streamscout-logo.jpg" 
+            <img
+              src="/streamscout-logo.jpg"
               alt="StreamScout - Find Your Audience. Grow Your Channel."
               className="w-full max-w-2xl h-auto"
             />
           </div>
-          
+
           {/* What is StreamScout? */}
           <div className="max-w-2xl mx-auto text-center mb-6 px-4">
-            <h2 className="text-lg sm:text-xl font-bold text-matrix-green mb-2">What is StreamScout?</h2>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed">
+            <h2 className="text-lg sm:text-xl font-bold text-matrix-green-bright mb-2">What is StreamScout?</h2>
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
               Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
             </p>
-            <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed mt-2">
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mt-2">
               We show you where small streamers can actually compete.
             </p>
-            <p className="text-base sm:text-lg font-bold text-matrix-green mt-3">
+            <p className="text-base sm:text-lg font-bold text-matrix-green-bright mt-3">
               No guesswork. Just data.
             </p>
           </div>
-          
+
           {data && (
             <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 🎮 {data.total_games_analyzed} GAMES ANALYZED
               </div>
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
               </div>
-              <div className="matrix-badge">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
                 🔄 NEXT UPDATE: {formatCountdown(countdown)}
               </div>
             </div>
@@ -381,7 +393,7 @@ Find your game → streamscout.gg`;
                 className="w-full px-4 py-3 bg-black/50 border border-matrix-green/30 rounded-lg text-matrix-green placeholder-matrix-green/40 focus:outline-none focus:border-matrix-green/60 focus:ring-1 focus:ring-matrix-green/30"
               />
             </div>
-            
+
             {/* Genre Filter Chips */}
             <div className="mb-6">
               <div className="flex flex-wrap gap-2 items-center">
@@ -423,17 +435,17 @@ Find your game → streamscout.gg`;
             <div className="grid gap-4">
               {filteredOpportunities.length === 0 && (selectedGenres.length > 0 || searchQuery) ? (
                 <div className="text-center py-12 text-matrix-green/50">
-                  {searchQuery 
+                  {searchQuery
                     ? `No games found matching "${searchQuery}". Try a different search.`
                     : 'No games found matching selected genres. Try different filters.'
                   }
                 </div>
               ) : filteredOpportunities.map((game) => (
-                <div 
-                  key={game.rank} 
+                <div
+                  key={game.rank}
                   className={`matrix-card cursor-pointer ${
-                    game.is_filtered 
-                      ? 'border-red-500/50 bg-red-900/10' 
+                    game.is_filtered
+                      ? 'border-red-500/50 bg-red-900/10'
                       : ''
                   }`}
                   onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
@@ -450,14 +462,14 @@ Find your game → streamscout.gg`;
                       )}
                     </div>
                   )}
-                  
+
                   {/* Mobile and Desktop Layout */}
                   <div className="flex gap-4">
                     {/* Game Cover Image - Left Side */}
                     {game.box_art_url && (
                       <div className="flex-shrink-0">
-                        <img 
-                          src={game.box_art_url} 
+                        <img
+                          src={game.box_art_url}
                           alt={game.game_name}
                           className="w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
                           onError={(e) => {
@@ -466,7 +478,7 @@ Find your game → streamscout.gg`;
                         />
                       </div>
                     )}
-                    
+
                     {/* Content - Right Side */}
                     <div className="flex-1 min-w-0 flex flex-col">
                       {/* Header Row: Rank + Title + Score */}
@@ -475,20 +487,20 @@ Find your game → streamscout.gg`;
                         <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-matrix-green-bright flex-shrink-0">
                           #{game.rank}
                         </div>
-                        
+
                         {/* Title (flex-grow to push score right) */}
                         <div className="flex-1 min-w-0">
                           <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
                             {game.game_name}
                           </h2>
-                          <div className="text-xs sm:text-sm text-matrix-green-dim mt-1">
+                          <div className="text-xs sm:text-sm text-gray-300 mt-1">
                             {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
                           </div>
                           {/* Genre Tags */}
                           {game.genres && game.genres.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
                               {game.genres.slice(0, 3).map(genre => (
-                                <span 
+                                <span
                                   key={genre}
                                   className="px-2 py-0.5 text-[10px] sm:text-xs rounded bg-matrix-green/10 text-matrix-green/70 border border-matrix-green/20"
                                 >
@@ -498,32 +510,32 @@ Find your game → streamscout.gg`;
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Score - Always Visible - With Info Tooltip */}
                         <div className="text-right flex-shrink-0 ml-2 pr-1 relative">
                           <div className="flex items-start justify-end gap-1">
                             {/* Info Icon with Tooltip */}
                             <div className="relative group/info mt-1">
-                              <span className="text-matrix-green/40 hover:text-matrix-green cursor-help text-sm">ⓘ</span>
-                              
+                              <span className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
+
                               {/* Tooltip - Positioned Left */}
-                              <div className="absolute right-full top-0 mr-2 w-56 p-3 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                              <div className="absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-200 z-50 text-left pointer-events-none">
                                 <div className="text-matrix-green font-bold text-xs mb-2">Why this score?</div>
                                 {game.is_filtered ? (
                                   <div className="text-red-400 text-xs leading-relaxed">
                                     <p>{game.warning_text || 'This category is oversaturated.'}</p>
-                                    <p className="mt-2 text-red-300/70">Small streamers get buried pages deep in categories this large.</p>
+                                    <p className="mt-2 text-red-300">Small streamers get buried pages deep in categories this large.</p>
                                   </div>
                                 ) : (
                                   <div className="text-xs leading-relaxed space-y-2">
-                                    <p className="text-matrix-green-dim">{getScoreContext(game).competition} ({game.channels} streamers)</p>
-                                    <p className="text-matrix-green-dim">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
-                                    <p className="text-matrix-green/60 text-[10px] mt-2">Click card for detailed breakdown →</p>
+                                    <p className="text-white">{getScoreContext(game).competition} ({game.channels} streamers)</p>
+                                    <p className="text-white">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
+                                    <p className="text-gray-300 text-[10px] mt-2">Click card for detailed breakdown →</p>
                                   </div>
                                 )}
                               </div>
                             </div>
-                            
+
                             {/* Score Number */}
                             <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
                               game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
@@ -534,11 +546,11 @@ Find your game → streamscout.gg`;
                               }
                             </div>
                           </div>
-                          <div className="text-[10px] sm:text-xs text-matrix-green-dim mt-1">
+                          <div className="text-[10px] sm:text-xs text-gray-400 mt-1">
                             {game.is_filtered ? 'POOR' : game.trend}
                           </div>
-                          <div className={`text-[8px] sm:text-[10px] leading-tight max-w-[80px] sm:max-w-none ${
-                            game.is_filtered ? 'text-red-400' : 'text-matrix-green-dim'
+                          <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
+                            game.is_filtered ? 'text-red-400' : 'text-amber-400'
                           }`}>
                             {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
                           </div>
@@ -552,27 +564,27 @@ Find your game → streamscout.gg`;
                           href={getTwitchUrl(game.game_name)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500 text-xs sm:text-sm"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('twitch', game);
                           }}
                         >
-                          📺 Twitch
+                          <span className="text-sm">📺</span> Twitch
                         </a>
-                        
+
                         {game.purchase_links.steam && (
                           <a
                             href={game.purchase_links.steam}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small text-xs sm:text-sm"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#2a475e] hover:bg-[#3d6a8a] text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('steam', game);
                             }}
                           >
-                            🎮 Steam
+                            <span className="text-sm">🎮</span> Steam
                           </a>
                         )}
                         {game.purchase_links.epic && (
@@ -580,22 +592,22 @@ Find your game → streamscout.gg`;
                             href={game.purchase_links.epic}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small text-xs sm:text-sm"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#313131] hover:bg-[#444444] border border-gray-600 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('epic', game);
                             }}
                           >
-                            🎮 Epic
+                            <span className="text-sm">🎮</span> Epic
                           </a>
                         )}
-                        
-                        {/* Share to Twitter Button */}
+
+                        {/* Share to Twitter/X Button */}
                         <a
                           href={getTwitterShareUrl(game)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="matrix-button-small bg-sky-600 hover:bg-sky-700 border-sky-500 text-xs sm:text-sm"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('share_twitter', game);
@@ -613,66 +625,109 @@ Find your game → streamscout.gg`;
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {/* Discoverability */}
                         <div className="matrix-stat relative group/disc">
-                          <div className="text-matrix-green-dim text-xs flex items-center gap-1 cursor-help">
+                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                             DISCOVERABILITY
-                            <span className="text-matrix-green/40 group-hover/disc:text-matrix-green">ⓘ</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/disc:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
                             {(game.discoverability_score * 10).toFixed(1)}/10
                           </div>
                           {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-matrix-green-dim leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
+                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
                           </div>
                         </div>
-                        
+
                         {/* Viability */}
                         <div className="matrix-stat relative group/viab">
-                          <div className="text-matrix-green-dim text-xs flex items-center gap-1 cursor-help">
+                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                             VIABILITY
-                            <span className="text-matrix-green/40 group-hover/viab:text-matrix-green">ⓘ</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/viab:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
                             {(game.viability_score * 10).toFixed(1)}/10
                           </div>
                           {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-matrix-green-dim leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
+                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
                           </div>
                         </div>
-                        
+
                         {/* Engagement */}
                         <div className="matrix-stat relative group/eng">
-                          <div className="text-matrix-green-dim text-xs flex items-center gap-1 cursor-help">
+                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                             ENGAGEMENT
-                            <span className="text-matrix-green/40 group-hover/eng:text-matrix-green">ⓘ</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/eng:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
                             {(game.engagement_score * 10).toFixed(1)}/10
                           </div>
                           {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-matrix-green-dim leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
+                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
                           </div>
                         </div>
-                        
+
                         {/* Avg Viewers */}
                         <div className="matrix-stat relative group/avg">
-                          <div className="text-matrix-green-dim text-xs flex items-center gap-1 cursor-help">
+                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                             AVG VIEWERS/CH
-                            <span className="text-matrix-green/40 group-hover/avg:text-matrix-green">ⓘ</span>
+                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/avg:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
                           </div>
                           <div className="text-2xl font-bold text-matrix-green">
                             {game.avg_viewers_per_channel.toFixed(1)}
                           </div>
                           {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-black/95 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-matrix-green-dim leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
+                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="mt-4 text-sm text-matrix-green-dim text-center">
+
+                      {/* Learn About This Game */}
+                      <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                        <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={getIGDBUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('igdb', game);
+                            }}
+                          >
+                            📖 Game Info (IGDB)
+                          </a>
+                          <a
+                            href={getYouTubeUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800/50 text-gray-200 text-xs font-medium transition-colors border border-red-800/50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('youtube', game);
+                            }}
+                          >
+                            ▶️ Gameplay & Trailers
+                          </a>
+                          <a
+                            href={getWikipediaUrl(game.game_name)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackExternalClick('wikipedia', game);
+                            }}
+                          >
+                            📚 Wikipedia
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 text-sm text-gray-400 text-center">
                         Click card again to collapse
                       </div>
                     </div>
@@ -685,13 +740,15 @@ Find your game → streamscout.gg`;
 
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
-          <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span></p>
+          <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span> (digitalvocalstv@gmail.com)</p>
           <p className="mt-2">Data auto-updates every 10 minutes • Powered by Twitch API</p>
           <p className="mt-2">
             Affiliate Disclosure: We may earn a commission from game purchases through our links.
           </p>
-          <div className="mt-4 flex justify-center gap-4">
+          <div className="mt-4 flex justify-center gap-4 flex-wrap">
             <Link href="/about" className="hover:text-matrix-green transition-colors">About</Link>
+            <span>•</span>
+            <Link href="/changelog" className="hover:text-matrix-green transition-colors">Changelog</Link>
             <span>•</span>
             <Link href="/contact" className="hover:text-matrix-green transition-colors">Contact</Link>
             <span>•</span>
