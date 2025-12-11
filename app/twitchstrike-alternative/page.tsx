@@ -349,58 +349,60 @@ Find your game → streamscout.gg`;
             </div>
           </div>
 
-          {/* Comparison Table */}
-          <div className="max-w-2xl mx-auto mb-8 px-4">
-            <h2 className="text-lg font-bold text-matrix-green-bright mb-4 text-center">
-              StreamScout vs TwitchStrike
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border border-matrix-green/30 rounded-lg overflow-hidden">
-                <thead>
-                  <tr className="bg-matrix-green/20">
-                    <th className="text-left p-3 text-matrix-green">Feature</th>
-                    <th className="text-center p-3 text-matrix-green">StreamScout</th>
-                    <th className="text-center p-3 text-gray-400">TwitchStrike</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-matrix-green/20">
-                  <tr className="bg-black/30">
-                    <td className="p-3 text-gray-300">Real-time Data</td>
-                    <td className="p-3 text-center text-green-400">✓ Every 10 min</td>
-                    <td className="p-3 text-center text-red-400">✗ Broken</td>
-                  </tr>
-                  <tr className="bg-black/20">
-                    <td className="p-3 text-gray-300">Games Analyzed</td>
-                    <td className="p-3 text-center text-green-400">{data?.total_games_analyzed || 500}+</td>
-                    <td className="p-3 text-center text-gray-500">Unknown</td>
-                  </tr>
-                  <tr className="bg-black/30">
-                    <td className="p-3 text-gray-300">Discoverability Score</td>
-                    <td className="p-3 text-center text-green-400">✓ Multi-factor</td>
-                    <td className="p-3 text-center text-gray-500">Basic ratio</td>
-                  </tr>
-                  <tr className="bg-black/20">
-                    <td className="p-3 text-gray-300">Saturation Warnings</td>
-                    <td className="p-3 text-center text-green-400">✓ Yes</td>
-                    <td className="p-3 text-center text-red-400">✗ No</td>
-                  </tr>
-                  <tr className="bg-black/30">
-                    <td className="p-3 text-gray-300">Genre Filters</td>
-                    <td className="p-3 text-center text-green-400">✓ 20 genres</td>
-                    <td className="p-3 text-center text-red-400">✗ No</td>
-                  </tr>
-                  <tr className="bg-black/20">
-                    <td className="p-3 text-gray-300">Free to Use</td>
-                    <td className="p-3 text-center text-green-400">✓ 100% Free</td>
-                    <td className="p-3 text-center text-green-400">✓ Free</td>
-                  </tr>
-                  <tr className="bg-black/30">
-                    <td className="p-3 text-gray-300">Still Maintained</td>
-                    <td className="p-3 text-center text-green-400">✓ Active</td>
-                    <td className="p-3 text-center text-red-400">✗ Abandoned</td>
-                  </tr>
-                </tbody>
-              </table>
+          {/* Comparison Table - with solid background and spacing */}
+          <div className="max-w-2xl mx-auto mb-8 px-4 mt-10">
+            <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6">
+              <h2 className="text-lg font-bold text-matrix-green-bright mb-4 text-center">
+                StreamScout vs TwitchStrike
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-matrix-green/30">
+                      <th className="text-left p-3 text-matrix-green">Feature</th>
+                      <th className="text-center p-3 text-matrix-green">StreamScout</th>
+                      <th className="text-center p-3 text-gray-400">TwitchStrike</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-matrix-green/10">
+                    <tr>
+                      <td className="p-3 text-gray-200">Real-time Data</td>
+                      <td className="p-3 text-center text-green-400">✓ Every 10 min</td>
+                      <td className="p-3 text-center text-red-400">✗ Broken</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-gray-200">Games Analyzed</td>
+                      <td className="p-3 text-center text-green-400">{data?.total_games_analyzed || 500}+</td>
+                      <td className="p-3 text-center text-gray-400">Unknown</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-gray-200">Discoverability Score</td>
+                      <td className="p-3 text-center text-green-400">✓ Multi-factor</td>
+                      <td className="p-3 text-center text-gray-400">Basic ratio</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-gray-200">Saturation Warnings</td>
+                      <td className="p-3 text-center text-green-400">✓ Yes</td>
+                      <td className="p-3 text-center text-red-400">✗ No</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-gray-200">Genre Filters</td>
+                      <td className="p-3 text-center text-green-400">✓ 20 genres</td>
+                      <td className="p-3 text-center text-red-400">✗ No</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-gray-200">Free to Use</td>
+                      <td className="p-3 text-center text-green-400">✓ 100% Free</td>
+                      <td className="p-3 text-center text-green-400">✓ Free</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-gray-200">Still Maintained</td>
+                      <td className="p-3 text-center text-green-400">✓ Active</td>
+                      <td className="p-3 text-center text-red-400">✗ Abandoned</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           
@@ -733,7 +735,7 @@ Find your game → streamscout.gg`;
             <div className="mt-8 text-center">
               <Link
                 href="/"
-                className="inline-block bg-matrix-green text-matrix-dark font-bold text-lg px-8 py-3 rounded-lg transition-all duration-200 hover:bg-matrix-green-bright hover:shadow-lg hover:shadow-matrix-green/50"
+                className="inline-block bg-matrix-green text-matrix-dark font-bold text-lg px-8 py-3 rounded-full transition-all duration-200 hover:bg-matrix-green-bright hover:shadow-lg hover:shadow-matrix-green/50"
               >
                 Search All {data?.total_games_analyzed || 500} Games →
               </Link>
