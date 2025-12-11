@@ -301,14 +301,15 @@ Find your game → streamscout.gg`;
           
           {/* TwitchStrike Alternative Content */}
           <div className="max-w-3xl mx-auto mb-8 px-4">
-            {/* SEO-targeted pre-header */}
-            <p className="text-center text-gray-400 text-sm mb-2">
-              The Modern, Working Alternative to TwitchStrike
-            </p>
-            
-            <h1 className="text-2xl sm:text-3xl font-bold text-matrix-green text-center mb-6">
-              Find Games Where Small Streamers Can Actually Compete
+            {/* SEO-optimized H1 */}
+            <h1 className="text-2xl sm:text-3xl font-bold text-matrix-green text-center mb-3">
+              The TwitchStrike Alternative That Actually Works
             </h1>
+            
+            {/* H2 - The "Why" */}
+            <h2 className="text-center text-gray-400 text-base sm:text-lg mb-6">
+              Real-time game discovery for small streamers. No dead links. No outdated data. Just opportunities.
+            </h2>
             
             <div className="text-gray-300 leading-relaxed space-y-4 mb-6">
               <p>
@@ -342,16 +343,16 @@ Find your game → streamscout.gg`;
                 <li>• <span className="text-matrix-green">Transparent algorithm.</span> You see why a game scores well: Discoverability (45%), Viability (35%), Engagement (20%).</li>
                 <li>• <span className="text-matrix-green">Warning system.</span> We show oversaturated games with clear &quot;AVOID&quot; warnings. No hiding the truth.</li>
               </ul>
-              
-              {/* Primary CTA - Right after features */}
-              <div className="mt-6 text-center">
-                <Link
-                  href="/"
-                  className="matrix-button text-lg px-8 py-3 inline-block"
-                >
-                  Search All {data?.total_games_analyzed || 500} Games →
-                </Link>
-              </div>
+            </div>
+            
+            {/* Primary CTA - Prominent, outside the box */}
+            <div className="text-center mb-8">
+              <Link
+                href="/"
+                className="matrix-button text-lg px-10 py-4 inline-block font-bold"
+              >
+                Start Searching Games Now →
+              </Link>
             </div>
 
             {/* Competitor Comparison - Fixed text hierarchy */}

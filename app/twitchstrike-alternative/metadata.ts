@@ -1,40 +1,30 @@
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'TwitchStrike Alternative - Find Games Where Small Streamers Can Compete | StreamScout',
-  description: 'Looking for a TwitchStrike alternative? StreamScout analyzes 500 games every 10 minutes to show you which games give small streamers the best shot at discovery. Live data, transparent algorithm, no signup required.',
+  title: 'TwitchStrike Alternative: Best Games to Stream in 2025 - StreamScout',
+  description: 'Looking for a TwitchStrike alternative that actually works? StreamScout analyzes 500+ games in real-time to find where small streamers can actually get discovered. Free, no signup required.',
   keywords: [
-    'twitchstrike alternative',
-    'twitch game recommendations',
-    'streaming opportunity analyzer',
-    'small streamer tools',
-    'twitch discovery tool',
+    'TwitchStrike alternative',
+    'TwitchStrike replacement',
     'best games to stream',
-    'streaming analytics',
-    'twitch game finder',
-    'streamer growth tool',
-    'low competition twitch games'
+    'Twitch game discovery',
+    'small streamer games',
+    'low competition Twitch games',
+    'streaming game recommendations',
+    'Twitch discoverability',
+    'games for small streamers 2025'
   ],
   openGraph: {
-    title: 'TwitchStrike Alternative - Find Games Where Small Streamers Can Compete',
-    description: 'Live analysis of 500 games every 10 minutes. See which games give small streamers the best shot at discovery.',
+    title: 'TwitchStrike Alternative: Best Games to Stream in 2025',
+    description: 'Real-time game discovery for small streamers. 500+ games analyzed every 10 minutes. Find where you can actually get discovered.',
     type: 'website',
     url: 'https://streamscout.gg/twitchstrike-alternative',
     siteName: 'StreamScout',
-    images: [
-      {
-        url: '/streamscout-logo.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'StreamScout - Find Your Audience',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TwitchStrike Alternative - Find Games Where Small Streamers Can Compete',
-    description: 'Live analysis of 500 games every 10 minutes. See which games give small streamers the best shot at discovery.',
-    images: ['/streamscout-logo.jpg'],
+    title: 'TwitchStrike Alternative That Actually Works',
+    description: 'Real-time game discovery for small streamers. No dead links. No outdated data. Just opportunities.',
   },
   alternates: {
     canonical: 'https://streamscout.gg/twitchstrike-alternative',
