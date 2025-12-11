@@ -25,8 +25,22 @@
     @apply bg-matrix-green-bright shadow-lg shadow-matrix-green/50;
   }
   
+  /* Small buttons for action links (Twitch, Steam, Epic, Share) */
+  .matrix-button-small {
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded font-semibold transition-colors border border-matrix-green/50 bg-matrix-green/20 text-matrix-green;
+  }
+  
+  .matrix-button-small:hover {
+    @apply bg-matrix-green/30 border-matrix-green;
+  }
+  
   .matrix-badge {
-    @apply inline-block bg-matrix-green text-matrix-dark text-xs font-bold px-3 py-1 rounded-full;
+    @apply inline-block px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50;
+  }
+  
+  /* Stat boxes in expanded game details */
+  .matrix-stat {
+    @apply bg-black/30 rounded-lg p-3 text-center;
   }
   
   .score-excellent {
@@ -43,6 +57,20 @@
   
   .score-poor {
     @apply text-red-500;
+  }
+  
+  /* Glow animation for loading states */
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+  }
+  to {
+    text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00, 0 0 60px #00ff00;
   }
 }
 

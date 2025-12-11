@@ -500,7 +500,7 @@ Find your game → streamscout.gg`;
                           href={getTwitchUrl(game.game_name)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500 text-xs sm:text-sm"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('twitch', game);
@@ -514,7 +514,7 @@ Find your game → streamscout.gg`;
                             href={game.purchase_links.steam}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small text-xs sm:text-sm"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('steam', game);
@@ -528,7 +528,7 @@ Find your game → streamscout.gg`;
                             href={game.purchase_links.epic}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="matrix-button-small text-xs sm:text-sm"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('epic', game);
@@ -543,7 +543,7 @@ Find your game → streamscout.gg`;
                           href={getTwitterShareUrl(game)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="matrix-button-small bg-sky-600 hover:bg-sky-700 border-sky-500 text-xs sm:text-sm"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('share_twitter', game);
