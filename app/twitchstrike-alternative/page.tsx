@@ -301,11 +301,16 @@ Find your game → streamscout.gg`;
           
           {/* TwitchStrike Alternative Content */}
           <div className="max-w-3xl mx-auto mb-8 px-4">
+            {/* SEO-targeted pre-header */}
+            <p className="text-center text-gray-400 text-sm mb-2">
+              The Modern, Working Alternative to TwitchStrike
+            </p>
+            
             <h1 className="text-2xl sm:text-3xl font-bold text-matrix-green text-center mb-6">
               Find Games Where Small Streamers Can Actually Compete
             </h1>
             
-            <div className="text-matrix-green-dim leading-relaxed space-y-4 mb-6">
+            <div className="text-gray-300 leading-relaxed space-y-4 mb-6">
               <p>
                 Looking for a tool that tells you which games give small streamers a real shot at discovery?
               </p>
@@ -320,7 +325,7 @@ Find your game → streamscout.gg`;
             {/* What Streamers Need */}
             <div className="matrix-card mb-6">
               <h2 className="text-lg font-bold text-matrix-green mb-3">What small streamers actually need:</h2>
-              <ul className="text-matrix-green-dim space-y-2">
+              <ul className="text-gray-300 space-y-2">
                 <li>• Which games have space for new faces</li>
                 <li>• Where you won&apos;t get buried 10 pages deep</li>
                 <li>• Real-time data, not yesterday&apos;s numbers</li>
@@ -331,29 +336,43 @@ Find your game → streamscout.gg`;
             {/* StreamScout Features */}
             <div className="matrix-card mb-6">
               <h2 className="text-lg font-bold text-matrix-green mb-3">That&apos;s StreamScout.</h2>
-              <ul className="text-matrix-green-dim space-y-2">
+              <ul className="text-gray-300 space-y-2">
                 <li>• <span className="text-matrix-green">Live data every 10 minutes.</span> Not daily snapshots.</li>
                 <li>• <span className="text-matrix-green">500 games analyzed.</span> Not just the top 100.</li>
                 <li>• <span className="text-matrix-green">Transparent algorithm.</span> You see why a game scores well: Discoverability (45%), Viability (35%), Engagement (20%).</li>
                 <li>• <span className="text-matrix-green">Warning system.</span> We show oversaturated games with clear &quot;AVOID&quot; warnings. No hiding the truth.</li>
               </ul>
-            </div>
-
-            {/* Competitor Comparison */}
-            <div className="matrix-card mb-6">
-              <h2 className="text-lg font-bold text-matrix-green mb-3">vs Other Tools:</h2>
-              <div className="text-matrix-green-dim space-y-3">
-                <p><span className="text-matrix-green">SullyGnome:</span> Great for historical data. Overwhelming when you just need &quot;what should I stream today?&quot;</p>
-                <p><span className="text-matrix-green">TwitchTracker:</span> Channel-focused analytics. Not built for game discovery.</p>
-                <p><span className="text-matrix-green">StreamElements/Streamlabs:</span> Overlays and alerts. Different problem.</p>
-                <p className="text-matrix-green/50 text-sm mt-4">No hate to any of them. They solve different problems.</p>
-                <p className="text-matrix-green font-bold mt-2">StreamScout answers one question: &quot;Which games give small streamers the best shot?&quot;</p>
+              
+              {/* Primary CTA - Right after features */}
+              <div className="mt-6 text-center">
+                <Link
+                  href="/"
+                  className="matrix-button text-lg px-8 py-3 inline-block"
+                >
+                  Search All {data?.total_games_analyzed || 500} Games →
+                </Link>
               </div>
             </div>
 
-            {/* CTA */}
-            <div className="text-center mb-6">
-              <p className="text-xl font-bold text-matrix-green">Here&apos;s today&apos;s top opportunities:</p>
+            {/* Competitor Comparison - Fixed text hierarchy */}
+            <div className="matrix-card mb-8">
+              <h2 className="text-lg font-bold text-matrix-green mb-3">vs Other Tools:</h2>
+              <div className="space-y-3">
+                <p><span className="text-matrix-green font-semibold">SullyGnome:</span> <span className="text-gray-400">Great for historical data. Overwhelming when you just need &quot;what should I stream today?&quot;</span></p>
+                <p><span className="text-matrix-green font-semibold">TwitchTracker:</span> <span className="text-gray-400">Channel-focused analytics. Not built for game discovery.</span></p>
+                <p><span className="text-matrix-green font-semibold">StreamElements/Streamlabs:</span> <span className="text-gray-400">Overlays and alerts. Different problem.</span></p>
+                <p className="text-gray-500 text-sm mt-4">No hate to any of them. They solve different problems.</p>
+                {/* Punchline - Bold and white to stand out */}
+                <p className="text-white font-bold mt-3 text-lg">StreamScout answers one question: &quot;Which games give small streamers the best shot?&quot;</p>
+              </div>
+            </div>
+
+            {/* Transition to game grid - More breathing room */}
+            <div className="text-center mt-10 mb-8">
+              <p className="text-xl font-bold text-matrix-green mb-2">Here&apos;s today&apos;s top opportunities:</p>
+              <p className="text-gray-400 text-sm">
+                <Link href="/" className="text-matrix-green hover:underline">View all {data?.total_games_analyzed || 500} analyzed games →</Link>
+              </p>
             </div>
           </div>
           
@@ -500,7 +519,7 @@ Find your game → streamscout.gg`;
                           href={getTwitchUrl(game.game_name)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white transition-colors"
+                          className="matrix-button-small bg-purple-600 hover:bg-purple-700 border-purple-500 text-xs sm:text-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('twitch', game);
@@ -514,7 +533,7 @@ Find your game → streamscout.gg`;
                             href={game.purchase_links.steam}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 transition-colors"
+                            className="matrix-button-small text-xs sm:text-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('steam', game);
@@ -528,7 +547,7 @@ Find your game → streamscout.gg`;
                             href={game.purchase_links.epic}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 transition-colors"
+                            className="matrix-button-small text-xs sm:text-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               trackExternalClick('epic', game);
@@ -543,7 +562,7 @@ Find your game → streamscout.gg`;
                           href={getTwitterShareUrl(game)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white transition-colors"
+                          className="matrix-button-small bg-sky-600 hover:bg-sky-700 border-sky-500 text-xs sm:text-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             trackExternalClick('share_twitter', game);
@@ -629,14 +648,17 @@ Find your game → streamscout.gg`;
               ))}
             </div>
 
-            {/* See All Games CTA */}
+            {/* See All Games CTA - Bottom */}
             <div className="mt-8 text-center">
               <Link
                 href="/"
-                className="matrix-button text-lg px-8 py-3"
+                className="matrix-button text-lg px-8 py-3 inline-block"
               >
-                See All {data?.total_games_analyzed || 500} Games →
+                Search All {data?.total_games_analyzed || 500} Games →
               </Link>
+              <p className="text-gray-500 text-sm mt-3">
+                Full search, genre filters, and 500+ games analyzed
+              </p>
             </div>
           </main>
         </div>
