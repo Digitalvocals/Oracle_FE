@@ -206,22 +206,6 @@ export default function BestGenreGamesToStream() {
             </div>
           </div>
 
-          {/* Status Badges - Matching TwitchStrike */}
-          <div className="flex flex-wrap justify-center gap-3 mb-10">
-            <div className="flex items-center gap-2 px-4 py-2 bg-matrix-green/10 border border-matrix-green/30 rounded-full">
-              <span className="text-matrix-green">📊</span>
-              <span className="text-matrix-green font-medium">{data?.total_games_analyzed || '450+'} GAMES ANALYZED</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-matrix-green/10 border border-matrix-green/30 rounded-full">
-              <span className="w-2 h-2 bg-matrix-green rounded-full animate-pulse"></span>
-              <span className="text-gray-300">UPDATED: {data?.timestamp ? formatTime(data.timestamp) : 'Recently'}</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-matrix-green/10 border border-matrix-green/30 rounded-full">
-              <span className="text-blue-400">🔄</span>
-              <span className="text-gray-300">REFRESHES EVERY 10 MIN</span>
-            </div>
-          </div>
-
           {/* Back to Analyzer CTA */}
           <div className="max-w-2xl mx-auto mb-10 px-4">
             <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6 text-center">
@@ -276,6 +260,24 @@ export default function BestGenreGamesToStream() {
             </div>
           </div>
         </header>
+
+        {/* ============================================================ */}
+        {/* STATUS BADGES - Above game cards (matching TwitchStrike) */}
+        {/* ============================================================ */}
+        <div className="flex flex-wrap justify-center gap-3 mb-10">
+          <div className="flex items-center gap-2 px-4 py-2 bg-matrix-green/10 border border-matrix-green/30 rounded-full">
+            <span className="text-matrix-green">📊</span>
+            <span className="text-matrix-green font-medium">{data?.total_games_analyzed || '450+'} GAMES ANALYZED</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-matrix-green/10 border border-matrix-green/30 rounded-full">
+            <span className="w-2 h-2 bg-matrix-green rounded-full animate-pulse"></span>
+            <span className="text-gray-300">UPDATED: {data?.timestamp ? formatTime(data.timestamp) : 'Recently'}</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-matrix-green/10 border border-matrix-green/30 rounded-full">
+            <span className="text-blue-400">🔄</span>
+            <span className="text-gray-300">REFRESHES EVERY 10 MIN</span>
+          </div>
+        </div>
 
         {/* ============================================================ */}
         {/* GOOD GAMES SECTION */}
