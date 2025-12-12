@@ -148,64 +148,75 @@ export default function BestGenreGamesToStream() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="mb-12">
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="text-3xl font-bold tracking-wider hover:text-matrix-green transition-colors">
-            StreamScout
-          </Link>
-        </div>
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <header className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <Link href="/" className="text-3xl font-bold tracking-wider hover:text-matrix-green transition-colors">
+              StreamScout
+            </Link>
+          </div>
 
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-          Best {GENRE_DISPLAY} Games to Stream on Twitch
-        </h1>
-        <p className="text-lg sm:text-xl text-gray-300 mb-8">
-          Find {GENRE_DISPLAY} games where small streamers can actually get discovered. 
-          Real-time discoverability scores and competition analysis.
-        </p>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+              Best {GENRE_DISPLAY} Games to Stream on Twitch
+            </h1>
+            <p className="text-lg sm:text-xl text-gray-300">
+              Find {GENRE_DISPLAY} games where small streamers can actually get discovered. 
+              Real-time discoverability scores and competition analysis.
+            </p>
+          </div>
 
-        {/* Back to Analyzer CTA */}
-        <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-matrix-green-bright mb-3">
-            Want to analyze ALL games in real-time?
-          </h2>
-          <p className="text-gray-300 mb-4">
-            StreamScout shows live discoverability scores for 500+ games across all genres. 
-            Free, instant, no signup required.
-          </p>
-          <Link 
-            href="/"
-            className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-matrix-green to-green-400 text-black font-bold hover:from-green-400 hover:to-matrix-green transition-all"
-          >
-            Try StreamScout Free →
-          </Link>
-        </div>
-
-        {/* Insights Sections */}
-        <div className="space-y-6 mb-12">
-          <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-matrix-green-bright mb-4">The Challenge</h2>
-            <div className="text-gray-300 whitespace-pre-line leading-relaxed">
-              {insights.challenge}
+          {/* Back to Analyzer CTA */}
+          <div className="max-w-2xl mx-auto mb-10 px-4">
+            <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6 text-center">
+              <h2 className="text-xl font-bold text-matrix-green-bright mb-3">
+                Want to analyze ALL games in real-time?
+              </h2>
+              <p className="text-gray-200 mb-4">
+                StreamScout shows live discoverability scores for 500+ games across all genres. 
+                Free, instant, no signup required.
+              </p>
+              <Link 
+                href="/"
+                className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-matrix-green to-green-400 text-black font-bold hover:from-green-400 hover:to-matrix-green transition-all"
+              >
+                Try StreamScout Free →
+              </Link>
             </div>
           </div>
 
-          <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-matrix-green-bright mb-4">The Opportunity</h2>
-            <div className="text-gray-300 whitespace-pre-line leading-relaxed">
-              {insights.opportunity}
+          {/* Insights Sections */}
+          <div className="space-y-6 mb-12">
+            <div className="max-w-2xl mx-auto px-4">
+              <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-matrix-green-bright mb-4">The Challenge</h2>
+                <div className="text-gray-200 whitespace-pre-line leading-relaxed">
+                  {insights.challenge}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-matrix-green-bright mb-4">What Actually Works</h2>
-            <div className="text-gray-300 whitespace-pre-line leading-relaxed">
-              {insights.advice}
+            <div className="max-w-2xl mx-auto px-4">
+              <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-matrix-green-bright mb-4">The Opportunity</h2>
+                <div className="text-gray-200 whitespace-pre-line leading-relaxed">
+                  {insights.opportunity}
+                </div>
+              </div>
+            </div>
+
+            <div className="max-w-2xl mx-auto px-4">
+              <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-matrix-green-bright mb-4">What Actually Works</h2>
+                <div className="text-gray-200 whitespace-pre-line leading-relaxed">
+                  {insights.advice}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       {/* Good Games Section */}
       {goodGames.length > 0 && (
@@ -358,32 +369,37 @@ export default function BestGenreGamesToStream() {
 
       {/* No Games Message */}
       {genreGames.length === 0 && (
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-8 text-center">
+            <p className="text-gray-200 text-lg mb-4">
+              No {GENRE_DISPLAY} games currently streaming with enough data.
+            </p>
+            <Link 
+              href="/"
+              className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-matrix-green to-green-400 text-black font-bold hover:from-green-400 hover:to-matrix-green transition-all"
+            >
+              View All Games
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Footer CTA */}
+      <div className="max-w-2xl mx-auto mt-12 px-4">
         <div className="bg-[#111] border border-matrix-green/30 rounded-lg p-8 text-center">
-          <p className="text-gray-400 text-lg mb-4">
-            No {GENRE_DISPLAY} games currently streaming with enough data.
+          <h2 className="text-2xl font-bold text-matrix-green-bright mb-3">Ready to Find Your Perfect Game?</h2>
+          <p className="text-gray-200 mb-4">
+            StreamScout analyzes 500+ games in real-time. Free forever, no signup required.
           </p>
           <Link 
             href="/"
             className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-matrix-green to-green-400 text-black font-bold hover:from-green-400 hover:to-matrix-green transition-all"
           >
-            View All Games
+            Launch StreamScout →
           </Link>
         </div>
-      )}
-
-      {/* Footer CTA */}
-      <div className="mt-12 bg-[#111] border border-matrix-green/30 rounded-lg p-8 text-center">
-        <h2 className="text-2xl font-bold mb-3">Ready to Find Your Perfect Game?</h2>
-        <p className="text-gray-300 mb-4">
-          StreamScout analyzes 500+ games in real-time. Free forever, no signup required.
-        </p>
-        <Link 
-          href="/"
-          className="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-matrix-green to-green-400 text-black font-bold hover:from-green-400 hover:to-matrix-green transition-all"
-        >
-          Launch StreamScout →
-        </Link>
       </div>
     </div>
+  </div>
   )
 }
