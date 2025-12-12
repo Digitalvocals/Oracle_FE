@@ -1,6 +1,6 @@
 'use client'
 
-import { getGamePlatforms, isGameFree, PLATFORMS, Platform } from './game-platforms'
+import { getGamePlatforms, isGameFree, PLATFORMS, Platform } from '../game-platforms'
 
 interface SmartBuyLinksProps {
   gameName: string
