@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import GENRE_INSIGHTS from '@/app/components/genre-insights'
+import GENRE_INSIGHTS from '../components/genre-insights'
 
 // ============================================================================
 // CHANGE THESE TWO LINES FOR EACH GENRE PAGE
