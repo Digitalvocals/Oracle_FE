@@ -25,6 +25,15 @@ interface GameOpportunity {
     steam: string | null
     epic: string | null
     free: boolean
+    // New rich platform data from US-028
+    platforms?: Array<{
+      id: string
+      name: string
+      icon: string
+      color: string
+      url: string
+    }>
+    primary_url?: string | null
   }
   is_filtered?: boolean
   warning_flags?: string[]
@@ -572,6 +581,13 @@ Find your game → streamscout.gg`;
                         >
                           <span className="text-sm">📺</span> Twitch
                         </a>
+
+                        {/* Free to Play Badge */}
+                        {game.purchase_links.free && (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 text-xs sm:text-sm font-semibold leading-none">
+                            <span className="text-sm">🆓</span> Free
+                          </span>
+                        )}
 
                         {game.purchase_links.steam && (
                           <a
