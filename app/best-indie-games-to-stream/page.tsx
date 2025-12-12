@@ -177,7 +177,7 @@ export default function BestGenreGamesToStream() {
           <div className="flex justify-center mb-8">
             <Link href="/">
               <Image 
-                src="/images/streamscout-logo.png" 
+                src="/streamscout-logo.jpg" 
                 alt="StreamScout - Find Your Audience. Grow Your Channel."
                 width={600}
                 height={150}
