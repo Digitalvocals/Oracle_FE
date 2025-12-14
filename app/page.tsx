@@ -583,6 +583,15 @@ Find your game → streamscout.gg`;
                           <span className="text-sm">📺</span> Twitch
                         </a>
 
+                        {/* Kinguin Buy Game Button */}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <KinguinButton 
+                            gameName={game.game_name}
+                            onClick={() => trackExternalClick('kinguin', game)}
+                          />
+                        </div>
+
+
                         {/* Free to Play Badge */}
                         {game.purchase_links.free && (
                           <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 text-xs sm:text-sm font-semibold leading-none">
@@ -618,14 +627,6 @@ Find your game → streamscout.gg`;
                             <span className="text-sm">🎮</span> Epic
                           </a>
                         )}
-
-                        {/* Kinguin Buy Game Button */}
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <KinguinButton 
-                            gameName={game.game_name}
-                            onClick={() => trackExternalClick('kinguin', game)}
-                          />
-                        </div>
 
                         {/* Share to Twitter/X Button */}
                         <a
