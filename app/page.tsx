@@ -175,7 +175,7 @@ Find your game → streamscout.gg`;
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)
+      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=1000`)
 
       // Check if warming up (202 status or warming_up status)
       if (response.status === 202 || response.data.status === 'warming_up') {
@@ -310,7 +310,7 @@ Find your game → streamscout.gg`;
     },
     avgViewers: {
       title: 'Avg Viewers/Channel',
-      description: 'Total viewers divided by total streamers. Higher = each streamer gets more eyeballs on average. Below 10 is rough, above 50 is healthy.'
+      description: 'Total viewers divided by total streamers. Higher ratio = more eyeballs per streamer on average. This metric helps calculate your discoverability score.'
     }
   }
 
