@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import Link from 'next/link'
-import { KinguinButton } from '@/components/streamscout-ui'
+import { KinguinButton } from './components/streamscout-ui'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
