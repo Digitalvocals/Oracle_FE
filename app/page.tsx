@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import Link from 'next/link'
+import { KinguinButton } from '@/components/streamscout-ui'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -133,7 +134,7 @@ Find your game → streamscout.gg`;
   }
 
   // External click tracking for GA4
-  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia' | 'share_twitter', game: GameOpportunity) => {
+  const trackExternalClick = (linkType: 'steam' | 'epic' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia' | 'share_twitter' | 'kinguin', game: GameOpportunity) => {
     if (typeof window !== 'undefined' && (window as any).gtag) {
       const score = game.discoverability_rating !== undefined
         ? game.discoverability_rating
@@ -617,6 +618,14 @@ Find your game → streamscout.gg`;
                             <span className="text-sm">🎮</span> Epic
                           </a>
                         )}
+
+                        {/* Kinguin Buy Game Button */}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <KinguinButton 
+                            gameName={game.game_name}
+                            onClick={() => trackExternalClick('kinguin', game)}
+                          />
+                        </div>
 
                         {/* Share to Twitter/X Button */}
                         <a

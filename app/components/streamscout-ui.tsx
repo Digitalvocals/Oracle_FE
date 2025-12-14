@@ -3,9 +3,9 @@
  * =============================
  * Reusable components with production-locked styling.
  * Import these instead of writing inline Tailwind everywhere.
- * 
+ *
  * Location: /app/components/streamscout-ui.tsx
- * 
+ *
  * Usage:
  *   import { TwitchButton, SteamButton, GameCard, InfoTooltip } from '@/components/streamscout-ui'
  */
@@ -64,6 +64,43 @@ export function EpicButton({ href, onClick, children }: ButtonProps) {
       onClick={onClick}
     >
       <span className="text-sm">🎮</span> {children}
+    </a>
+  )
+}
+
+/** Kinguin orange "Buy Game" button with cart icon */
+export function KinguinButton({ 
+  gameName, 
+  onClick 
+}: { 
+  gameName: string
+  onClick?: () => void 
+}) {
+  const kinguinUrl = `https://kinguin.net/?r=69308&7eb1a6f&search=${encodeURIComponent(gameName)}`
+  
+  const handleClick = () => {
+    // GA4 tracking
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'kinguin_click', {
+        game_name: gameName,
+        affiliate_link: kinguinUrl
+      })
+    }
+    onClick?.()
+  }
+
+  return (
+    <a
+      href={kinguinUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={handleClick}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold rounded transition-all duration-200 hover:scale-105 leading-none"
+    >
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+      </svg>
+      Buy Game
     </a>
   )
 }
@@ -138,16 +175,16 @@ interface TooltipProps {
 
 /** Info tooltip with ? icon - use size="md" for main score, "sm" for metrics */
 export function InfoTooltip({ children, size = 'sm', groupName }: TooltipProps) {
-  const sizeClasses = size === 'md' 
-    ? 'w-5 h-5 text-xs' 
+  const sizeClasses = size === 'md'
+    ? 'w-5 h-5 text-xs'
     : 'w-4 h-4 text-[10px]'
-  
+
   return (
     <div className={`relative group/${groupName}`}>
       <span className={`${sizeClasses} rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center font-bold cursor-help transition-colors`}>
         ?
       </span>
-      
+
       {/* Tooltip */}
       <div className={`absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/${groupName}:opacity-100 group-hover/${groupName}:visible transition-all duration-200 z-50 text-left pointer-events-none`}>
         {children}
@@ -258,24 +295,27 @@ export function getScoreColorClass(score: number): string {
 
 /** URL Helpers */
 export const urls = {
-  twitch: (gameName: string) => 
+  twitch: (gameName: string) =>
     `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`,
-  
-  steam: (gameName: string) => 
+
+  steam: (gameName: string) =>
     `https://store.steampowered.com/search/?term=${gameName.replace(' ', '+')}`,
-  
-  epic: (gameName: string) => 
+
+  epic: (gameName: string) =>
     `https://store.epicgames.com/en-US/browse?q=${gameName.replace(' ', '%20')}`,
-  
-  igdb: (gameName: string) => 
+
+  kinguin: (gameName: string) =>
+    `https://kinguin.net/?r=69308&7eb1a6f&search=${encodeURIComponent(gameName)}`,
+
+  igdb: (gameName: string) =>
     `https://www.igdb.com/search?type=1&q=${encodeURIComponent(gameName)}`,
-  
-  youtube: (gameName: string) => 
+
+  youtube: (gameName: string) =>
     `https://www.youtube.com/results?search_query=${encodeURIComponent(gameName + ' gameplay trailer')}`,
-  
-  wikipedia: (gameName: string) => 
+
+  wikipedia: (gameName: string) =>
     `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(gameName + ' video game')}`,
-  
+
   twitterShare: (gameName: string, score: number, channels: number, viewers: number) => {
     const text = `${gameName} scores ${score}/10 for discoverability
 
@@ -305,6 +345,7 @@ Buttons:
   - TwitchButton     (purple)
   - SteamButton      (steam blue)
   - EpicButton       (dark gray + border)
+  - KinguinButton    (orange + cart icon)
   - ShareButton      (sky blue)
   - InfoButton       (gray)
   - YouTubeButton    (red)
@@ -323,11 +364,13 @@ Text:
 
 Utilities:
   - getScoreColorClass(score)
-  - urls.twitch(), urls.steam(), etc.
+  - urls.twitch(), urls.steam(), urls.kinguin(), etc.
   - METRIC_DESCRIPTIONS
 
 Usage Example:
   <TwitchButton href={urls.twitch(game.game_name)} onClick={handleClick}>
     Twitch
   </TwitchButton>
+
+  <KinguinButton gameName={game.game_name} />
 */
