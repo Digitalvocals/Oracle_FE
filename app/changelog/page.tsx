@@ -13,8 +13,31 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "3.2.0",
+    date: "December 14, 2025",
+    title: "Massive Game Expansion & Historical Data",
+    added: [
+      "1,533 games now analyzed (up from 456) - find niche games and hidden gems",
+      "Historical data collection - foundation for upcoming trend features",
+      "13 genre landing pages - dedicated pages for Action, RPG, Horror, Sports, and more",
+      "TwitchStrike Alternative page - for users migrating from the defunct tool",
+      "Share buttons - share game opportunities to Twitter and Discord",
+      "Game info expansion - IGDB, YouTube gameplay, and Wikipedia links on every card"
+    ],
+    changed: [
+      "Backend optimization - refresh time reduced from 125s to 58s (54% faster)",
+      "Dynamic batch processing - scales automatically as we add more games",
+      "Improved score accuracy - more games means better market coverage",
+      "Shows full spectrum of opportunities (including 5-6 score games) for honest assessment"
+    ],
+    fixed: [
+      "API rate limiting issues with large game batches",
+      "Cache validation for better data accuracy"
+    ]
+  },
+  {
     version: "3.1.0",
-    date: "December 10, 2024",
+    date: "December 10, 2025",
     title: "UI Polish & Game Info Update",
     added: [
       "Game Info links - Click any card to see IGDB, YouTube gameplay, and Wikipedia links",
@@ -26,7 +49,7 @@ const changelog: ChangelogEntry[] = [
       "Completely redesigned UI with improved contrast and readability",
       "Platform buttons (Twitch/Steam/Epic) now have consistent styling",
       "Status pills redesigned to be less visually dominant",
-      "\"Excellent Opportunity\" indicator now uses amber color for better visibility",
+      "Excellent Opportunity indicator now uses amber color for better visibility",
       "Improved text hierarchy throughout the interface"
     ],
     fixed: [
@@ -37,7 +60,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: "3.0.0",
-    date: "December 7, 2024",
+    date: "December 7, 2025",
     title: "Genre Filters & Algorithm Improvements",
     added: [
       "Genre filters - Filter games by RPG, FPS, Horror, and 17 other genres",
@@ -53,7 +76,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: "2.0.0",
-    date: "November 2024",
+    date: "November 2025",
     title: "Public Launch",
     added: [
       "Core opportunity analyzer",
@@ -71,7 +94,7 @@ export default function ChangelogPage() {
         {/* Header */}
         <header className="mb-8">
           <Link href="/" className="text-matrix-green hover:text-matrix-green-bright transition-colors mb-4 inline-block">
-            ← Back to StreamScout
+            &larr; Back to StreamScout
           </Link>
           <h1 className="text-3xl sm:text-4xl font-bold text-matrix-green-bright mb-2">
             Changelog
@@ -116,7 +139,7 @@ export default function ChangelogPage() {
                   </h3>
                   <ul className="space-y-1 text-gray-300 text-sm">
                     {entry.added.map((item, i) => (
-                      <li key={i} className="pl-4">• {item}</li>
+                      <li key={i} className="pl-4">&bull; {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -131,7 +154,7 @@ export default function ChangelogPage() {
                   </h3>
                   <ul className="space-y-1 text-gray-300 text-sm">
                     {entry.changed.map((item, i) => (
-                      <li key={i} className="pl-4">• {item}</li>
+                      <li key={i} className="pl-4">&bull; {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -146,13 +169,24 @@ export default function ChangelogPage() {
                   </h3>
                   <ul className="space-y-1 text-gray-300 text-sm">
                     {entry.fixed.map((item, i) => (
-                      <li key={i} className="pl-4">• {item}</li>
+                      <li key={i} className="pl-4">&bull; {item}</li>
                     ))}
                   </ul>
                 </div>
               )}
             </article>
           ))}
+        </div>
+
+        {/* Coming Soon */}
+        <div className="mt-8 p-6 border border-matrix-green/30 rounded-lg bg-matrix-green/5">
+          <h3 className="text-lg font-semibold text-matrix-green-bright mb-2">Coming Soon</h3>
+          <ul className="space-y-1 text-gray-300 text-sm">
+            <li className="pl-4">&bull; Historical trend sparklines - see 7-day trends at a glance</li>
+            <li className="pl-4">&bull; Best time to stream - recommendations based on historical data</li>
+            <li className="pl-4">&bull; Real-time opportunity indicators - know when to go live</li>
+          </ul>
+          <p className="text-gray-500 text-xs mt-3">Target: December 19, 2025</p>
         </div>
 
         {/* Footer */}
@@ -165,7 +199,7 @@ export default function ChangelogPage() {
           </p>
           <div className="mt-4">
             <Link href="/" className="text-matrix-green hover:text-matrix-green-bright transition-colors">
-              ← Back to StreamScout
+              &larr; Back to StreamScout
             </Link>
           </div>
         </footer>
