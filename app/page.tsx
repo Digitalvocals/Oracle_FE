@@ -175,7 +175,7 @@ Find your game → streamscout.gg`;
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=1000`)
+      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=2000`)
 
       // Check if warming up (202 status or warming_up status)
       if (response.status === 202 || response.data.status === 'warming_up') {
