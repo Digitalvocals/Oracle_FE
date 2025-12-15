@@ -695,21 +695,22 @@ Find your game → streamscout.gg`;
                       <div className="flex-1 min-w-0">
                         <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
                           {game.game_name}
-                          {/* Historical: Sparkline and Trend Arrow */}
-                          {analytics?.sparkline && analytics.sparkline.scores.length > 0 && (
-                            <span className="inline-flex items-center gap-1 ml-2">
-                              <Sparkline 
-                                data={analytics.sparkline.scores}
-                                width={60}
-                                height={20}
-                                className="text-matrix-green opacity-60"
-                              />
-                              {analytics?.trend && (
-                                <TrendArrow 
-                                  direction={analytics.trend.direction} 
-                                  change={analytics.trend.change} 
-                                />
-                              )}
+                          {/* Historical: Trend Arrow + Label (Prominent, Simple) */}
+                          {analytics?.trend && (
+                            <span className={`inline-flex items-center gap-1.5 ml-2 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wide ${
+                              analytics.trend.direction === 'up' ? 'bg-green-900/30 text-green-400' :
+                              analytics.trend.direction === 'down' ? 'bg-red-900/30 text-red-400' :
+                              'bg-gray-800/50 text-gray-400'
+                            }`}>
+                              <span className="text-lg font-bold">
+                                {analytics.trend.direction === 'up' ? '↗' : 
+                                 analytics.trend.direction === 'down' ? '↘' : '→'}
+                              </span>
+                              <span>
+                                {analytics.trend.direction === 'up' ? 'Trending Up' :
+                                 analytics.trend.direction === 'down' ? 'Trending Down' :
+                                 'Stable'}
+                              </span>
                             </span>
                           )}
                         </h2>
@@ -952,6 +953,31 @@ Find your game → streamscout.gg`;
                         </div>
                       </div>
                     </div>
+
+                    {/* 7-Day Trend (for data nerds) */}
+                    {analytics?.sparkline && analytics.sparkline.scores.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                        <div className="text-gray-400 text-xs mb-2">7-DAY TREND</div>
+                        <div className="flex items-center gap-4">
+                          <Sparkline 
+                            data={analytics.sparkline.scores}
+                            width={120}
+                            height={40}
+                            className="text-matrix-green opacity-80"
+                          />
+                          <div className="text-sm text-gray-300">
+                            <div>
+                              {analytics.trend.direction === 'up' && `↗ Up ${Math.abs(analytics.trend.change).toFixed(1)}%`}
+                              {analytics.trend.direction === 'down' && `↘ Down ${Math.abs(analytics.trend.change).toFixed(1)}%`}
+                              {analytics.trend.direction === 'stable' && `→ Stable (${Math.abs(analytics.trend.change).toFixed(1)}%)`}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {analytics.meta.data_points} data points
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Learn About This Game */}
                     <div className="mt-4 pt-4 border-t border-matrix-green/20">
