@@ -8,6 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 interface GameOpportunity {
   rank: number
+  game_id: string
   game_name: string
   total_viewers: number
   channels: number
@@ -40,19 +41,14 @@ interface GameOpportunity {
   dominance_ratio?: number
 }
 
-// HISTORICAL FEATURES - New interface
+// HISTORICAL FEATURES - Interface matching Architect's spec
 interface GameAnalytics {
-  game_id: number
-  sparkline_7d: number[]
-  trend_direction: 'up' | 'down' | 'stable'
-  trend_percentage: number
-  best_time_block: string
-  time_blocks: {
-    [key: string]: {
-      avg_ratio: number
-      sample_count: number
-    }
-  }
+  sparkline: number[]
+  trend: 'up' | 'down' | 'stable'
+  trendMagnitude: number
+  bestTime: string
+  status: 'good' | 'ok' | 'avoid' | 'unknown'
+  dataDays: number
 }
 
 interface AnalysisData {
@@ -92,9 +88,10 @@ const Sparkline: React.FC<SparklineProps> = ({
 }) => {
   if (!data || data.length < 2) return null
 
-  const max = Math.max(...data)
-  const min = Math.min(...data)
-  const range = max - min || 1
+  // ARCHITECT SPEC: Fixed 0-10 scale, not auto-scaled
+  const max = 10
+  const min = 0
+  const range = max - min
 
   const points = data.map((value, index) => {
     const x = (index / (data.length - 1)) * width
@@ -119,6 +116,24 @@ const Sparkline: React.FC<SparklineProps> = ({
       />
     </svg>
   )
+}
+
+// HISTORICAL FEATURES - Best Time Formatter
+const formatBestTime = (block: string): string => {
+  const timeMap: Record<string, string> = {
+    "00-04": "12 AM - 4 AM PST",
+    "04-08": "4 AM - 8 AM PST",
+    "08-12": "8 AM - 12 PM PST",
+    "12-16": "12 PM - 4 PM PST",
+    "16-20": "4 PM - 8 PM PST",
+    "20-24": "8 PM - 12 AM PST"
+  }
+  return timeMap[block] || block
+}
+
+// HISTORICAL FEATURES - Clean Recommendation Text
+const cleanRecommendation = (rating: string): string => {
+  return rating.replace(/^\[.*?\]\s*/, '')
 }
 
 // HISTORICAL FEATURES - Trend Arrow Component
@@ -153,11 +168,11 @@ const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
   const { arrow, text, className } = getArrowAndText()
 
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border text-xs font-semibold ${className}`}>
+    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border text-sm font-medium ${className}`}>
       <span className="text-lg leading-none">{arrow}</span>
       <span>{text}</span>
-      {change !== 0 && (
-        <span className="text-[10px] opacity-70">
+      {direction !== 'stable' && change !== 0 && (
+        <span className="text-xs opacity-70">
           {change > 0 ? '+' : ''}{change.toFixed(1)}%
         </span>
       )}
@@ -228,8 +243,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('')
 
   // HISTORICAL FEATURES - Analytics state
-  const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: number]: GameAnalytics }>({})
-  const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: number]: boolean }>({})
+  const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
+  const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: string]: boolean }>({})
 
   // Available genre filters
   const GENRE_OPTIONS = [
@@ -309,7 +324,7 @@ Find your game → streamscout.gg`;
   }
 
   // HISTORICAL FEATURES - Fetch analytics for a game
-  const fetchAnalytics = useCallback(async (gameId: number) => {
+  const fetchAnalytics = useCallback(async (gameId: string) => {
     if (analyticsCache[gameId] || loadingAnalytics[gameId]) {
       return // Already have it or loading it
     }
@@ -611,9 +626,9 @@ Find your game → streamscout.gg`;
                 </div>
               ) : filteredOpportunities.map((game) => {
                 // HISTORICAL FEATURES - Fetch analytics when game is expanded
-                const analytics = analyticsCache[game.rank]
-                if (selectedGame?.rank === game.rank && !analytics && !loadingAnalytics[game.rank]) {
-                  fetchAnalytics(game.rank)
+                const analytics = analyticsCache[game.game_id]
+                if (selectedGame?.rank === game.rank && !analytics && !loadingAnalytics[game.game_id]) {
+                  fetchAnalytics(game.game_id)
                 }
 
                 return (
@@ -659,19 +674,18 @@ Find your game → streamscout.gg`;
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
-                              {game.game_name}
-                            </h2>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
+                                {game.game_name}
+                              </h2>
+                              {/* HISTORICAL FEATURES - Trend Arrow (moved to title) */}
+                              {analytics && (
+                                <TrendArrow direction={analytics.trend} change={analytics.trendMagnitude} />
+                              )}
+                            </div>
                             <div className="text-xs sm:text-sm text-gray-300 mt-1">
                               {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
                             </div>
-
-                            {/* HISTORICAL FEATURES - Trend Arrow Injection */}
-                            {analytics && (
-                              <div className="mt-1.5">
-                                <TrendArrow direction={analytics.trend_direction} change={analytics.trend_percentage} />
-                              </div>
-                            )}
 
                             {game.genres && game.genres.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
@@ -686,13 +700,12 @@ Find your game → streamscout.gg`;
                               </div>
                             )}
 
-                            {/* HISTORICAL FEATURES - Time Blocks Injection */}
-                            {analytics && analytics.time_blocks && (
+                            {/* HISTORICAL FEATURES - Best Time Display */}
+                            {analytics && analytics.bestTime && (
                               <div className="mt-2 flex items-center gap-2">
-                                <span className="text-[10px] text-gray-400">BEST TIME:</span>
-                                <TimeBlocks blocks={analytics.time_blocks} bestBlock={analytics.best_time_block} />
-                                <span className="text-[10px] text-matrix-green font-semibold">
-                                  {analytics.best_time_block} PST
+                                <span className="text-xs text-gray-400">BEST TIME:</span>
+                                <span className="text-xs text-matrix-green font-semibold">
+                                  {formatBestTime(analytics.bestTime)}
                                 </span>
                               </div>
                             )}
@@ -735,7 +748,7 @@ Find your game → streamscout.gg`;
                             <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
                               game.is_filtered ? 'text-red-400' : 'text-amber-400'
                             }`}>
-                              {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
+                              {game.is_filtered ? 'NOT RECOMMENDED' : cleanRecommendation(game.recommendation)}
                             </div>
                           </div>
                         </div>
@@ -878,18 +891,18 @@ Find your game → streamscout.gg`;
                         </div>
 
                         {/* HISTORICAL FEATURES - Sparkline in Expanded Section */}
-                        {analytics && analytics.sparkline_7d && analytics.sparkline_7d.length > 0 && (
+                        {analytics && analytics.sparkline && analytics.sparkline.length > 0 && (
                           <div className="mt-4 pt-4 border-t border-matrix-green/20">
                             <div className="flex items-center gap-3">
-                              <div className="text-gray-400 text-xs">7-DAY TREND</div>
+                              <div className="text-gray-400 text-xs">{analytics.dataDays}-DAY TREND</div>
                               <Sparkline 
-                                data={analytics.sparkline_7d} 
+                                data={analytics.sparkline} 
                                 width={120} 
                                 height={40}
                                 className="text-matrix-green"
                               />
                               <div className="text-xs text-gray-400">
-                                {analytics.trend_percentage > 0 ? '+' : ''}{analytics.trend_percentage.toFixed(1)}% change
+                                {analytics.trendMagnitude > 0 ? '+' : ''}{analytics.trendMagnitude.toFixed(1)}% change
                               </div>
                             </div>
                           </div>
