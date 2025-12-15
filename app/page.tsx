@@ -171,7 +171,7 @@ const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
     <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border text-sm font-medium ${className}`}>
       <span className="text-lg leading-none">{arrow}</span>
       <span>{text}</span>
-      {change !== 0 && (
+      {direction !== 'stable' && change != null && change !== 0 && (
         <span className="text-xs opacity-70">
           {change > 0 ? '+' : ''}{change.toFixed(1)}%
         </span>
