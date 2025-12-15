@@ -468,6 +468,24 @@ Find your game → streamscout.gg`;
     return 'score-poor'
   }
 
+  // Generate contextual explanation for the overall score
+  const getScoreContext = (game: GameOpportunity) => {
+    const channels = game.channels
+    const viewers = game.total_viewers
+
+    let competition = channels < 50 ? 'Very few streamers here'
+      : channels < 150 ? 'Low streamer count'
+      : channels < 300 ? 'Moderate competition'
+      : 'Crowded category'
+
+    let audience = viewers < 500 ? 'Small but focused audience'
+      : viewers < 2000 ? 'Solid viewer pool'
+      : viewers < 10000 ? 'Healthy audience size'
+      : 'Large viewer base'
+
+    return { competition, audience, channels, viewers }
+  }
+
   // Metric tooltips
   const METRIC_TOOLTIPS = {
     discoverability: {
