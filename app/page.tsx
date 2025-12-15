@@ -39,6 +39,42 @@ interface GameOpportunity {
   warning_flags?: string[]
   warning_text?: string | null
   dominance_ratio?: number
+  game_id?: string  // Add game_id for analytics lookup
+}
+
+// Analytics data structure
+interface GameAnalytics {
+  game_id: string
+  game_name: string
+  sparkline: {
+    dates: string[]
+    scores: number[]
+  }
+  trend: {
+    direction: 'up' | 'down' | 'stable'
+    change: number
+  }
+  time_of_day: {
+    best_block: string
+    best_status: 'good' | 'ok' | 'avoid'
+    blocks: {
+      [key: string]: {
+        avg_channels: number
+        avg_ratio: number
+        avg_viewers: number
+        sample_count: number
+      }
+    }
+  }
+  averages: {
+    channels: number
+    discoverability: number
+    viewers: number
+  }
+  meta: {
+    data_points: number
+    last_updated: string
+  }
 }
 
 interface AnalysisData {
@@ -62,6 +98,130 @@ interface StatusData {
   }
 }
 
+// Sparkline SVG Component
+interface SparklineProps {
+  data: number[]
+  width?: number
+  height?: number
+  className?: string
+}
+
+const Sparkline: React.FC<SparklineProps> = ({ 
+  data, 
+  width = 80, 
+  height = 24,
+  className = '' 
+}) => {
+  if (!data || data.length < 2) return null
+
+  const max = Math.max(...data)
+  const min = Math.min(...data)
+  const range = max - min || 1 // Avoid division by zero
+
+  // Generate SVG path
+  const points = data.map((value, index) => {
+    const x = (index / (data.length - 1)) * width
+    const y = height - ((value - min) / range) * height
+    return `${x},${y}`
+  }).join(' ')
+
+  return (
+    <svg 
+      width={width} 
+      height={height} 
+      className={className}
+      viewBox={`0 0 ${width} ${height}`}
+    >
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  )
+}
+
+// Trend Arrow Component
+interface TrendArrowProps {
+  direction: 'up' | 'down' | 'stable'
+  change: number
+}
+
+const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
+  const getArrow = () => {
+    switch (direction) {
+      case 'up': return '↗'
+      case 'down': return '↘'
+      case 'stable': return '→'
+    }
+  }
+
+  const getColor = () => {
+    switch (direction) {
+      case 'up': return 'text-matrix-green'
+      case 'down': return 'text-red-500'
+      case 'stable': return 'text-gray-400'
+    }
+  }
+
+  return (
+    <span className={`${getColor()} text-sm ml-1`} title={`${direction} (${change > 0 ? '+' : ''}${change.toFixed(2)})`}>
+      {getArrow()}
+    </span>
+  )
+}
+
+// Time Block Status Component
+interface TimeBlocksProps {
+  blocks: GameAnalytics['time_of_day']['blocks']
+  bestBlock: string
+}
+
+const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
+  const blockOrder = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
+  
+  const getStatus = (blockKey: string): 'good' | 'ok' | 'avoid' => {
+    const block = blocks[blockKey]
+    if (!block) return 'avoid'
+    
+    // Calculate average ratio across all blocks
+    const allRatios = Object.values(blocks).map(b => b.avg_ratio)
+    const avgRatio = allRatios.reduce((sum, r) => sum + r, 0) / allRatios.length
+    
+    // Good: >= average, OK: 75-99% of average, Avoid: < 75%
+    if (block.avg_ratio >= avgRatio) return 'good'
+    if (block.avg_ratio >= avgRatio * 0.75) return 'ok'
+    return 'avoid'
+  }
+
+  const getStatusColor = (status: 'good' | 'ok' | 'avoid') => {
+    switch (status) {
+      case 'good': return 'bg-green-500'
+      case 'ok': return 'bg-yellow-500'
+      case 'avoid': return 'bg-red-500'
+    }
+  }
+
+  return (
+    <div className="flex gap-1 items-center">
+      {blockOrder.map(blockKey => {
+        const status = getStatus(blockKey)
+        const isBest = blockKey === bestBlock
+        return (
+          <div 
+            key={blockKey}
+            className={`w-3 h-3 rounded-full ${getStatusColor(status)} ${isBest ? 'ring-2 ring-matrix-green' : ''}`}
+            title={`${blockKey} PST: ${status} (ratio: ${blocks[blockKey]?.avg_ratio?.toFixed(1) || 'N/A'})`}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
 export default function Home() {
   const [data, setData] = useState<AnalysisData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -72,6 +232,9 @@ export default function Home() {
   const [warmupStatus, setWarmupStatus] = useState<string>('Initializing...')
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [analyticsCache, setAnalyticsCache] = useState<{[gameId: string]: GameAnalytics}>({})
+  const [loadingAnalytics, setLoadingAnalytics] = useState<{[gameId: string]: boolean}>({})
+  
   // Available genre filters
   const GENRE_OPTIONS = [
     'Action', 'Adventure', 'Battle Royale', 'Card Game', 'FPS', 'Fighting',
@@ -98,6 +261,38 @@ export default function Home() {
     if (selectedGenres.length === 0) return true
     return game.genres?.some(g => selectedGenres.includes(g))
   }) || []
+
+  // Fetch analytics for a specific game
+  const fetchAnalytics = async (gameId: string) => {
+    // Check cache first
+    if (analyticsCache[gameId]) return analyticsCache[gameId]
+    
+    // Check if already loading
+    if (loadingAnalytics[gameId]) return null
+
+    try {
+      setLoadingAnalytics(prev => ({ ...prev, [gameId]: true }))
+      const response = await axios.get<GameAnalytics>(`${API_URL}/api/v1/analytics/${gameId}`)
+      const analytics = response.data
+      
+      // Cache the result
+      setAnalyticsCache(prev => ({ ...prev, [gameId]: analytics }))
+      setLoadingAnalytics(prev => ({ ...prev, [gameId]: false }))
+      
+      return analytics
+    } catch (err) {
+      console.error(`Failed to fetch analytics for game ${gameId}:`, err)
+      setLoadingAnalytics(prev => ({ ...prev, [gameId]: false }))
+      return null
+    }
+  }
+
+  // Fetch analytics when a game card is expanded
+  useEffect(() => {
+    if (selectedGame?.game_id) {
+      fetchAnalytics(selectedGame.game_id)
+    }
+  }, [selectedGame])
 
   // Helper function to create Twitch search URL
   const getTwitchUrl = (gameName: string) => {
@@ -163,86 +358,92 @@ Find your game → streamscout.gg`;
         setWarmupStatus('Data ready!')
         return true // Has data
       } else {
-        setWarmupStatus('Waiting for initial data fetch...')
+        setWarmupStatus('Waiting for initial data...')
       }
       return false
     } catch (err) {
-      setWarmupStatus('Connecting to server...')
+      console.error('Status check failed:', err)
       return false
     }
   }, [])
 
+  // Poll for data during warmup
+  const pollForData = useCallback(async () => {
+    const maxAttempts = 30 // 30 seconds max
+    let attempts = 0
+
+    const poll = async (): Promise<boolean> => {
+      if (attempts >= maxAttempts) {
+        setError('Warmup timed out. Please refresh the page.')
+        setIsWarmingUp(false)
+        return false
+      }
+
+      const hasData = await checkStatus()
+      if (hasData) {
+        return true
+      }
+
+      attempts++
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      return poll()
+    }
+
+    return poll()
+  }, [checkStatus])
+
+  // Fetch data from API
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true)
-      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=2000`)
-
-      // Check if warming up (202 status or warming_up status)
-      if (response.status === 202 || response.data.status === 'warming_up') {
-        setIsWarmingUp(true)
-        setData(null)
-        return false
-      }
-
-      setIsWarmingUp(false)
-      setData(response.data)
       setError(null)
-
-      // Set countdown from whichever field exists
-      const refreshSeconds = response.data.next_refresh_in_seconds ??
-                            response.data.cache_expires_in_seconds ??
-                            600
-      setCountdown(refreshSeconds)
-
-      return true
-    } catch (err: any) {
-      // 202 comes as an error with axios sometimes
-      if (err.response?.status === 202 || err.response?.data?.status === 'warming_up') {
+      
+      // Check if we need to warmup first
+      const hasData = await checkStatus()
+      
+      if (!hasData) {
         setIsWarmingUp(true)
-        setData(null)
-        return false
+        setWarmupStatus('No cached data. Warming up...')
+        
+        const warmedUp = await pollForData()
+        if (!warmedUp) {
+          return // Error already set
+        }
       }
-      setError('Failed to load data. Please try again later.')
-      console.error(err)
-      return false
+
+      // Fetch actual data
+      const response = await axios.get<AnalysisData>(`${API_URL}/api/v1/analyze?limit=2000`)
+      setData(response.data)
+      
+      // Set countdown timer using the correct field name
+      const refreshSeconds = response.data.next_refresh_in_seconds || 
+                            response.data.cache_expires_in_seconds || 600
+      setCountdown(refreshSeconds)
+      
+      setIsWarmingUp(false)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error || err.message)
+      } else {
+        setError('Failed to fetch data')
+      }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [checkStatus, pollForData])
 
-  // Initial load
+  // Initial data fetch
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  // Warmup polling - check status every 3 seconds while warming up
-  useEffect(() => {
-    if (!isWarmingUp) return
-
-    const pollStatus = async () => {
-      const hasData = await checkStatus()
-      if (hasData) {
-        // Data is ready, fetch it
-        await fetchData()
-      }
-    }
-
-    // Start polling
-    pollStatus()
-    const interval = setInterval(pollStatus, 3000)
-
-    return () => clearInterval(interval)
-  }, [isWarmingUp, checkStatus, fetchData])
-
   // Countdown timer
   useEffect(() => {
-    if (!data || countdown <= 0) return
+    if (countdown <= 0) return
 
     const timer = setInterval(() => {
-      setCountdown((prev) => {
+      setCountdown(prev => {
         if (prev <= 1) {
-          // Countdown hit 0 - fetch fresh data
-          fetchData()
+          fetchData() // Auto-refresh when countdown hits 0
           return 0
         }
         return prev - 1
@@ -250,83 +451,55 @@ Find your game → streamscout.gg`;
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [data, countdown, fetchData])
+  }, [countdown, fetchData])
 
-  // Also poll for updates every 60 seconds (in case countdown drifts)
-  useEffect(() => {
-    if (!data) return
-
-    const interval = setInterval(() => {
-      fetchData()
-    }, 60 * 1000)
-
-    return () => clearInterval(interval)
-  }, [data, fetchData])
-
-  const formatCountdown = (seconds: number) => {
+  // Format countdown as MM:SS
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Score color helper
   const getScoreColor = (score: number) => {
-    if (score >= 0.80) return 'score-excellent'
-    if (score >= 0.65) return 'score-good'
-    if (score >= 0.50) return 'score-moderate'
+    if (score >= 0.8) return 'score-excellent'
+    if (score >= 0.6) return 'score-good'
+    if (score >= 0.4) return 'score-moderate'
     return 'score-poor'
   }
 
-  // Generate contextual explanation for the overall score
-  const getScoreContext = (game: GameOpportunity) => {
-    const channels = game.channels
-    const viewers = game.total_viewers
-
-    let competition = channels < 50 ? 'Very few streamers here'
-      : channels < 150 ? 'Low streamer count'
-      : channels < 300 ? 'Moderate competition'
-      : 'Crowded category'
-
-    let audience = viewers < 500 ? 'Small but focused audience'
-      : viewers < 2000 ? 'Solid viewer pool'
-      : viewers < 10000 ? 'Healthy audience size'
-      : 'Large viewer base'
-
-    return { competition, audience, channels, viewers }
-  }
-
-  // Metric definitions for tooltips
+  // Metric tooltips
   const METRIC_TOOLTIPS = {
     discoverability: {
-      title: 'Discoverability',
-      description: 'Can viewers find you? Fewer streamers = you appear higher in the browse list. This is weighted highest (45%) because if nobody sees you, nothing else matters.'
+      description: 'How easy it is for viewers to find your stream in this category. Higher = better chance of discovery.'
     },
     viability: {
-      title: 'Viability',
-      description: 'Is there actually an audience? Sweet spot is enough viewers to matter, but not so many that giants dominate. Too few = dead category, too many = you\'re buried.'
+      description: 'Balance of viewer count vs competition. Shows if the category has enough audience to be worth streaming.'
     },
     engagement: {
-      title: 'Engagement',
-      description: 'Are people really watching? Higher average viewers per channel means an engaged community, not just background noise.'
+      description: 'How engaged viewers are (avg viewers per channel). Higher = more loyal, less channel-hopping.'
     },
     avgViewers: {
-      title: 'Avg Viewers/Channel',
-      description: 'Total viewers divided by total streamers. Higher ratio = more eyeballs per streamer on average. This metric helps calculate your discoverability score.'
+      description: 'Average number of viewers per stream. Shows typical stream size in this category.'
     }
   }
 
-  // Warmup screen
-  if (isWarmingUp || (loading && !data)) {
+  if (loading || isWarmingUp) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-matrix-dark flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="text-4xl sm:text-6xl mb-4 animate-glow">[ WARMING UP ]</div>
-          <div className="text-matrix-green-dim mb-4">{warmupStatus}</div>
-          <div className="flex justify-center">
-            <div className="w-8 h-8 border-2 border-matrix-green border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-6xl mb-4 animate-glow">🎮</div>
+          <div className="text-2xl text-matrix-green font-bold mb-2 animate-pulse">
+            {isWarmingUp ? 'Warming Up System...' : 'Loading...'}
           </div>
-          <div className="text-matrix-green-dim mt-4 text-sm">
-            First load takes ~30 seconds. Auto-refreshing...
+          <div className="text-matrix-green-dim">
+            {warmupStatus}
           </div>
+          {isWarmingUp && (
+            <div className="mt-4 text-sm text-matrix-green-dim">
+              This may take up to 30 seconds for the first load
+            </div>
+          )}
         </div>
       </div>
     )
@@ -334,441 +507,445 @@ Find your game → streamscout.gg`;
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="matrix-card max-w-md text-center">
-          <div className="text-3xl mb-4">❌ ERROR</div>
-          <div className="text-matrix-green-dim">{error}</div>
-          <button onClick={fetchData} className="matrix-button mt-6">
-            RETRY
+      <div className="min-h-screen bg-matrix-dark flex items-center justify-center p-4">
+        <div className="matrix-card max-w-md w-full text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-matrix-green mb-4">Error</h1>
+          <p className="text-gray-300 mb-6">{error}</p>
+          <button 
+            onClick={() => {
+              setLoading(true)
+              setError(null)
+              fetchData()
+            }}
+            className="matrix-button"
+          >
+            Try Again
           </button>
         </div>
       </div>
     )
   }
 
+  if (!data || !data.top_opportunities || data.top_opportunities.length === 0) {
+    return (
+      <div className="min-h-screen bg-matrix-dark flex items-center justify-center p-4">
+        <div className="matrix-card max-w-md w-full text-center">
+          <div className="text-6xl mb-4">🎮</div>
+          <h1 className="text-2xl font-bold text-matrix-green mb-4">No Data Available</h1>
+          <p className="text-gray-300">
+            The opportunity analyzer is still gathering data. Please check back in a few minutes.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-matrix-dark">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <header className="mb-8">
-          <div className="flex justify-center mb-4">
-            <img
-              src="/streamscout-logo.jpg"
-              alt="StreamScout - Find Your Audience. Grow Your Channel."
-              className="w-full max-w-2xl h-auto"
-            />
+        <header className="text-center mb-12">
+          <h1 className="text-5xl md:text-6xl font-bold text-matrix-green mb-4 drop-shadow-[0_0_10px_rgba(0,255,0,0.5)]">
+            STREAMSCOUT
+          </h1>
+          <p className="text-xl text-matrix-green-dim mb-2">
+            Find Streaming Opportunities • Real-Time Discovery Analysis
+          </p>
+          <p className="text-sm text-gray-400">
+            {data.total_games_analyzed.toLocaleString()} games analyzed • Updates every 10 minutes
+          </p>
+          
+          {/* Countdown Timer */}
+          <div className="mt-4 inline-block bg-matrix-light border border-matrix-green/30 rounded px-4 py-2">
+            <span className="text-gray-400 text-sm">Next update in: </span>
+            <span className="text-matrix-green font-bold text-lg">{formatTime(countdown)}</span>
           </div>
 
-          {/* What is StreamScout? */}
-          <div className="max-w-2xl mx-auto text-center mb-6 px-4">
-            <h2 className="text-lg sm:text-xl font-bold text-matrix-green-bright mb-2">What is StreamScout?</h2>
-            <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
-              Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
-            </p>
-            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mt-2">
-              We show you where small streamers can actually compete.
-            </p>
-            <p className="text-base sm:text-lg font-bold text-matrix-green-bright mt-3">
-              No guesswork. Just data.
-            </p>
+          {/* Navigation */}
+          <div className="mt-6 flex justify-center gap-4 text-sm">
+            <Link href="/twitchstrike-alternative" className="text-matrix-green hover:text-matrix-green-bright transition-colors">
+              TwitchStrike Alternative
+            </Link>
+            <span className="text-gray-600">•</span>
+            <Link href="/changelog" className="text-matrix-green hover:text-matrix-green-bright transition-colors">
+              What's New
+            </Link>
           </div>
-
-          {data && (
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
-                🎮 {data.total_games_analyzed} GAMES ANALYZED
-              </div>
-              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
-                ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
-              </div>
-              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
-                🔄 NEXT UPDATE: {formatCountdown(countdown)}
-              </div>
-            </div>
-          )}
         </header>
 
-        {/* Main Content with Sidebar */}
-        <div className="flex gap-8">
-          {/* Main Game Grid - Full Width */}
-          <main className="w-full">
-            {/* Search Box */}
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Search for any game (e.g., Fortnite, League of Legends)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 bg-black/50 border border-matrix-green/30 rounded-lg text-matrix-green placeholder-matrix-green/40 focus:outline-none focus:border-matrix-green/60 focus:ring-1 focus:ring-matrix-green/30"
-              />
-            </div>
+        {/* Search Bar */}
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search games... (e.g., 'Minecraft', 'League')"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-matrix-light border-2 border-matrix-green/30 rounded-lg px-4 py-3 text-matrix-green placeholder-gray-500 focus:border-matrix-green focus:outline-none"
+          />
+        </div>
 
-            {/* Genre Filter Chips */}
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-matrix-green/70 text-sm mr-2">Filter by genre:</span>
-                {GENRE_OPTIONS.map(genre => (
-                  <button
-                    key={genre}
-                    onClick={() => toggleGenre(genre)}
-                    className={`px-3 py-1 rounded-full text-sm transition-all ${
-                      selectedGenres.includes(genre)
-                        ? 'bg-matrix-green text-black font-semibold'
-                        : 'bg-matrix-green/10 text-matrix-green border border-matrix-green/30 hover:bg-matrix-green/20'
-                    }`}
-                  >
-                    {genre}
-                  </button>
-                ))}
-                {selectedGenres.length > 0 && (
-                  <button
-                    onClick={() => setSelectedGenres([])}
-                    className="px-3 py-1 rounded-full text-sm bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 ml-2"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-              {selectedGenres.length > 0 && (
-                <div className="text-matrix-green/50 text-sm mt-2">
-                  Showing {filteredOpportunities.length} of {data?.top_opportunities?.length || 0} games
-                </div>
-              )}
-              {searchQuery && (
-                <div className="text-matrix-green/50 text-sm mt-2">
-                  Search results for "{searchQuery}": {filteredOpportunities.length} games found
-                </div>
-              )}
-            </div>
+        {/* Genre Filters */}
+        <div className="mb-8">
+          <div className="text-sm text-gray-400 mb-3">Filter by Genre:</div>
+          <div className="flex flex-wrap gap-2">
+            {GENRE_OPTIONS.map(genre => (
+              <button
+                key={genre}
+                onClick={() => toggleGenre(genre)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedGenres.includes(genre)
+                    ? 'bg-matrix-green text-matrix-dark border-2 border-matrix-green'
+                    : 'bg-matrix-light border-2 border-matrix-green/30 text-matrix-green hover:border-matrix-green/50'
+                }`}
+              >
+                {genre}
+              </button>
+            ))}
+            {selectedGenres.length > 0 && (
+              <button
+                onClick={() => setSelectedGenres([])}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-900/30 border-2 border-red-500/50 text-red-400 hover:bg-red-900/50"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
 
-            <div className="grid gap-4">
-              {filteredOpportunities.length === 0 && (selectedGenres.length > 0 || searchQuery) ? (
-                <div className="text-center py-12 text-matrix-green/50">
-                  {searchQuery
-                    ? `No games found matching "${searchQuery}". Try a different search.`
-                    : 'No games found matching selected genres. Try different filters.'
-                  }
-                </div>
-              ) : filteredOpportunities.map((game) => (
-                <div
-                  key={game.rank}
-                  className={`matrix-card cursor-pointer ${
-                    game.is_filtered
-                      ? 'border-red-500/50 bg-red-900/10'
-                      : ''
-                  }`}
-                  onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
-                >
-                  {/* Warning Banner for Filtered Games */}
-                  {game.is_filtered && game.warning_text && (
-                    <div className="bg-red-500/20 border border-red-500/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
-                      <span className="text-red-400 font-bold text-sm">AVOID</span>
-                      <span className="text-red-300/80 text-xs">{game.warning_text}</span>
-                      {game.discoverability_rating !== undefined && (
-                        <span className="ml-auto text-red-400 font-bold text-sm">
-                          {game.discoverability_rating}/10
-                        </span>
-                      )}
-                    </div>
-                  )}
+        {/* Results Count */}
+        <div className="mb-4 text-center">
+          <span className="text-gray-400">
+            Showing {filteredOpportunities.length} {filteredOpportunities.length === 1 ? 'game' : 'games'}
+            {(selectedGenres.length > 0 || searchQuery) && (
+              <span> (filtered from {data.top_opportunities.length})</span>
+            )}
+          </span>
+        </div>
 
-                  {/* Mobile and Desktop Layout */}
-                  <div className="flex gap-4">
-                    {/* Game Cover Image - Left Side */}
-                    {game.box_art_url && (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={game.box_art_url}
-                          alt={game.game_name}
-                          className="w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
-                      </div>
-                    )}
+        {/* Game Cards */}
+        <div className="space-y-4">
+          {filteredOpportunities.map((game) => {
+            const analytics = game.game_id ? analyticsCache[game.game_id] : null
+            const isLoadingAnalytics = game.game_id ? loadingAnalytics[game.game_id] : false
 
-                    {/* Content - Right Side */}
-                    <div className="flex-1 min-w-0 flex flex-col">
-                      {/* Header Row: Rank + Title + Score */}
-                      <div className="flex items-start gap-2 mb-2">
-                        {/* Rank */}
-                        <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-matrix-green-bright flex-shrink-0">
-                          #{game.rank}
-                        </div>
-
-                        {/* Title (flex-grow to push score right) */}
-                        <div className="flex-1 min-w-0">
-                          <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
-                            {game.game_name}
-                          </h2>
-                          <div className="text-xs sm:text-sm text-gray-300 mt-1">
-                            {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
-                          </div>
-                          {/* Genre Tags */}
-                          {game.genres && game.genres.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {game.genres.slice(0, 3).map(genre => (
-                                <span
-                                  key={genre}
-                                  className="px-2 py-0.5 text-[10px] sm:text-xs rounded bg-matrix-green/10 text-matrix-green/70 border border-matrix-green/20"
-                                >
-                                  {genre}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Score - Always Visible - With Info Tooltip */}
-                        <div className="text-right flex-shrink-0 ml-2 pr-1 relative">
-                          <div className="flex items-start justify-end gap-1">
-                            {/* Info Icon with Tooltip */}
-                            <div className="relative group/info mt-1">
-                              <span className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
-
-                              {/* Tooltip - Positioned Left */}
-                              <div className="absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                                <div className="text-matrix-green font-bold text-xs mb-2">Why this score?</div>
-                                {game.is_filtered ? (
-                                  <div className="text-red-400 text-xs leading-relaxed">
-                                    <p>{game.warning_text || 'This category is oversaturated.'}</p>
-                                    <p className="mt-2 text-red-300">Small streamers get buried pages deep in categories this large.</p>
-                                  </div>
-                                ) : (
-                                  <div className="text-xs leading-relaxed space-y-2">
-                                    <p className="text-white">{getScoreContext(game).competition} ({game.channels} streamers)</p>
-                                    <p className="text-white">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
-                                    <p className="text-gray-300 text-[10px] mt-2">Click card for detailed breakdown →</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Score Number */}
-                            <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
-                              game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
-                            }`}>
-                              {game.is_filtered && game.discoverability_rating !== undefined
-                                ? `${game.discoverability_rating}/10`
-                                : `${(game.overall_score * 10).toFixed(1)}/10`
-                              }
-                            </div>
-                          </div>
-                          <div className="text-[10px] sm:text-xs text-gray-400 mt-1">
-                            {game.is_filtered ? 'POOR' : game.trend}
-                          </div>
-                          <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
-                            game.is_filtered ? 'text-red-400' : 'text-amber-400'
-                          }`}>
-                            {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Links */}
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {/* Twitch Directory Link */}
-                        <a
-                          href={getTwitchUrl(game.game_name)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            trackExternalClick('twitch', game);
-                          }}
-                        >
-                          <span className="text-sm">📺</span> Twitch
-                        </a>
-
-                        {/* Kinguin Buy Button */}
-                        <a
-                          href={`https://www.kinguin.net/listing?&query%5D=${encodeURIComponent(game.game_name)}&active=1&r=6930867eb1a6f`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-105 leading-none"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            trackExternalClick('kinguin', game);
-                          }}
-                        >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-                          </svg>
-                          Buy
-                        </a>
-
-                        {/* Free to Play Badge */}
-                        {game.purchase_links.free && (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 text-xs sm:text-sm font-semibold leading-none">
-                            <span className="text-sm">🆓</span> Free
-                          </span>
-                        )}
-
-                        {game.purchase_links.steam && (
-                          <a
-                            href={game.purchase_links.steam}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#2a475e] hover:bg-[#3d6a8a] text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              trackExternalClick('steam', game);
-                            }}
-                          >
-                            <span className="text-sm">🎮</span> Steam
-                          </a>
-                        )}
-                        {game.purchase_links.epic && (
-                          <a
-                            href={game.purchase_links.epic}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#313131] hover:bg-[#444444] border border-gray-600 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              trackExternalClick('epic', game);
-                            }}
-                          >
-                            <span className="text-sm">🎮</span> Epic
-                          </a>
-                        )}
-
-                        {/* Share to Twitter/X Button */}
-                        <a
-                          href={getTwitterShareUrl(game)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            trackExternalClick('share_twitter', game);
-                          }}
-                        >
-                          Share
-                        </a>
+            return (
+              <div 
+                key={game.rank}
+                className={`matrix-card cursor-pointer ${game.is_filtered ? 'opacity-60' : ''}`}
+                onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
+              >
+                {/* Warning Banner */}
+                {game.is_filtered && game.warning_text && (
+                  <div className="mb-4 -mx-6 -mt-6 bg-red-900/30 border-b-2 border-red-500/50 px-6 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">⚠️</span>
+                      <div>
+                        <div className="text-red-400 font-bold text-sm">WARNING</div>
+                        <div className="text-red-300 text-sm">{game.warning_text}</div>
                       </div>
                     </div>
                   </div>
+                )}
 
-                  {/* Expanded Details */}
-                  {selectedGame?.rank === game.rank && (
-                    <div className="mt-4 pt-4 border-t border-matrix-green/30">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {/* Discoverability */}
-                        <div className="matrix-stat relative group/disc">
-                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-                            DISCOVERABILITY
-                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/disc:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
-                          </div>
-                          <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
-                            {(game.discoverability_score * 10).toFixed(1)}/10
-                          </div>
-                          {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
-                          </div>
-                        </div>
+                {/* Main Card Content */}
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Rank Badge */}
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 rounded-lg bg-matrix-dark border-2 border-matrix-green flex items-center justify-center">
+                      <span className="text-2xl font-bold text-matrix-green">#{game.rank}</span>
+                    </div>
+                  </div>
 
-                        {/* Viability */}
-                        <div className="matrix-stat relative group/viab">
-                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-                            VIABILITY
-                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/viab:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
-                          </div>
-                          <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
-                            {(game.viability_score * 10).toFixed(1)}/10
-                          </div>
-                          {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
-                          </div>
-                        </div>
+                  {/* Game Info */}
+                  <div className="flex-1 min-w-0">
+                    {/* Title Row with Sparkline */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <h2 className="text-2xl font-bold text-matrix-green truncate">
+                        {game.game_name}
+                      </h2>
+                      {analytics?.trend && (
+                        <TrendArrow 
+                          direction={analytics.trend.direction} 
+                          change={analytics.trend.change} 
+                        />
+                      )}
+                      {analytics?.sparkline && analytics.sparkline.scores.length > 0 && (
+                        <Sparkline 
+                          data={analytics.sparkline.scores}
+                          className="text-matrix-green opacity-60"
+                        />
+                      )}
+                    </div>
 
-                        {/* Engagement */}
-                        <div className="matrix-stat relative group/eng">
-                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-                            ENGAGEMENT
-                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/eng:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
-                          </div>
-                          <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
-                            {(game.engagement_score * 10).toFixed(1)}/10
-                          </div>
-                          {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
-                          </div>
-                        </div>
-
-                        {/* Avg Viewers */}
-                        <div className="matrix-stat relative group/avg">
-                          <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-                            AVG VIEWERS/CH
-                            <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/avg:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
-                          </div>
-                          <div className="text-2xl font-bold text-matrix-green">
-                            {game.avg_viewers_per_channel.toFixed(1)}
-                          </div>
-                          {/* Tooltip */}
-                          <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                            <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
-                          </div>
-                        </div>
+                    {/* Score & Stats */}
+                    <div className="flex flex-wrap items-center gap-4 text-sm mb-3">
+                      <div>
+                        <span className="text-gray-400">SCORE: </span>
+                        <span className={`font-bold text-lg ${getScoreColor(game.overall_score)}`}>
+                          {game.discoverability_rating !== undefined 
+                            ? `${game.discoverability_rating}/10`
+                            : `${(game.overall_score * 10).toFixed(1)}/10`
+                          }
+                        </span>
                       </div>
-
-                      {/* Learn About This Game */}
-                      <div className="mt-4 pt-4 border-t border-matrix-green/20">
-                        <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
-                        <div className="flex flex-wrap gap-2">
-                          <a
-                            href={getIGDBUrl(game.game_name)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              trackExternalClick('igdb', game);
-                            }}
-                          >
-                            📖 Game Info (IGDB)
-                          </a>
-                          <a
-                            href={getYouTubeUrl(game.game_name)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800/50 text-gray-200 text-xs font-medium transition-colors border border-red-800/50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              trackExternalClick('youtube', game);
-                            }}
-                          >
-                            ▶️ Gameplay & Trailers
-                          </a>
-                          <a
-                            href={getWikipediaUrl(game.game_name)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              trackExternalClick('wikipedia', game);
-                            }}
-                          >
-                            📚 Wikipedia
-                          </a>
-                        </div>
+                      <div className="text-gray-400">•</div>
+                      <div>
+                        <span className="text-gray-400">VIEWERS: </span>
+                        <span className="text-matrix-green font-semibold">
+                          {game.total_viewers.toLocaleString()}
+                        </span>
                       </div>
-
-                      <div className="mt-4 text-sm text-gray-400 text-center">
-                        Click card again to collapse
+                      <div className="text-gray-400">•</div>
+                      <div>
+                        <span className="text-gray-400">STREAMERS: </span>
+                        <span className="text-matrix-green font-semibold">
+                          {game.channels.toLocaleString()}
+                        </span>
                       </div>
                     </div>
-                  )}
+
+                    {/* Historical Features - Best Time to Stream */}
+                    {analytics?.time_of_day && (
+                      <div className="mb-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">BEST TIME:</span>
+                          <span className="text-matrix-green font-semibold">
+                            {analytics.time_of_day.best_block.replace('-', ':00-')}:00 PST
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            analytics.time_of_day.best_status === 'good' ? 'bg-green-900/50 text-green-400' :
+                            analytics.time_of_day.best_status === 'ok' ? 'bg-yellow-900/50 text-yellow-400' :
+                            'bg-red-900/50 text-red-400'
+                          }`}>
+                            {analytics.time_of_day.best_status.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="mt-1.5">
+                          <TimeBlocks 
+                            blocks={analytics.time_of_day.blocks}
+                            bestBlock={analytics.time_of_day.best_block}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Genres */}
+                    {game.genres && game.genres.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {game.genres.map(genre => (
+                          <span 
+                            key={genre}
+                            className="matrix-badge text-xs"
+                          >
+                            {genre}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      {/* Twitch Button */}
+                      <a
+                        href={getTwitchUrl(game.game_name)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-purple-700 hover:bg-purple-600 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          trackExternalClick('twitch', game);
+                        }}
+                      >
+                        <span className="text-sm">📺</span> Twitch
+                      </a>
+
+                      {/* Kinguin Button - Always show */}
+                      <a
+                        href={`https://www.kinguin.net/listing?&query%5D=${encodeURIComponent(game.game_name)}&active=1&r=6930867eb1a6f`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          trackExternalClick('kinguin', game);
+                        }}
+                      >
+                        <span className="text-sm">🛒</span> Buy
+                      </a>
+
+                      {/* Steam Button */}
+                      {game.purchase_links.steam && (
+                        <a
+                          href={game.purchase_links.steam}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="matrix-button-small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackExternalClick('steam', game);
+                          }}
+                        >
+                          <span className="text-sm">🎮</span> Steam
+                        </a>
+                      )}
+
+                      {/* Epic Button */}
+                      {game.purchase_links.epic && (
+                        <a
+                          href={game.purchase_links.epic}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="matrix-button-small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackExternalClick('epic', game);
+                          }}
+                        >
+                          <span className="text-sm">🎮</span> Epic
+                        </a>
+                      )}
+
+                      {/* Share to Twitter/X Button */}
+                      <a
+                        href={getTwitterShareUrl(game)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          trackExternalClick('share_twitter', game);
+                        }}
+                      >
+                        Share
+                      </a>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </main>
+
+                {/* Expanded Details */}
+                {selectedGame?.rank === game.rank && (
+                  <div className="mt-4 pt-4 border-t border-matrix-green/30">
+                    {/* Loading state for analytics */}
+                    {isLoadingAnalytics && (
+                      <div className="text-center text-gray-400 text-sm mb-4">
+                        Loading historical data...
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {/* Discoverability */}
+                      <div className="matrix-stat relative group/disc">
+                        <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                          DISCOVERABILITY
+                          <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/disc:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                        </div>
+                        <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
+                          {(game.discoverability_score * 10).toFixed(1)}/10
+                        </div>
+                        {/* Tooltip */}
+                        <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                          <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
+                        </div>
+                      </div>
+
+                      {/* Viability */}
+                      <div className="matrix-stat relative group/viab">
+                        <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                          VIABILITY
+                          <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/viab:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                        </div>
+                        <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
+                          {(game.viability_score * 10).toFixed(1)}/10
+                        </div>
+                        {/* Tooltip */}
+                        <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                          <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
+                        </div>
+                      </div>
+
+                      {/* Engagement */}
+                      <div className="matrix-stat relative group/eng">
+                        <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                          ENGAGEMENT
+                          <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/eng:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                        </div>
+                        <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
+                          {(game.engagement_score * 10).toFixed(1)}/10
+                        </div>
+                        {/* Tooltip */}
+                        <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                          <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
+                        </div>
+                      </div>
+
+                      {/* Avg Viewers */}
+                      <div className="matrix-stat relative group/avg">
+                        <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                          AVG VIEWERS/CH
+                          <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/avg:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                        </div>
+                        <div className="text-2xl font-bold text-matrix-green">
+                          {game.avg_viewers_per_channel.toFixed(1)}
+                        </div>
+                        {/* Tooltip */}
+                        <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                          <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Learn About This Game */}
+                    <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                      <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
+                      <div className="flex flex-wrap gap-2">
+                        <a
+                          href={getIGDBUrl(game.game_name)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackExternalClick('igdb', game);
+                          }}
+                        >
+                          📖 Game Info (IGDB)
+                        </a>
+                        <a
+                          href={getYouTubeUrl(game.game_name)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800/50 text-gray-200 text-xs font-medium transition-colors border border-red-800/50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackExternalClick('youtube', game);
+                          }}
+                        >
+                          ▶️ Gameplay & Trailers
+                        </a>
+                        <a
+                          href={getWikipediaUrl(game.game_name)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackExternalClick('wikipedia', game);
+                          }}
+                        >
+                          📚 Wikipedia
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 text-sm text-gray-400 text-center">
+                      Click card again to collapse
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* Footer */}
