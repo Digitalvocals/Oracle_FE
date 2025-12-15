@@ -502,22 +502,19 @@ Find your game → streamscout.gg`;
     }
   }
 
-  if (loading || isWarmingUp) {
+  // Warmup screen
+  if (isWarmingUp || (loading && !data)) {
     return (
-      <div className="min-h-screen bg-matrix-dark flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-glow">🎮</div>
-          <div className="text-2xl text-matrix-green font-bold mb-2 animate-pulse">
-            {isWarmingUp ? 'Warming Up System...' : 'Loading...'}
+          <div className="text-4xl sm:text-6xl mb-4 animate-glow">[ WARMING UP ]</div>
+          <div className="text-matrix-green-dim mb-4">{warmupStatus}</div>
+          <div className="flex justify-center">
+            <div className="w-8 h-8 border-2 border-matrix-green border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <div className="text-matrix-green-dim">
-            {warmupStatus}
+          <div className="text-matrix-green-dim mt-4 text-sm">
+            First load takes ~30 seconds. Auto-refreshing...
           </div>
-          {isWarmingUp && (
-            <div className="mt-4 text-sm text-matrix-green-dim">
-              This may take up to 30 seconds for the first load
-            </div>
-          )}
         </div>
       </div>
     )
@@ -525,35 +522,13 @@ Find your game → streamscout.gg`;
 
   if (error) {
     return (
-      <div className="min-h-screen bg-matrix-dark flex items-center justify-center p-4">
-        <div className="matrix-card max-w-md w-full text-center">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-matrix-green mb-4">Error</h1>
-          <p className="text-gray-300 mb-6">{error}</p>
-          <button 
-            onClick={() => {
-              setLoading(true)
-              setError(null)
-              fetchData()
-            }}
-            className="matrix-button"
-          >
-            Try Again
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="matrix-card max-w-md text-center">
+          <div className="text-3xl mb-4">❌ ERROR</div>
+          <div className="text-matrix-green-dim">{error}</div>
+          <button onClick={fetchData} className="matrix-button mt-6">
+            RETRY
           </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!data || !data.top_opportunities || data.top_opportunities.length === 0) {
-    return (
-      <div className="min-h-screen bg-matrix-dark flex items-center justify-center p-4">
-        <div className="matrix-card max-w-md w-full text-center">
-          <div className="text-6xl mb-4">🎮</div>
-          <h1 className="text-2xl font-bold text-matrix-green mb-4">No Data Available</h1>
-          <p className="text-gray-300">
-            The opportunity analyzer is still gathering data. Please check back in a few minutes.
-          </p>
         </div>
       </div>
     )
