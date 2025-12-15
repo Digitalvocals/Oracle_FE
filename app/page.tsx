@@ -40,39 +40,14 @@ interface GameOpportunity {
   dominance_ratio?: number
 }
 
-// HISTORICAL FEATURES - New interface (matches backend response)
+// HISTORICAL FEATURES - Interface matching Architect's spec
 interface GameAnalytics {
-  game_id: string
-  game_name: string
-  sparkline: {
-    dates: string[]
-    scores: number[]
-  }
-  trend: {
-    direction: 'up' | 'down' | 'stable'
-    change: number
-  }
-  time_of_day: {
-    blocks: {
-      [key: string]: {
-        avg_ratio: number
-        avg_channels: number
-        avg_viewers: number
-        sample_count: number
-      }
-    }
-    best_block: string
-    best_status: string
-  }
-  averages: {
-    discoverability: number
-    viewers: number
-    channels: number
-  }
-  meta: {
-    data_points: number
-    last_updated: string
-  }
+  sparkline: number[]
+  trend: 'up' | 'down' | 'stable'
+  trendMagnitude: number
+  bestTime: string
+  status: 'good' | 'ok' | 'avoid' | 'unknown'
+  dataDays: number
 }
 
 interface AnalysisData {
@@ -687,9 +662,9 @@ Find your game → streamscout.gg`;
                             </div>
 
                             {/* HISTORICAL FEATURES - Trend Arrow Injection */}
-                            {analytics && analytics.trend && (
+                            {analytics && (
                               <div className="mt-1.5">
-                                <TrendArrow direction={analytics.trend.direction} change={analytics.trend.change} />
+                                <TrendArrow direction={analytics.trend} change={analytics.trendMagnitude} />
                               </div>
                             )}
 
@@ -706,13 +681,12 @@ Find your game → streamscout.gg`;
                               </div>
                             )}
 
-                            {/* HISTORICAL FEATURES - Time Blocks Injection */}
-                            {analytics && analytics.time_of_day && analytics.time_of_day.blocks && (
+                            {/* HISTORICAL FEATURES - Best Time Display */}
+                            {analytics && analytics.bestTime && (
                               <div className="mt-2 flex items-center gap-2">
                                 <span className="text-[10px] text-gray-400">BEST TIME:</span>
-                                <TimeBlocks blocks={analytics.time_of_day.blocks} bestBlock={analytics.time_of_day.best_block} />
                                 <span className="text-[10px] text-matrix-green font-semibold">
-                                  {analytics.time_of_day.best_block} PST
+                                  {analytics.bestTime} PST
                                 </span>
                               </div>
                             )}
@@ -898,18 +872,18 @@ Find your game → streamscout.gg`;
                         </div>
 
                         {/* HISTORICAL FEATURES - Sparkline in Expanded Section */}
-                        {analytics && analytics.sparkline && analytics.sparkline.scores && analytics.sparkline.scores.length > 0 && (
+                        {analytics && analytics.sparkline && analytics.sparkline.length > 0 && (
                           <div className="mt-4 pt-4 border-t border-matrix-green/20">
                             <div className="flex items-center gap-3">
-                              <div className="text-gray-400 text-xs">{analytics.sparkline.dates.length}-DAY TREND</div>
+                              <div className="text-gray-400 text-xs">{analytics.dataDays}-DAY TREND</div>
                               <Sparkline 
-                                data={analytics.sparkline.scores} 
+                                data={analytics.sparkline} 
                                 width={120} 
                                 height={40}
                                 className="text-matrix-green"
                               />
                               <div className="text-xs text-gray-400">
-                                {analytics.trend.change > 0 ? '+' : ''}{analytics.trend.change.toFixed(1)}% change
+                                {analytics.trendMagnitude > 0 ? '+' : ''}{analytics.trendMagnitude.toFixed(1)}% change
                               </div>
                             </div>
                           </div>
