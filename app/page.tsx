@@ -88,9 +88,10 @@ const Sparkline: React.FC<SparklineProps> = ({
 }) => {
   if (!data || data.length < 2) return null
 
-  const max = Math.max(...data)
-  const min = Math.min(...data)
-  const range = max - min || 1
+  // ARCHITECT SPEC: Fixed 0-10 scale, not auto-scaled
+  const max = 10
+  const min = 0
+  const range = max - min
 
   const points = data.map((value, index) => {
     const x = (index / (data.length - 1)) * width
@@ -115,6 +116,24 @@ const Sparkline: React.FC<SparklineProps> = ({
       />
     </svg>
   )
+}
+
+// HISTORICAL FEATURES - Best Time Formatter
+const formatBestTime = (block: string): string => {
+  const timeMap: Record<string, string> = {
+    "00-04": "12 AM - 4 AM PST",
+    "04-08": "4 AM - 8 AM PST",
+    "08-12": "8 AM - 12 PM PST",
+    "12-16": "12 PM - 4 PM PST",
+    "16-20": "4 PM - 8 PM PST",
+    "20-24": "8 PM - 12 AM PST"
+  }
+  return timeMap[block] || block
+}
+
+// HISTORICAL FEATURES - Clean Recommendation Text
+const cleanRecommendation = (rating: string): string => {
+  return rating.replace(/^\[.*?\]\s*/, '')
 }
 
 // HISTORICAL FEATURES - Trend Arrow Component
@@ -149,11 +168,11 @@ const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
   const { arrow, text, className } = getArrowAndText()
 
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border text-xs font-semibold ${className}`}>
+    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border text-sm font-medium ${className}`}>
       <span className="text-lg leading-none">{arrow}</span>
       <span>{text}</span>
       {change !== 0 && (
-        <span className="text-[10px] opacity-70">
+        <span className="text-xs opacity-70">
           {change > 0 ? '+' : ''}{change.toFixed(1)}%
         </span>
       )}
@@ -655,19 +674,18 @@ Find your game → streamscout.gg`;
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
-                              {game.game_name}
-                            </h2>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
+                                {game.game_name}
+                              </h2>
+                              {/* HISTORICAL FEATURES - Trend Arrow (moved to title) */}
+                              {analytics && (
+                                <TrendArrow direction={analytics.trend} change={analytics.trendMagnitude} />
+                              )}
+                            </div>
                             <div className="text-xs sm:text-sm text-gray-300 mt-1">
                               {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
                             </div>
-
-                            {/* HISTORICAL FEATURES - Trend Arrow Injection */}
-                            {analytics && (
-                              <div className="mt-1.5">
-                                <TrendArrow direction={analytics.trend} change={analytics.trendMagnitude} />
-                              </div>
-                            )}
 
                             {game.genres && game.genres.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
@@ -685,9 +703,9 @@ Find your game → streamscout.gg`;
                             {/* HISTORICAL FEATURES - Best Time Display */}
                             {analytics && analytics.bestTime && (
                               <div className="mt-2 flex items-center gap-2">
-                                <span className="text-[10px] text-gray-400">BEST TIME:</span>
-                                <span className="text-[10px] text-matrix-green font-semibold">
-                                  {analytics.bestTime} PST
+                                <span className="text-xs text-gray-400">BEST TIME:</span>
+                                <span className="text-xs text-matrix-green font-semibold">
+                                  {formatBestTime(analytics.bestTime)}
                                 </span>
                               </div>
                             )}
@@ -730,7 +748,7 @@ Find your game → streamscout.gg`;
                             <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
                               game.is_filtered ? 'text-red-400' : 'text-amber-400'
                             }`}>
-                              {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
+                              {game.is_filtered ? 'NOT RECOMMENDED' : cleanRecommendation(game.recommendation)}
                             </div>
                           </div>
                         </div>
