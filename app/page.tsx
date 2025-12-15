@@ -560,28 +560,51 @@ Find your game → streamscout.gg`;
   }
 
   return (
-    <div className="min-h-screen bg-matrix-dark">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <header className="text-center mb-12">
-          <h1 className="text-5xl md:text-6xl font-bold text-matrix-green mb-4 drop-shadow-[0_0_10px_rgba(0,255,0,0.5)]">
-            STREAMSCOUT
-          </h1>
-          <p className="text-xl text-matrix-green-dim mb-2">
-            Find Streaming Opportunities • Real-Time Discovery Analysis
-          </p>
-          <p className="text-sm text-gray-400">
-            {data.total_games_analyzed.toLocaleString()} games analyzed • Updates every 10 minutes
-          </p>
-          
-          {/* Countdown Timer */}
-          <div className="mt-4 inline-block bg-matrix-light border border-matrix-green/30 rounded px-4 py-2">
-            <span className="text-gray-400 text-sm">Next update in: </span>
-            <span className="text-matrix-green font-bold text-lg">{formatTime(countdown)}</span>
+        <header className="mb-8">
+          <div className="flex justify-center mb-4">
+            <img
+              src="/streamscout-logo.jpg"
+              alt="StreamScout - Find Your Audience. Grow Your Channel."
+              className="w-full max-w-2xl h-auto"
+            />
           </div>
 
-          {/* Navigation */}
-          <div className="mt-6 flex justify-center gap-4 text-sm">
+          {/* What is StreamScout? */}
+          <div className="max-w-2xl mx-auto text-center mb-6 px-4">
+            <h2 className="text-lg sm:text-xl font-bold text-matrix-green-bright mb-2">What is StreamScout?</h2>
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+              Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
+            </p>
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed mt-2">
+              We show you where small streamers can actually compete.
+            </p>
+            <p className="text-base sm:text-lg font-bold text-matrix-green-bright mt-3">
+              No guesswork. Just data.
+            </p>
+          </div>
+
+          {data && (
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
+                🎮 {data.total_games_analyzed} GAMES ANALYZED
+              </div>
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
+                ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
+              </div>
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
+                🔄 NEXT UPDATE: {formatCountdown(countdown)}
+              </div>
+            </div>
+          )}
+        </header>
+
+        {/* Main Content with Sidebar */}
+        <div className="flex gap-8">
+          {/* Main Game Grid - Full Width */}
+          <main className="w-full">
             <Link href="/twitchstrike-alternative" className="text-matrix-green hover:text-matrix-green-bright transition-colors">
               TwitchStrike Alternative
             </Link>
