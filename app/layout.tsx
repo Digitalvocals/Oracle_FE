@@ -63,10 +63,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        {/* Favicon */}
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+      <body className={inter.className}>
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-X5JXBGFR5Z"
@@ -87,8 +84,8 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
-      </head>
-      <body className={inter.className}>{children}</body>
+        {children}
+      </body>
     </html>
   )
 }
