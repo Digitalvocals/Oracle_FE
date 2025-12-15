@@ -648,66 +648,120 @@ Find your game → streamscout.gg`;
                   </div>
                 )}
 
-                {/* Main Card Content */}
-                <div className="flex flex-col md:flex-row gap-4">
-                  {/* Rank Badge */}
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 rounded-lg bg-matrix-dark border-2 border-matrix-green flex items-center justify-center">
-                      <span className="text-2xl font-bold text-matrix-green">#{game.rank}</span>
+                {/* Mobile and Desktop Layout */}
+                <div className="flex gap-4">
+                  {/* Game Cover Image - Left Side */}
+                  {game.box_art_url && (
+                    <div className="flex-shrink-0">
+                      <img
+                        src={game.box_art_url}
+                        alt={game.game_name}
+                        className="w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
                     </div>
-                  </div>
+                  )}
 
-                  {/* Game Info */}
-                  <div className="flex-1 min-w-0">
-                    {/* Title Row with Sparkline */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <h2 className="text-2xl font-bold text-matrix-green truncate">
-                        {game.game_name}
-                      </h2>
-                      {analytics?.trend && (
-                        <TrendArrow 
-                          direction={analytics.trend.direction} 
-                          change={analytics.trend.change} 
-                        />
-                      )}
-                      {analytics?.sparkline && analytics.sparkline.scores.length > 0 && (
-                        <Sparkline 
-                          data={analytics.sparkline.scores}
-                          className="text-matrix-green opacity-60"
-                        />
-                      )}
-                    </div>
+                  {/* Content - Right Side */}
+                  <div className="flex-1 min-w-0 flex flex-col">
+                    {/* Header Row: Rank + Title + Score */}
+                    <div className="flex items-start gap-2 mb-2">
+                      {/* Rank */}
+                      <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-matrix-green-bright flex-shrink-0">
+                        #{game.rank}
+                      </div>
 
-                    {/* Score & Stats */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm mb-3">
-                      <div>
-                        <span className="text-gray-400">SCORE: </span>
-                        <span className={`font-bold text-lg ${getScoreColor(game.overall_score)}`}>
-                          {game.discoverability_rating !== undefined 
-                            ? `${game.discoverability_rating}/10`
-                            : `${(game.overall_score * 10).toFixed(1)}/10`
-                          }
-                        </span>
+                      {/* Title (flex-grow to push score right) */}
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
+                          {game.game_name}
+                          {/* Historical: Sparkline and Trend Arrow */}
+                          {analytics?.sparkline && analytics.sparkline.scores.length > 0 && (
+                            <span className="inline-flex items-center gap-1 ml-2">
+                              <Sparkline 
+                                data={analytics.sparkline.scores}
+                                width={60}
+                                height={20}
+                                className="text-matrix-green opacity-60"
+                              />
+                              {analytics?.trend && (
+                                <TrendArrow 
+                                  direction={analytics.trend.direction} 
+                                  change={analytics.trend.change} 
+                                />
+                              )}
+                            </span>
+                          )}
+                        </h2>
+                        <div className="text-xs sm:text-sm text-gray-300 mt-1">
+                          {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
+                        </div>
+                        {/* Genre Tags */}
+                        {game.genres && game.genres.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {game.genres.slice(0, 3).map(genre => (
+                              <span
+                                key={genre}
+                                className="px-2 py-0.5 text-[10px] sm:text-xs rounded bg-matrix-green/10 text-matrix-green/70 border border-matrix-green/20"
+                              >
+                                {genre}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-gray-400">•</div>
-                      <div>
-                        <span className="text-gray-400">VIEWERS: </span>
-                        <span className="text-matrix-green font-semibold">
-                          {game.total_viewers.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="text-gray-400">•</div>
-                      <div>
-                        <span className="text-gray-400">STREAMERS: </span>
-                        <span className="text-matrix-green font-semibold">
-                          {game.channels.toLocaleString()}
-                        </span>
+
+                      {/* Score - Always Visible - With Info Tooltip */}
+                      <div className="text-right flex-shrink-0 ml-2 pr-1 relative">
+                        <div className="flex items-start justify-end gap-1">
+                          {/* Info Icon with Tooltip */}
+                          <div className="relative group/info mt-1">
+                            <span className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
+
+                            {/* Tooltip - Positioned Left */}
+                            <div className="absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                              <div className="text-matrix-green font-bold text-xs mb-2">Why this score?</div>
+                              {game.is_filtered ? (
+                                <div className="text-red-400 text-xs leading-relaxed">
+                                  <p>{game.warning_text || 'This category is oversaturated.'}</p>
+                                  <p className="mt-2 text-red-300">Small streamers get buried pages deep in categories this large.</p>
+                                </div>
+                              ) : (
+                                <div className="text-xs leading-relaxed space-y-2">
+                                  <p className="text-white">{getScoreContext(game).competition} ({game.channels} streamers)</p>
+                                  <p className="text-white">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
+                                  <p className="text-gray-300 text-[10px] mt-2">Click card for detailed breakdown →</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Score Number */}
+                          <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
+                            game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
+                          }`}>
+                            {game.is_filtered && game.discoverability_rating !== undefined
+                              ? `${game.discoverability_rating}/10`
+                              : `${(game.overall_score * 10).toFixed(1)}/10`
+                            }
+                          </div>
+                        </div>
+                        <div className="text-[10px] sm:text-xs text-gray-400 mt-1">
+                          {game.is_filtered ? 'POOR' : game.trend}
+                        </div>
+                        <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
+                          game.is_filtered ? 'text-red-400' : 'text-amber-400'
+                        }`}>
+                          {game.is_filtered ? 'NOT RECOMMENDED' : game.recommendation}
+                        </div>
                       </div>
                     </div>
 
                     {/* Historical Features - Best Time to Stream */}
                     {analytics?.time_of_day && (
-                      <div className="mb-3 text-sm">
+                      <div className="mb-2 text-sm">
                         <div className="flex items-center gap-2">
                           <span className="text-gray-400">BEST TIME:</span>
                           <span className="text-matrix-green font-semibold">
@@ -730,22 +784,8 @@ Find your game → streamscout.gg`;
                       </div>
                     )}
 
-                    {/* Genres */}
-                    {game.genres && game.genres.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {game.genres.map(genre => (
-                          <span 
-                            key={genre}
-                            className="matrix-badge text-xs"
-                          >
-                            {genre}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-2">
+                    {/* Action Links */}
+                    <div className="flex flex-wrap gap-2 mt-2">
                       {/* Twitch Button */}
                       <a
                         href={getTwitchUrl(game.game_name)}
