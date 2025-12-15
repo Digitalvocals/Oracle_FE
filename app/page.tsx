@@ -8,6 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 interface GameOpportunity {
   rank: number
+  game_id: string
   game_name: string
   total_viewers: number
   channels: number
@@ -223,8 +224,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('')
 
   // HISTORICAL FEATURES - Analytics state
-  const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: number]: GameAnalytics }>({})
-  const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: number]: boolean }>({})
+  const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
+  const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: string]: boolean }>({})
 
   // Available genre filters
   const GENRE_OPTIONS = [
@@ -304,7 +305,7 @@ Find your game → streamscout.gg`;
   }
 
   // HISTORICAL FEATURES - Fetch analytics for a game
-  const fetchAnalytics = useCallback(async (gameId: number) => {
+  const fetchAnalytics = useCallback(async (gameId: string) => {
     if (analyticsCache[gameId] || loadingAnalytics[gameId]) {
       return // Already have it or loading it
     }
@@ -606,9 +607,9 @@ Find your game → streamscout.gg`;
                 </div>
               ) : filteredOpportunities.map((game) => {
                 // HISTORICAL FEATURES - Fetch analytics when game is expanded
-                const analytics = analyticsCache[game.rank]
-                if (selectedGame?.rank === game.rank && !analytics && !loadingAnalytics[game.rank]) {
-                  fetchAnalytics(game.rank)
+                const analytics = analyticsCache[game.game_id]
+                if (selectedGame?.rank === game.rank && !analytics && !loadingAnalytics[game.game_id]) {
+                  fetchAnalytics(game.game_id)
                 }
 
                 return (
