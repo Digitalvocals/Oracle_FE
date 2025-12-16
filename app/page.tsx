@@ -3,6 +3,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import Link from 'next/link'
+import mappingsData from './data/game_store_mappings.json'
+import { 
+  TwitchButton, 
+  YouTubeButton, 
+  SteamButton, 
+  EpicButton, 
+  BattleNetButton, 
+  RiotButton, 
+  OfficialButton 
+} from './components/streamscout-ui'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -229,6 +239,42 @@ const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
       })}
     </div>
   )
+}
+
+// SMART PURCHASE LINKS - Store button visibility logic (US-028)
+interface StoreButtons {
+  steam: string | null
+  epic: string | null
+  battlenet: string | null
+  riot: string | null
+  official: string | null
+  isFree: boolean
+}
+
+function getStoreButtons(gameId: string, gameName: string): StoreButtons {
+  const mapping = mappingsData.find(m => m.game_id === gameId)
+  
+  if (mapping) {
+    // Known game - use explicit mapping
+    return {
+      steam: mapping.steam === false ? null : mapping.steam,
+      epic: mapping.epic === false ? null : mapping.epic,
+      battlenet: mapping.battlenet || null,
+      riot: mapping.riot || null,
+      official: mapping.official || null,
+      isFree: mapping.free,
+    }
+  } else {
+    // Unknown game - default to search links
+    return {
+      steam: `https://store.steampowered.com/search/?term=${encodeURIComponent(gameName)}`,
+      epic: `https://store.epicgames.com/browse?q=${encodeURIComponent(gameName)}`,
+      battlenet: null,
+      riot: null,
+      official: null,
+      isFree: false,
+    }
+  }
 }
 
 export default function Home() {
@@ -783,40 +829,59 @@ Find your game → streamscout.gg`;
                             Buy
                           </a>
 
-                          {game.purchase_links.free && (
-                            <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 text-xs sm:text-sm font-semibold leading-none">
-                              <span className="text-sm">🆓</span> Free
-                            </span>
-                          )}
-
-                          {game.purchase_links.steam && (
-                            <a
-                              href={game.purchase_links.steam}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#2a475e] hover:bg-[#3d6a8a] text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                trackExternalClick('steam', game);
-                              }}
-                            >
-                              <span className="text-sm">🎮</span> Steam
-                            </a>
-                          )}
-                          {game.purchase_links.epic && (
-                            <a
-                              href={game.purchase_links.epic}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#313131] hover:bg-[#444444] border border-gray-600 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                trackExternalClick('epic', game);
-                              }}
-                            >
-                              <span className="text-sm">🎮</span> Epic
-                            </a>
-                          )}
+                          {/* SMART PURCHASE LINKS (US-028) */}
+                          {(() => {
+                            const buttons = getStoreButtons(game.game_id, game.game_name)
+                            
+                            return (
+                              <>
+                                {buttons.steam && (
+                                  <SteamButton 
+                                    gameName={game.game_name} 
+                                    url={buttons.steam}
+                                    isFree={buttons.isFree}
+                                    onClick={() => trackExternalClick('steam', game)}
+                                  />
+                                )}
+                                
+                                {buttons.epic && (
+                                  <EpicButton 
+                                    gameName={game.game_name}
+                                    url={buttons.epic}
+                                    isFree={buttons.isFree}
+                                    onClick={() => trackExternalClick('epic', game)}
+                                  />
+                                )}
+                                
+                                {buttons.battlenet && (
+                                  <BattleNetButton 
+                                    gameName={game.game_name}
+                                    url={buttons.battlenet}
+                                    isFree={buttons.isFree}
+                                    onClick={() => trackExternalClick('battlenet', game)}
+                                  />
+                                )}
+                                
+                                {buttons.riot && (
+                                  <RiotButton 
+                                    gameName={game.game_name}
+                                    url={buttons.riot}
+                                    isFree={buttons.isFree}
+                                    onClick={() => trackExternalClick('riot', game)}
+                                  />
+                                )}
+                                
+                                {buttons.official && (
+                                  <OfficialButton 
+                                    gameName={game.game_name}
+                                    url={buttons.official}
+                                    isFree={buttons.isFree}
+                                    onClick={() => trackExternalClick('official', game)}
+                                  />
+                                )}
+                              </>
+                            )
+                          })()}
 
                           <a
                             href={getTwitterShareUrl(game)}
