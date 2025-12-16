@@ -13,6 +13,25 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "3.3.0",
+    date: "December 16, 2025",
+    title: "Smart Purchase Links",
+    added: [
+      "Platform-specific store buttons - shows only where games are actually available",
+      "Battle.net button for Blizzard exclusives (Overwatch 2, Hearthstone, WoW)",
+      "Riot Games button for Riot exclusives (League of Legends, Valorant, TFT)",
+      "Official Site button for games not on major stores (Minecraft, Escape from Tarkov)",
+      "\"Play Free\" vs \"Buy\" buttons - free-to-play games show correct text",
+      "22 top games configured with accurate store mappings",
+      "Smart fallback - unmapped games show search links instead of dead links"
+    ],
+    changed: [
+      "Store buttons now accurately reflect game availability",
+      "Eliminated dead links to stores that don't carry the game",
+      "Improved user experience - no more clicking Steam for Battle.net exclusives"
+    ]
+  },
+  {
     version: "3.2.0",
     date: "December 14, 2025",
     title: "Massive Game Expansion & Historical Data",
