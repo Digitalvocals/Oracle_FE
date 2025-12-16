@@ -13,7 +13,7 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
-    version: "3.3.0",
+    version: "3.4.0",
     date: "December 16, 2025",
     title: "Smart Purchase Links",
     added: [
@@ -29,6 +29,23 @@ const changelog: ChangelogEntry[] = [
       "Store buttons now accurately reflect game availability",
       "Eliminated dead links to stores that don't carry the game",
       "Improved user experience - no more clicking Steam for Battle.net exclusives"
+    ]
+  },
+  {
+    version: "3.3.0",
+    date: "December 15, 2025",
+    title: "Historical Features - Trends & Best Time to Stream",
+    added: [
+      "7-day trend sparklines - see if a game's opportunity is improving or declining",
+      "Trend badges - instantly spot games trending UP, DOWN, or STABLE",
+      "Best time to stream recommendations - shows optimal 4-hour streaming window for each game",
+      "Time-of-day analysis - based on historical viewer/streamer ratio data",
+      "Real-time opportunity status - \"good\", \"ok\", or \"avoid\" indicators for current streaming windows"
+    ],
+    changed: [
+      "Game cards now show week-over-week trends at a glance",
+      "Data-driven streaming schedule recommendations",
+      "Historical data collection powers all new features"
     ]
   },
   {
@@ -195,17 +212,6 @@ export default function ChangelogPage() {
               )}
             </article>
           ))}
-        </div>
-
-        {/* Coming Soon */}
-        <div className="mt-8 p-6 border border-matrix-green/30 rounded-lg bg-matrix-green/5">
-          <h3 className="text-lg font-semibold text-matrix-green-bright mb-2">Coming Soon</h3>
-          <ul className="space-y-1 text-gray-300 text-sm">
-            <li className="pl-4">&bull; Historical trend sparklines - see 7-day trends at a glance</li>
-            <li className="pl-4">&bull; Best time to stream - recommendations based on historical data</li>
-            <li className="pl-4">&bull; Real-time opportunity indicators - know when to go live</li>
-          </ul>
-          <p className="text-gray-500 text-xs mt-3">Target: December 19, 2025</p>
         </div>
 
         {/* Footer */}
