@@ -1,376 +1,364 @@
-/**
- * StreamScout Component Library
- * =============================
- * Reusable components with production-locked styling.
- * Import these instead of writing inline Tailwind everywhere.
- *
- * Location: /app/components/streamscout-ui.tsx
- *
- * Usage:
- *   import { TwitchButton, SteamButton, GameCard, InfoTooltip } from '@/components/streamscout-ui'
- */
+// StreamScout UI Components
+// Updated: Dec 16, 2025 - Added Smart Purchase Links (US-028)
 
-import React, { ReactNode } from 'react'
+import React from 'react';
 
-// =============================================================================
-// BUTTONS - All action buttons with locked-in brand colors
-// =============================================================================
+// ============================================================================
+// PURCHASE / DOWNLOAD BUTTONS
+// ============================================================================
 
-interface ButtonProps {
-  href: string
-  onClick?: (e: React.MouseEvent) => void
-  children: ReactNode
-  className?: string
+// ------- Steam Button (Modified - added isFree + url props) -------
+interface SteamButtonProps {
+  gameName?: string;    // For search URL (fallback)
+  url?: string;         // Direct URL (preferred)
+  isFree?: boolean;
 }
 
-/** Purple Twitch button */
-export function TwitchButton({ href, onClick, children }: ButtonProps) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-      onClick={onClick}
-    >
-      <span className="text-sm">📺</span> {children}
-    </a>
-  )
-}
-
-/** Steam blue button */
-export function SteamButton({ href, onClick, children }: ButtonProps) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#2a475e] hover:bg-[#3d6a8a] text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-      onClick={onClick}
-    >
-      <span className="text-sm">🎮</span> {children}
-    </a>
-  )
-}
-
-/** Epic dark gray button with border */
-export function EpicButton({ href, onClick, children }: ButtonProps) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#313131] hover:bg-[#444444] border border-gray-600 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-      onClick={onClick}
-    >
-      <span className="text-sm">🎮</span> {children}
-    </a>
-  )
-}
-
-/** Kinguin orange "Buy" button with cart icon */
-export function KinguinButton({ 
-  gameName, 
-  onClick 
-}: { 
-  gameName: string
-  onClick?: () => void 
-}) {
-  const kinguinUrl = `https://kinguin.net/?r=69308&7eb1a6f&search=${encodeURIComponent(gameName)}`
+export function SteamButton({ gameName, url, isFree = false }: SteamButtonProps) {
+  const href = url || `https://store.steampowered.com/search/?term=${encodeURIComponent(gameName || '')}`;
   
-  const handleClick = () => {
-    // GA4 tracking
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'kinguin_click', {
-        game_name: gameName,
-        affiliate_link: kinguinUrl
-      })
-    }
-    onClick?.()
-  }
-
-  return (
-    <a
-      href={kinguinUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={handleClick}
-      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold rounded transition-all duration-200 hover:scale-105 leading-none"
-    >
-      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-      </svg>
-      Buy
-    </a>
-  )
-}
-
-/** Sky blue share button */
-export function ShareButton({ href, onClick, children }: ButtonProps) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-      onClick={onClick}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1b2838] hover:bg-[#2a475e] text-white text-sm font-medium rounded transition-colors"
     >
-      {children}
+      {isFree ? 'Play Free' : 'Buy'} on Steam
     </a>
-  )
+  );
 }
 
-/** Gray info/learn button */
-export function InfoButton({ href, onClick, children }: ButtonProps) {
+// ------- Epic Button (Modified - added isFree + url props) -------
+interface EpicButtonProps {
+  gameName?: string;    // For search URL (fallback)
+  url?: string;         // Direct URL (preferred)
+  isFree?: boolean;
+}
+
+export function EpicButton({ gameName, url, isFree = false }: EpicButtonProps) {
+  const href = url || `https://store.epicgames.com/browse?q=${encodeURIComponent(gameName || '')}`;
+  
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
-      onClick={onClick}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#313131] hover:bg-[#414141] text-white text-sm font-medium rounded transition-colors"
     >
-      {children}
+      {isFree ? 'Play Free' : 'Buy'} on Epic
     </a>
-  )
+  );
 }
 
-/** Red YouTube button */
-export function YouTubeButton({ href, onClick, children }: ButtonProps) {
+// ------- Battle.net Button (NEW) -------
+interface BattleNetButtonProps {
+  url: string;
+  isFree?: boolean;
+}
+
+export function BattleNetButton({ url, isFree = false }: BattleNetButtonProps) {
   return (
     <a
-      href={href}
+      href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800/50 text-gray-200 text-xs font-medium transition-colors border border-red-800/50"
-      onClick={onClick}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00AEFF] hover:bg-[#0095DD] text-white text-sm font-medium rounded transition-colors"
     >
-      {children}
+      {isFree ? 'Play Free' : 'Get'} on Battle.net
     </a>
-  )
+  );
 }
 
-/** Main Matrix green CTA button */
-export function MatrixButton({ href, onClick, children, className = '' }: ButtonProps) {
+// ------- Riot Button (NEW) -------
+interface RiotButtonProps {
+  url: string;
+  isFree?: boolean;
+}
+
+export function RiotButton({ url, isFree = false }: RiotButtonProps) {
   return (
     <a
-      href={href}
-      className={`matrix-button ${className}`}
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#D13639] hover:bg-[#B12D30] text-white text-sm font-medium rounded transition-colors"
+    >
+      {isFree ? 'Play Free' : 'Get'} on Riot
+    </a>
+  );
+}
+
+// ------- Official Site Button (NEW) -------
+interface OfficialButtonProps {
+  url: string;
+  isFree?: boolean;
+}
+
+export function OfficialButton({ url, isFree = false }: OfficialButtonProps) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white text-sm font-medium rounded transition-colors"
+    >
+      {isFree ? 'Play Free' : 'Buy'} - Official Site
+    </a>
+  );
+}
+
+// ============================================================================
+// PLATFORM BUTTONS
+// ============================================================================
+
+interface TwitchButtonProps {
+  gameName: string;
+}
+
+export function TwitchButton({ gameName }: TwitchButtonProps) {
+  const url = `https://www.twitch.tv/directory/category/${encodeURIComponent(gameName)}`;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded transition-colors"
+    >
+      Watch on Twitch
+    </a>
+  );
+}
+
+interface YouTubeButtonProps {
+  gameName: string;
+  searchType?: string;
+}
+
+export function YouTubeButton({ gameName, searchType = "gameplay" }: YouTubeButtonProps) {
+  const query = `${gameName} ${searchType}`;
+  const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded transition-colors"
+    >
+      Watch on YouTube
+    </a>
+  );
+}
+
+// ============================================================================
+// SHARE BUTTON
+// ============================================================================
+
+interface ShareButtonProps {
+  gameName: string;
+  score: number;
+  viewers: number;
+  channels: number;
+}
+
+export function ShareButton({ gameName, score, viewers, channels }: ShareButtonProps) {
+  const ratio = (viewers / channels).toFixed(1);
+  const text = `Found a streaming opportunity: ${gameName} - ${score}/10 discoverability (${viewers} viewers, ${channels} channels, ${ratio} ratio) via @StreamScoutGG`;
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=https://streamscout.gg`;
+  
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded transition-colors"
+    >
+      Share
+    </a>
+  );
+}
+
+// ============================================================================
+// GENERIC BUTTON
+// ============================================================================
+
+interface MatrixButtonProps {
+  onClick?: () => void;
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary';
+}
+
+export function MatrixButton({ onClick, children, variant = 'primary' }: MatrixButtonProps) {
+  const baseClasses = "inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded transition-colors";
+  const variantClasses = variant === 'primary'
+    ? "bg-green-600 hover:bg-green-700 text-white"
+    : "bg-slate-700 hover:bg-slate-600 text-white";
+  
+  return (
+    <button
       onClick={onClick}
+      className={`${baseClasses} ${variantClasses}`}
     >
       {children}
-    </a>
-  )
+    </button>
+  );
 }
 
-// =============================================================================
-// INFO TOOLTIPS - Consistent ? icons with hover tooltips
-// =============================================================================
+// ============================================================================
+// TOOLTIPS
+// ============================================================================
 
-interface TooltipProps {
-  children: ReactNode
-  size?: 'sm' | 'md'  // sm = metrics (w-4), md = main score (w-5)
-  groupName: string   // For hover targeting: group/info, group/disc, etc.
+interface InfoTooltipProps {
+  content: string;
 }
 
-/** Info tooltip with ? icon - use size="md" for main score, "sm" for metrics */
-export function InfoTooltip({ children, size = 'sm', groupName }: TooltipProps) {
-  const sizeClasses = size === 'md'
-    ? 'w-5 h-5 text-xs'
-    : 'w-4 h-4 text-[10px]'
-
+export function InfoTooltip({ content }: InfoTooltipProps) {
   return (
-    <div className={`relative group/${groupName}`}>
-      <span className={`${sizeClasses} rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center font-bold cursor-help transition-colors`}>
-        ?
+    <span className="group relative inline-block cursor-help">
+      <span className="text-gray-400 hover:text-gray-300">ⓘ</span>
+      <span className="invisible group-hover:visible absolute left-0 bottom-full mb-2 w-64 p-2 bg-slate-800 text-white text-xs rounded shadow-lg z-10">
+        {content}
       </span>
-
-      {/* Tooltip */}
-      <div className={`absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/${groupName}:opacity-100 group-hover/${groupName}:visible transition-all duration-200 z-50 text-left pointer-events-none`}>
-        {children}
-      </div>
-    </div>
-  )
+    </span>
+  );
 }
 
-/** Bottom-positioned tooltip for metric stats */
-export function MetricTooltip({ children, groupName }: { children: ReactNode, groupName: string }) {
+interface MetricTooltipProps {
+  value: number | string;
+  label: string;
+  explanation: string;
+}
+
+export function MetricTooltip({ value, label, explanation }: MetricTooltipProps) {
   return (
-    <div className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/${groupName}:opacity-100 group-hover/${groupName}:visible transition-all duration-200 z-50 text-left pointer-events-none`}>
-      <p className="text-xs text-white leading-relaxed">{children}</p>
-    </div>
-  )
+    <span className="group relative inline-block cursor-help">
+      <span className="text-green-400 font-semibold">{value}</span>
+      <span className="invisible group-hover:visible absolute left-0 bottom-full mb-2 w-64 p-2 bg-slate-800 text-white text-xs rounded shadow-lg z-10">
+        <strong>{label}:</strong> {explanation}
+      </span>
+    </span>
+  );
 }
 
-// =============================================================================
-// BADGES - Header stat badges
-// =============================================================================
+// ============================================================================
+// HISTORICAL FEATURES (US-006, US-007, US-018)
+// ============================================================================
 
-interface BadgeProps {
-  children: ReactNode
+interface SparklineProps {
+  data: number[];
+  width?: number;
+  height?: number;
 }
 
-/** Bordered badge for header stats */
-export function MatrixBadge({ children }: BadgeProps) {
+export function Sparkline({ data, width = 120, height = 40 }: SparklineProps) {
+  if (!data || data.length === 0) return null;
+  
+  const min = 0;
+  const max = 10;
+  const points = data.map((val, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((val - min) / (max - min)) * height;
+    return `${x},${y}`;
+  }).join(' ');
+  
   return (
-    <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
-      {children}
-    </div>
-  )
+    <svg width={width} height={height} className="inline-block">
+      <polyline
+        points={points}
+        fill="none"
+        stroke="#00ff00"
+        strokeWidth="2"
+      />
+    </svg>
+  );
 }
 
-// =============================================================================
-// STAT BOXES - Metric display boxes in expanded view
-// =============================================================================
-
-interface MetricStatProps {
-  label: string
-  value: string | number
-  valueClass?: string
-  tooltip: string
-  groupName: string
+interface TrendArrowProps {
+  trend: 'up' | 'down' | 'stable';
+  magnitude: number;
 }
 
-/** Metric stat box with tooltip */
-export function MetricStat({ label, value, valueClass = 'text-matrix-green', tooltip, groupName }: MetricStatProps) {
+export function TrendArrow({ trend, magnitude }: TrendArrowProps) {
+  const arrows = {
+    up: '↗',
+    down: '↘',
+    stable: '→'
+  };
+  
+  const colors = {
+    up: 'text-green-400',
+    down: 'text-red-400',
+    stable: 'text-gray-400'
+  };
+  
+  const percentage = trend !== 'stable' && magnitude != null && magnitude !== 0
+    ? ` ${magnitude >= 0 ? '+' : ''}${magnitude.toFixed(1)}%`
+    : '';
+  
+  const labels = {
+    up: 'TRENDING UP',
+    down: 'TRENDING DOWN',
+    stable: 'STABLE'
+  };
+  
   return (
-    <div className={`matrix-stat relative group/${groupName}`}>
-      <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-        {label}
-        <span className={`w-4 h-4 rounded-full bg-matrix-green/50 group-hover/${groupName}:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors`}>
-          ?
-        </span>
-      </div>
-      <div className={`text-2xl font-bold ${valueClass}`}>
-        {value}
-      </div>
-      {/* Tooltip */}
-      <div className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/${groupName}:opacity-100 group-hover/${groupName}:visible transition-all duration-200 z-50 text-left pointer-events-none`}>
-        <p className="text-xs text-white leading-relaxed">{tooltip}</p>
-      </div>
-    </div>
-  )
+    <span className={`inline-flex items-center gap-1 text-sm font-medium ${colors[trend]}`}>
+      <span className="text-lg">{arrows[trend]}</span>
+      <span>{labels[trend]}{percentage}</span>
+    </span>
+  );
 }
 
-// =============================================================================
-// TEXT STYLES - Consistent text styling
-// =============================================================================
-
-/** Primary heading - bright green */
-export function Heading1({ children, className = '' }: { children: ReactNode, className?: string }) {
-  return <h1 className={`text-2xl sm:text-3xl font-bold text-matrix-green-bright ${className}`}>{children}</h1>
+interface BestTimeDisplayProps {
+  timeBlock: string;
+  status: 'good' | 'ok' | 'avoid';
 }
 
-/** Secondary heading - bright green */
-export function Heading2({ children, className = '' }: { children: ReactNode, className?: string }) {
-  return <h2 className={`text-lg sm:text-xl font-bold text-matrix-green-bright ${className}`}>{children}</h2>
+export function BestTimeDisplay({ timeBlock, status }: BestTimeDisplayProps) {
+  // Convert "08-12" to "8 AM - 12 PM PST"
+  const [start, end] = timeBlock.split('-').map(Number);
+  const formatHour = (h: number) => {
+    if (h === 0) return '12 AM';
+    if (h < 12) return `${h} AM`;
+    if (h === 12) return '12 PM';
+    return `${h - 12} PM`;
+  };
+  
+  const timeRange = `${formatHour(start)} - ${formatHour(end)} PST`;
+  
+  const statusColors = {
+    good: 'text-green-400',
+    ok: 'text-yellow-400',
+    avoid: 'text-red-400'
+  };
+  
+  return (
+    <span className={`text-sm font-medium ${statusColors[status]}`}>
+      BEST TIME: {timeRange}
+    </span>
+  );
 }
 
-/** Body text - gray-200 */
-export function BodyText({ children, className = '' }: { children: ReactNode, className?: string }) {
-  return <p className={`text-sm sm:text-base text-gray-200 leading-relaxed ${className}`}>{children}</p>
-}
+// ============================================================================
+// URL HELPERS
+// ============================================================================
 
-/** Muted text - gray-400 */
-export function MutedText({ children, className = '' }: { children: ReactNode, className?: string }) {
-  return <p className={`text-sm text-gray-400 ${className}`}>{children}</p>
-}
-
-/** Tagline - bright green bold */
-export function Tagline({ children, className = '' }: { children: ReactNode, className?: string }) {
-  return <p className={`text-base sm:text-lg font-bold text-matrix-green-bright ${className}`}>{children}</p>
-}
-
-// =============================================================================
-// UTILITY - Score colors, URL helpers
-// =============================================================================
-
-/** Get Tailwind class for score color */
-export function getScoreColorClass(score: number): string {
-  if (score >= 0.80) return 'score-excellent'
-  if (score >= 0.65) return 'score-good'
-  if (score >= 0.50) return 'score-moderate'
-  return 'score-poor'
-}
-
-/** URL Helpers */
 export const urls = {
-  twitch: (gameName: string) =>
-    `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`,
-
-  steam: (gameName: string) =>
-    `https://store.steampowered.com/search/?term=${gameName.replace(' ', '+')}`,
-
-  epic: (gameName: string) =>
-    `https://store.epicgames.com/en-US/browse?q=${gameName.replace(' ', '%20')}`,
-
-  kinguin: (gameName: string) =>
-    `https://kinguin.net/?r=69308&7eb1a6f&search=${encodeURIComponent(gameName)}`,
-
-  igdb: (gameName: string) =>
-    `https://www.igdb.com/search?type=1&q=${encodeURIComponent(gameName)}`,
-
-  youtube: (gameName: string) =>
-    `https://www.youtube.com/results?search_query=${encodeURIComponent(gameName + ' gameplay trailer')}`,
-
-  wikipedia: (gameName: string) =>
-    `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(gameName + ' video game')}`,
-
-  twitterShare: (gameName: string, score: number, channels: number, viewers: number) => {
-    const text = `${gameName} scores ${score}/10 for discoverability
-
-${channels} streamers • ${viewers.toLocaleString()} viewers
-
-Find your game → streamscout.gg`
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`
-  }
-}
-
-// =============================================================================
-// METRIC TOOLTIP CONTENT - Reusable descriptions
-// =============================================================================
-
-export const METRIC_DESCRIPTIONS = {
-  discoverability: 'Can viewers find you? Fewer streamers = you appear higher in the browse list. This is weighted highest (45%) because if nobody sees you, nothing else matters.',
-  viability: "Is there actually an audience? Sweet spot is enough viewers to matter, but not so many that giants dominate. Too few = dead category, too many = you're buried.",
-  engagement: 'Are people really watching? Higher average viewers per channel means an engaged community, not just background noise.',
-  avgViewers: 'Total viewers divided by total streamers. Higher = each streamer gets more eyeballs on average. Below 10 is rough, above 50 is healthy.'
-}
-
-// =============================================================================
-// EXPORTS SUMMARY
-// =============================================================================
-/*
-Buttons:
-  - TwitchButton     (purple)
-  - SteamButton      (steam blue)
-  - EpicButton       (dark gray + border)
-  - KinguinButton    (orange + cart icon)
-  - ShareButton      (sky blue)
-  - InfoButton       (gray)
-  - YouTubeButton    (red)
-  - MatrixButton     (green CTA)
-
-Tooltips:
-  - InfoTooltip      (? icon with hover content)
-  - MetricTooltip    (bottom-positioned for stats)
-
-Display:
-  - MatrixBadge      (header stat badges)
-  - MetricStat       (expanded view stat boxes)
-
-Text:
-  - Heading1, Heading2, BodyText, MutedText, Tagline
-
-Utilities:
-  - getScoreColorClass(score)
-  - urls.twitch(), urls.steam(), urls.kinguin(), etc.
-  - METRIC_DESCRIPTIONS
-
-Usage Example:
-  <TwitchButton href={urls.twitch(game.game_name)} onClick={handleClick}>
-    Twitch
-  </TwitchButton>
-
-  <KinguinButton gameName={game.game_name} />
-*/
+  twitch: (gameName: string) => 
+    `https://www.twitch.tv/directory/category/${encodeURIComponent(gameName)}`,
+  
+  steam: (gameName: string) => 
+    `https://store.steampowered.com/search/?term=${encodeURIComponent(gameName)}`,
+  
+  epic: (gameName: string) => 
+    `https://store.epicgames.com/browse?q=${encodeURIComponent(gameName)}`,
+  
+  igdb: (gameName: string) => 
+    `https://www.igdb.com/search?q=${encodeURIComponent(gameName)}`,
+  
+  youtube: (gameName: string, type = 'gameplay') => 
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(`${gameName} ${type}`)}`,
+  
+  wikipedia: (gameName: string) => 
+    `https://en.wikipedia.org/wiki/${encodeURIComponent(gameName.replace(/ /g, '_'))}`,
+};
