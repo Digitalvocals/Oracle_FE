@@ -1,0 +1,167 @@
+[
+  {
+    "game_id": "515025",
+    "name": "Overwatch 2",
+    "steam": false,
+    "epic": false,
+    "battlenet": "https://overwatch.blizzard.com/",
+    "free": true
+  },
+  {
+    "game_id": "21779",
+    "name": "League of Legends",
+    "steam": false,
+    "epic": false,
+    "riot": "https://www.leagueoflegends.com/",
+    "free": true
+  },
+  {
+    "game_id": "516575",
+    "name": "Valorant",
+    "steam": false,
+    "epic": false,
+    "riot": "https://playvalorant.com/",
+    "free": true
+  },
+  {
+    "game_id": "33214",
+    "name": "Fortnite",
+    "steam": false,
+    "epic": "https://store.epicgames.com/p/fortnite",
+    "free": true
+  },
+  {
+    "game_id": "138585",
+    "name": "Hearthstone",
+    "steam": false,
+    "epic": false,
+    "battlenet": "https://hearthstone.blizzard.com/",
+    "free": true
+  },
+  {
+    "game_id": "32399",
+    "name": "Counter-Strike 2",
+    "steam": "https://store.steampowered.com/app/730/CounterStrike_2/",
+    "epic": false,
+    "free": true
+  },
+  {
+    "game_id": "32982",
+    "name": "Grand Theft Auto V",
+    "steam": "https://store.steampowered.com/app/271590/Grand_Theft_Auto_V/",
+    "epic": "https://store.epicgames.com/p/grand-theft-auto-v",
+    "free": false
+  },
+  {
+    "game_id": "512710",
+    "name": "Call of Duty: Warzone",
+    "steam": "https://store.steampowered.com/app/1962663/Call_of_Duty_Warzone/",
+    "epic": false,
+    "battlenet": "https://www.callofduty.com/warzone",
+    "free": true
+  },
+  {
+    "game_id": "29595",
+    "name": "Dota 2",
+    "steam": "https://store.steampowered.com/app/570/Dota_2/",
+    "epic": false,
+    "free": true
+  },
+  {
+    "game_id": "511224",
+    "name": "Apex Legends",
+    "steam": "https://store.steampowered.com/app/1172470/Apex_Legends/",
+    "epic": false,
+    "free": true
+  },
+  {
+    "game_id": "27471",
+    "name": "Minecraft",
+    "steam": false,
+    "epic": false,
+    "official": "https://www.minecraft.net/",
+    "free": false
+  },
+  {
+    "game_id": "18122",
+    "name": "World of Warcraft",
+    "steam": false,
+    "epic": false,
+    "battlenet": "https://worldofwarcraft.blizzard.com/",
+    "free": false
+  },
+  {
+    "game_id": "460630",
+    "name": "Tom Clancy's Rainbow Six Siege",
+    "steam": "https://store.steampowered.com/app/359550/",
+    "epic": false,
+    "free": false
+  },
+  {
+    "game_id": "493057",
+    "name": "PUBG: BATTLEGROUNDS",
+    "steam": "https://store.steampowered.com/app/578080/PUBG_BATTLEGROUNDS/",
+    "epic": false,
+    "free": true
+  },
+  {
+    "game_id": "513143",
+    "name": "Teamfight Tactics",
+    "steam": false,
+    "epic": false,
+    "riot": "https://teamfighttactics.leagueoflegends.com/",
+    "free": true
+  },
+  {
+    "game_id": "65632",
+    "name": "Diablo IV",
+    "steam": "https://store.steampowered.com/app/2344520/Diablo_IV/",
+    "epic": false,
+    "battlenet": "https://diablo4.blizzard.com/",
+    "free": false
+  },
+  {
+    "game_id": "506274",
+    "name": "Legends of Runeterra",
+    "steam": false,
+    "epic": false,
+    "riot": "https://playruneterra.com/",
+    "free": true
+  },
+  {
+    "game_id": "263490",
+    "name": "Rust",
+    "steam": "https://store.steampowered.com/app/252490/Rust/",
+    "epic": false,
+    "free": false
+  },
+  {
+    "game_id": "491487",
+    "name": "Dead by Daylight",
+    "steam": "https://store.steampowered.com/app/381210/Dead_by_Daylight/",
+    "epic": "https://store.epicgames.com/p/dead-by-daylight",
+    "free": false
+  },
+  {
+    "game_id": "491931",
+    "name": "Escape from Tarkov",
+    "steam": false,
+    "epic": false,
+    "official": "https://www.escapefromtarkov.com/",
+    "free": false
+  },
+  {
+    "game_id": "512953",
+    "name": "Elden Ring",
+    "steam": "https://store.steampowered.com/app/1245620/ELDEN_RING/",
+    "epic": false,
+    "free": false
+  },
+  {
+    "game_id": "32507",
+    "name": "Rocket League",
+    "steam": false,
+    "epic": "https://store.epicgames.com/p/rocket-league",
+    "free": true
+  }
+]
