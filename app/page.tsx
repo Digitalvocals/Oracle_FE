@@ -257,8 +257,14 @@ function getStoreButtons(gameId: string, gameName: string): StoreButtons {
   if (mapping) {
     // Known game - use explicit mapping
     return {
-      steam: mapping.steam === false ? null : mapping.steam,
-      epic: mapping.epic === false ? null : mapping.epic,
+      steam: mapping.steam === false ? null : (
+        typeof mapping.steam === 'string' ? mapping.steam : 
+        `https://store.steampowered.com/search/?term=${encodeURIComponent(gameName)}`
+      ),
+      epic: mapping.epic === false ? null : (
+        typeof mapping.epic === 'string' ? mapping.epic :
+        `https://store.epicgames.com/browse?q=${encodeURIComponent(gameName)}`
+      ),
       battlenet: mapping.battlenet || null,
       riot: mapping.riot || null,
       official: mapping.official || null,
