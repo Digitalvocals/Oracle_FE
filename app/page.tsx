@@ -16,7 +16,16 @@ import {
   ShareButton,
   IGDBButton,
   WikipediaButton
+,
+  FavoriteButton,
+  FavoritesFilter,
+  EmptyFavoritesState,
+  UntrackedFavoriteCard,
+  ClearFavoritesButton,
+  UpdatedKinguinButton,
+  KinguinCodeToast
 } from './components/streamscout-ui'
+import { useFavorites } from './hooks/useFavorites'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -344,21 +353,10 @@ export default function Home() {
     if (selectedGenres.length === 0) return true
     return game.genres?.some(g => selectedGenres.includes(g))
   }) || []
-  
-  // US-002: Apply favorites filter
-  const displayedGames = showFavoritesOnly
-    ? filteredOpportunities.filter(game => isFavorited(game.game_id))
-    : filteredOpportunities
-  
-  // US-002: Find untracked favorites (favorited but not in current opportunities)
-  const untrackedFavorites = favorites.filter(fav => 
-    !data?.top_opportunities?.some(game => game.game_id === fav.game_id)
-  )
 
   // NOTE: URL helper functions removed - now handled by component library
   // Keeping only getTwitterShareUrl for special score computation
   
-
   // US-002: Favorites GA4 handlers
   const handleFavoriteToggle = (game: GameOpportunity) => {
     const wasFavorited = isFavorited(game.game_id)
@@ -735,7 +733,6 @@ export default function Home() {
                 </div>
               )}
             </div>
-
 
             {/* US-002: Favorites Filter + Clear Button */}
             <FavoritesFilter 
