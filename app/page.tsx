@@ -213,6 +213,7 @@ interface TimeBlocksProps {
 
 const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   const blockOrder = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
+  const blockLabels = ['12a', '4a', '8a', '12p', '4p', '8p']
   
   const getStatus = (blockKey: string): 'good' | 'ok' | 'avoid' => {
     const block = blocks[blockKey]
@@ -235,16 +236,20 @@ const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   }
 
   return (
-    <div className="flex gap-1 items-center">
-      {blockOrder.map(blockKey => {
+    <div className="flex gap-2 sm:gap-3">
+      {blockOrder.map((blockKey, index) => {
         const status = getStatus(blockKey)
         const isBest = blockKey === bestBlock
         return (
-          <div 
-            key={blockKey}
-            className={`w-3 h-3 rounded-full ${getStatusColor(status)} ${isBest ? 'ring-2 ring-matrix-green' : ''}`}
-            title={`${blockKey} PST: ${status} (ratio: ${blocks[blockKey]?.avg_ratio?.toFixed(1) || 'N/A'})`}
-          />
+          <div key={blockKey} className="flex flex-col items-center gap-1">
+            <div 
+              className={`w-5 h-5 rounded-full ${getStatusColor(status)} ${isBest ? 'ring-2 ring-matrix-green ring-offset-1 ring-offset-gray-900' : ''}`}
+              title={`${blockKey} PST: ${status} (ratio: ${blocks[blockKey]?.avg_ratio?.toFixed(1) || 'N/A'})`}
+            />
+            <span className={`text-[10px] ${isBest ? 'text-matrix-green font-bold' : 'text-gray-500'}`}>
+              {blockLabels[index]}
+            </span>
+          </div>
         )
       })}
     </div>
@@ -945,13 +950,15 @@ export default function Home() {
                         {/* HISTORICAL FEATURES - Time Blocks Visualization */}
                         {analytics && analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
                           <div className="mt-3">
-                            <div className="flex items-center gap-3">
-                              <div className="text-gray-400 text-xs">TIME OF DAY</div>
-                              <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
-                              <div className="text-xs text-gray-500">
-                                <span className="text-green-400">●</span> good 
-                                <span className="text-yellow-400 ml-1">●</span> ok 
-                                <span className="text-red-400 ml-1">●</span> avoid
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                              <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES (PST)</div>
+                              <div className="flex flex-col gap-1">
+                                <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
+                                <div className="text-[10px] text-gray-500 flex gap-2">
+                                  <span><span className="text-green-400">●</span> good</span>
+                                  <span><span className="text-yellow-400">●</span> ok</span>
+                                  <span><span className="text-red-400">●</span> avoid</span>
+                                </div>
                               </div>
                             </div>
                           </div>
