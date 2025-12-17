@@ -392,19 +392,20 @@ export const KinguinConfirmModal: React.FC<KinguinConfirmModalProps> = ({
   const [countdown, setCountdown] = React.useState(3)
 
   React.useEffect(() => {
-    // Auto-open Kinguin after 3 seconds
-    const openTimer = setTimeout(() => {
-      window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
-      onClose()
-    }, 3000)
-
     // Countdown display
     const countdownInterval = setInterval(() => {
-      setCountdown(prev => prev - 1)
+      setCountdown(prev => {
+        if (prev <= 1) {
+          // Time's up - open Kinguin
+          window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
+          onClose()
+          return 0
+        }
+        return prev - 1
+      })
     }, 1000)
 
     return () => {
-      clearTimeout(openTimer)
       clearInterval(countdownInterval)
     }
   }, [gameName, onClose])
