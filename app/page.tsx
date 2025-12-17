@@ -308,6 +308,13 @@ export default function Home() {
   const [warmupStatus, setWarmupStatus] = useState<string>('Initializing...')
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState<string>('')
+  
+  // US-002: Save Favorites state
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
+  const [showKinguinToast, setShowKinguinToast] = useState<boolean>(false)
+  
+  // US-002: Favorites hook
+  const { favorites, isFavorited, addFavorite, removeFavorite, toggleFavorite, clearAllFavorites } = useFavorites()
 
   // HISTORICAL FEATURES - Analytics state
   const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
@@ -337,11 +344,80 @@ export default function Home() {
     if (selectedGenres.length === 0) return true
     return game.genres?.some(g => selectedGenres.includes(g))
   }) || []
+  
+  // US-002: Apply favorites filter
+  const displayedGames = showFavoritesOnly
+    ? filteredOpportunities.filter(game => isFavorited(game.game_id))
+    : filteredOpportunities
+  
+  // US-002: Find untracked favorites (favorited but not in current opportunities)
+  const untrackedFavorites = favorites.filter(fav => 
+    !data?.top_opportunities?.some(game => game.game_id === fav.game_id)
+  )
 
   // NOTE: URL helper functions removed - now handled by component library
   // Keeping only getTwitterShareUrl for special score computation
   
-  // Generate Twitter share URL (kept for score computation logic)
+
+  // US-002: Favorites GA4 handlers
+  const handleFavoriteToggle = (game: GameOpportunity) => {
+    const wasFavorited = isFavorited(game.game_id)
+    toggleFavorite(game.game_id, game.game_name)
+    
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', wasFavorited ? 'remove_favorite' : 'add_favorite', {
+        game_name: game.game_name,
+        game_id: game.game_id
+      })
+    }
+  }
+  
+  const handleViewFavorites = () => {
+    setShowFavoritesOnly(!showFavoritesOnly)
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'view_favorites', {
+        showing_favorites: !showFavoritesOnly
+      })
+    }
+  }
+  
+  const handleClearAllFavorites = () => {
+    if (confirm(`Clear all ${favorites.length} favorites?`)) {
+      clearAllFavorites()
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'clear_all_favorites', {
+          count: favorites.length
+        })
+      }
+    }
+  }
+  
+  const handleKinguinClick = (game: GameOpportunity) => {
+    setShowKinguinToast(true)
+    setTimeout(() => setShowKinguinToast(false), 6000)
+    
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'kinguin_click', {
+        game_name: game.game_name,
+        game_id: game.game_id
+      })
+    }
+  }
+  
+  const handleKinguinCodeCopy = () => {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'kinguin_code_copy')
+    }
+  }
+  
+  const handleKinguinToastDismiss = () => {
+    setShowKinguinToast(false)
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'kinguin_toast_dismiss')
+    }
+  }
+  
+    // Generate Twitter share URL (kept for score computation logic)
   const getShareScore = (game: GameOpportunity): number => {
     return game.discoverability_rating !== undefined 
       ? game.discoverability_rating 
@@ -660,6 +736,53 @@ export default function Home() {
               )}
             </div>
 
+
+            {/* US-002: Favorites Filter + Clear Button */}
+            <FavoritesFilter 
+              showFavoritesOnly={showFavoritesOnly}
+              favoriteCount={favorites.length}
+              onToggle={handleViewFavorites}
+            />
+            
+            {showFavoritesOnly && favorites.length > 0 && (
+              <ClearFavoritesButton 
+                onClick={handleClearAllFavorites}
+                count={favorites.length}
+              />
+            )}
+
+            {/* US-002: Empty state when showing favorites but have none */}
+            {showFavoritesOnly && favorites.length === 0 ? (
+              <EmptyFavoritesState />
+            ) : showFavoritesOnly && displayedGames.length === 0 && untrackedFavorites.length === 0 ? (
+              <div className="text-center py-12 text-matrix-green/50">
+                None of your favorites match the current filters
+              </div>
+            ) : null}
+            
+            {/* US-002: Show untracked favorites first when in favorites view */}
+            {showFavoritesOnly && untrackedFavorites.length > 0 && (
+              <div className="space-y-4 mb-6">
+                {untrackedFavorites.map(fav => (
+                  <UntrackedFavoriteCard 
+                    key={fav.game_id}
+                    gameName={fav.game_name}
+                    addedAt={fav.added_at}
+                    onRemove={() => {
+                      removeFavorite(fav.game_id)
+                      if (typeof window !== 'undefined' && (window as any).gtag) {
+                        (window as any).gtag('event', 'remove_favorite', {
+                          game_name: fav.game_name,
+                          game_id: fav.game_id,
+                          source: 'untracked_card'
+                        })
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
             <div className="grid gap-4">
               {filteredOpportunities.length === 0 && (selectedGenres.length > 0 || searchQuery) ? (
                 <div className="text-center py-12 text-matrix-green/50">
@@ -668,7 +791,7 @@ export default function Home() {
                     : 'No games found matching selected genres. Try different filters.'
                   }
                 </div>
-              ) : filteredOpportunities.map((game) => {
+              ) : displayedGames.map((game) => {
                 // HISTORICAL FEATURES - Fetch analytics when game is expanded
                 const analytics = analyticsCache[game.game_id]
                 if (selectedGame?.rank === game.rank && !analytics && !loadingAnalytics[game.game_id]) {
@@ -722,6 +845,14 @@ export default function Home() {
                               <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
                                 {game.game_name}
                               </h2>
+                              {/* US-002: Favorite Button */}
+                              <FavoriteButton 
+                                isFavorited={isFavorited(game.game_id)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleFavoriteToggle(game)
+                                }}
+                              />
                               {/* HISTORICAL FEATURES - Trend Arrow (moved to title) */}
                               {analytics && (
                                 <TrendArrow direction={analytics.trend} change={analytics.trendMagnitude} />
@@ -803,9 +934,10 @@ export default function Home() {
                             onClick={() => trackExternalClick('twitch', game)}
                           />
 
-                          <KinguinButton 
+                          <UpdatedKinguinButton 
                             gameName={game.game_name}
                             onClick={() => trackExternalClick('kinguin', game)}
+                            onCodeShow={() => handleKinguinClick(game)}
                           />
 
                           {/* SMART PURCHASE LINKS (US-028) */}
@@ -993,6 +1125,14 @@ export default function Home() {
             </div>
           </main>
         </div>
+
+        {/* US-002: Kinguin Toast */}
+        {showKinguinToast && (
+          <KinguinCodeToast 
+            onDismiss={handleKinguinToastDismiss}
+            onCopy={handleKinguinCodeCopy}
+          />
+        )}
 
         <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
           <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span> (digitalvocalstv@gmail.com)</p>
