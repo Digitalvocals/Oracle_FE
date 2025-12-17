@@ -353,6 +353,16 @@ export default function Home() {
     if (selectedGenres.length === 0) return true
     return game.genres?.some(g => selectedGenres.includes(g))
   }) || []
+  
+  // US-002: Apply favorites filter
+  const displayedGames = showFavoritesOnly
+    ? filteredOpportunities.filter(game => isFavorited(game.game_id))
+    : filteredOpportunities
+  
+  // US-002: Find untracked favorites (favorited but not in current opportunities)
+  const untrackedFavorites = favorites.filter(fav => 
+    !data?.top_opportunities?.some(game => game.game_id === fav.game_id)
+  )
 
   // NOTE: URL helper functions removed - now handled by component library
   // Keeping only getTwitterShareUrl for special score computation
@@ -415,7 +425,7 @@ export default function Home() {
     }
   }
   
-    // Generate Twitter share URL (kept for score computation logic)
+  // Generate Twitter share URL (kept for score computation logic)
   const getShareScore = (game: GameOpportunity): number => {
     return game.discoverability_rating !== undefined 
       ? game.discoverability_rating 
@@ -734,6 +744,7 @@ export default function Home() {
               )}
             </div>
 
+
             {/* US-002: Favorites Filter + Clear Button */}
             <FavoritesFilter 
               showFavoritesOnly={showFavoritesOnly}
@@ -931,10 +942,9 @@ export default function Home() {
                             onClick={() => trackExternalClick('twitch', game)}
                           />
 
-                          <UpdatedKinguinButton 
+                          <KinguinButton 
                             gameName={game.game_name}
                             onClick={() => trackExternalClick('kinguin', game)}
-                            onCodeShow={() => handleKinguinClick(game)}
                           />
 
                           {/* SMART PURCHASE LINKS (US-028) */}
@@ -1122,6 +1132,7 @@ export default function Home() {
             </div>
           </main>
         </div>
+
 
         {/* US-002: Kinguin Toast */}
         {showKinguinToast && (
