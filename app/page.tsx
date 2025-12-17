@@ -22,8 +22,7 @@ import {
   EmptyFavoritesState,
   UntrackedFavoriteCard,
   ClearFavoritesButton,
-  UpdatedKinguinButton,
-  KinguinCodeToast
+  UpdatedKinguinButton
 } from './components/streamscout-ui'
 import { useFavorites } from './hooks/useFavorites'
 
@@ -320,8 +319,6 @@ export default function Home() {
   
   // US-002: Save Favorites state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
-  const [showKinguinToast, setShowKinguinToast] = useState<boolean>(false)
-  
   // US-002: Favorites hook
   const { favorites, isFavorited, addFavorite, removeFavorite, toggleFavorite, clearAllFavorites } = useFavorites()
 
@@ -400,32 +397,9 @@ export default function Home() {
     }
   }
   
-  const handleKinguinClick = (game: GameOpportunity) => {
-    setShowKinguinToast(true)
-    setTimeout(() => setShowKinguinToast(false), 6000)
-    
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'kinguin_click', {
-        game_name: game.game_name,
-        game_id: game.game_id
-      })
-    }
-  }
   
-  const handleKinguinCodeCopy = () => {
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'kinguin_code_copy')
-    }
-  }
   
-  const handleKinguinToastDismiss = () => {
-    setShowKinguinToast(false)
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'kinguin_toast_dismiss')
-    }
-  }
-  
-  // Generate Twitter share URL (kept for score computation logic)
+ // Generate Twitter share URL (kept for score computation logic)
   const getShareScore = (game: GameOpportunity): number => {
     return game.discoverability_rating !== undefined 
       ? game.discoverability_rating 
@@ -945,7 +919,6 @@ export default function Home() {
                           <UpdatedKinguinButton 
                             gameName={game.game_name}
                             onClick={() => trackExternalClick('kinguin', game)}
-                            onCodeShow={() => handleKinguinClick(game)}
                           />
 
                           {/* SMART PURCHASE LINKS (US-028) */}
@@ -1134,14 +1107,6 @@ export default function Home() {
           </main>
         </div>
 
-
-        {/* US-002: Kinguin Toast */}
-        {showKinguinToast && (
-          <KinguinCodeToast 
-            onDismiss={handleKinguinToastDismiss}
-            onCopy={handleKinguinCodeCopy}
-          />
-        )}
 
         <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
           <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span> (digitalvocalstv@gmail.com)</p>

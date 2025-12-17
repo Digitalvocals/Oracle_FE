@@ -529,34 +529,66 @@ export const ClearFavoritesButton: React.FC<ClearFavoritesButtonProps> = ({
 interface UpdatedKinguinButtonProps {
   gameName: string
   onClick?: () => void
-  onCodeShow?: () => void
 }
 
 export const UpdatedKinguinButton: React.FC<UpdatedKinguinButtonProps> = ({ 
   gameName,
-  onClick,
-  onCodeShow
+  onClick
 }) => {
-  const handleClick = (e: React.MouseEvent) => {
+  const [showCopied, setShowCopied] = React.useState(false)
+
+  const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation()
     
-    // Open Kinguin in new tab
-    window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
-    
-    onClick?.()
-    onCodeShow?.()
+    try {
+      // Copy code to clipboard
+      await navigator.clipboard.writeText('STREAMSCOUT')
+      
+      // Show "copied" feedback
+      setShowCopied(true)
+      setTimeout(() => setShowCopied(false), 2000)
+      
+      // Track GA4 event
+      onClick?.()
+      
+      // Open Kinguin after brief delay (so user sees feedback)
+      setTimeout(() => {
+        window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
+      }, 300)
+      
+    } catch (err) {
+      console.error('Failed to copy code:', err)
+      // Still open Kinguin even if copy fails
+      window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
+    }
   }
 
   return (
-    <button
-      onClick={handleClick}
-      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-105 leading-none"
-    >
-      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-      </svg>
-      5% OFF
-    </button>
+    <div className="relative inline-block">
+      <button
+        onClick={handleClick}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-105 leading-none"
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+        </svg>
+        5% OFF
+      </button>
+      
+      {/* Copied feedback tooltip */}
+      {showCopied && (
+        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-semibold whitespace-nowrap z-50 animate-fade-in">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span>STREAMSCOUT copied!</span>
+          </div>
+          {/* Arrow pointing down */}
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-green-500"></div>
+        </div>
+      )}
+    </div>
   )
 }
 
