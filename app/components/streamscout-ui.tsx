@@ -539,6 +539,10 @@ export const UpdatedKinguinButton: React.FC<UpdatedKinguinButtonProps> = ({
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
+    
+    // Open Kinguin in new tab
+    window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
+    
     onClick?.()
     onCodeShow?.()
   }
