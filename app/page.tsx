@@ -942,9 +942,10 @@ export default function Home() {
                             onClick={() => trackExternalClick('twitch', game)}
                           />
 
-                          <KinguinButton 
+                          <UpdatedKinguinButton 
                             gameName={game.game_name}
                             onClick={() => trackExternalClick('kinguin', game)}
+                            onCodeShow={() => handleKinguinClick(game)}
                           />
 
                           {/* SMART PURCHASE LINKS (US-028) */}
