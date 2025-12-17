@@ -22,8 +22,8 @@ const changelog: ChangelogEntry[] = [
       "Favorites persist across sessions - Your saved games stay even after closing the browser",
       "Untracked favorites indicator - See when your favorites aren't in the current results",
       "Clear all favorites - Remove all saved games with confirmation dialog",
-      "Game purchase discounts - Get an extra 5% off when buying games (code: STREAMSCOUT)",
-      "Stacked savings - Combine store discounts with our code for 10-20% total savings vs retail",
+      "Game purchase discounts at Kinguin - Get an extra 5% off with code STREAMSCOUT",
+      "Stacked savings - Kinguin's discounts + our code = 10-20% total savings vs retail",
       "Auto-copy discount code - Code copies to your clipboard automatically",
       "Optional support - Using our discount code helps keep StreamScout free"
     ],
