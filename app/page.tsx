@@ -11,7 +11,11 @@ import {
   EpicButton, 
   BattleNetButton, 
   RiotButton, 
-  OfficialButton 
+  OfficialButton,
+  KinguinButton,
+  ShareButton,
+  IGDBButton,
+  WikipediaButton
 } from './components/streamscout-ui'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
@@ -323,37 +327,14 @@ export default function Home() {
     return game.genres?.some(g => selectedGenres.includes(g))
   }) || []
 
-  // Helper function to create Twitch search URL
-  const getTwitchUrl = (gameName: string) => {
-    return `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`
-  }
-
-  // Helper functions for game info URLs
-  const getIGDBUrl = (gameName: string) => {
-    return `https://www.igdb.com/search?type=1&q=${encodeURIComponent(gameName)}`
-  }
-
-  const getYouTubeUrl = (gameName: string) => {
-    return `https://www.youtube.com/results?search_query=${encodeURIComponent(gameName + ' gameplay trailer')}`
-  }
-
-  const getWikipediaUrl = (gameName: string) => {
-    return `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(gameName + ' video game')}`
-  }
-
-  // Generate Twitter share URL
-  const getTwitterShareUrl = (game: GameOpportunity) => {
-    const score = game.discoverability_rating !== undefined 
+  // NOTE: URL helper functions removed - now handled by component library
+  // Keeping only getTwitterShareUrl for special score computation
+  
+  // Generate Twitter share URL (kept for score computation logic)
+  const getShareScore = (game: GameOpportunity): number => {
+    return game.discoverability_rating !== undefined 
       ? game.discoverability_rating 
-      : (game.overall_score * 10).toFixed(1);
-    
-    const text = `${game.game_name} scores ${score}/10 for discoverability
-
-${game.channels} streamers • ${game.total_viewers.toLocaleString()} viewers
-
-Find your game → streamscout.gg`;
-    
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+      : game.overall_score * 10
   }
 
   // External click tracking for GA4
@@ -806,34 +787,15 @@ Find your game → streamscout.gg`;
                         </div>
 
                         <div className="flex flex-wrap gap-2 mt-2">
-                          <a
-                            href={getTwitchUrl(game.game_name)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              trackExternalClick('twitch', game);
-                            }}
-                          >
-                            <span className="text-sm">📺</span> Twitch
-                          </a>
+                          <TwitchButton 
+                            gameName={game.game_name}
+                            onClick={() => trackExternalClick('twitch', game)}
+                          />
 
-                          <a
-                            href={`https://www.kinguin.net/listing?&query%5D=${encodeURIComponent(game.game_name)}&active=1&r=6930867eb1a6f`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-105 leading-none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              trackExternalClick('kinguin', game);
-                            }}
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-                            </svg>
-                            Buy
-                          </a>
+                          <KinguinButton 
+                            gameName={game.game_name}
+                            onClick={() => trackExternalClick('kinguin', game)}
+                          />
 
                           {/* SMART PURCHASE LINKS (US-028) */}
                           {(() => {
@@ -889,18 +851,13 @@ Find your game → streamscout.gg`;
                             )
                           })()}
 
-                          <a
-                            href={getTwitterShareUrl(game)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              trackExternalClick('share_twitter', game);
-                            }}
-                          >
-                            Share
-                          </a>
+                          <ShareButton 
+                            gameName={game.game_name}
+                            score={getShareScore(game)}
+                            channels={game.channels}
+                            viewers={game.total_viewers}
+                            onClick={() => trackExternalClick('share_twitter', game)}
+                          />
                         </div>
                       </div>
                     </div>
@@ -982,42 +939,18 @@ Find your game → streamscout.gg`;
                         <div className="mt-4 pt-4 border-t border-matrix-green/20">
                           <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
                           <div className="flex flex-wrap gap-2">
-                            <a
-                              href={getIGDBUrl(game.game_name)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                trackExternalClick('igdb', game);
-                              }}
-                            >
-                              📖 Game Info (IGDB)
-                            </a>
-                            <a
-                              href={getYouTubeUrl(game.game_name)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800/50 text-gray-200 text-xs font-medium transition-colors border border-red-800/50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                trackExternalClick('youtube', game);
-                              }}
-                            >
-                              ▶️ Gameplay & Trailers
-                            </a>
-                            <a
-                              href={getWikipediaUrl(game.game_name)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                trackExternalClick('wikipedia', game);
-                              }}
-                            >
-                              📚 Wikipedia
-                            </a>
+                            <IGDBButton 
+                              gameName={game.game_name}
+                              onClick={() => trackExternalClick('igdb', game)}
+                            />
+                            <YouTubeButton 
+                              gameName={game.game_name}
+                              onClick={() => trackExternalClick('youtube', game)}
+                            />
+                            <WikipediaButton 
+                              gameName={game.game_name}
+                              onClick={() => trackExternalClick('wikipedia', game)}
+                            />
                           </div>
                         </div>
 
