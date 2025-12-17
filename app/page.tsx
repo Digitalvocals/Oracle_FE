@@ -63,6 +63,12 @@ interface GameAnalytics {
   bestTime: string
   status: 'good' | 'ok' | 'avoid' | 'unknown'
   dataDays: number
+  timeBlocks?: {
+    [key: string]: {
+      avg_ratio: number
+      sample_count: number
+    }
+  }
 }
 
 interface AnalysisData {
@@ -931,6 +937,21 @@ export default function Home() {
                               />
                               <div className="text-xs text-gray-400">
                                 {analytics.trendMagnitude > 0 ? '+' : ''}{analytics.trendMagnitude.toFixed(1)}% change
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* HISTORICAL FEATURES - Time Blocks Visualization */}
+                        {analytics && analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
+                          <div className="mt-3">
+                            <div className="flex items-center gap-3">
+                              <div className="text-gray-400 text-xs">TIME OF DAY</div>
+                              <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
+                              <div className="text-xs text-gray-500">
+                                <span className="text-green-400">●</span> good 
+                                <span className="text-yellow-400 ml-1">●</span> ok 
+                                <span className="text-red-400 ml-1">●</span> avoid
                               </div>
                             </div>
                           </div>
