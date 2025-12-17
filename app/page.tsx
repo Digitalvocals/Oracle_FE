@@ -22,7 +22,8 @@ import {
   EmptyFavoritesState,
   UntrackedFavoriteCard,
   ClearFavoritesButton,
-  UpdatedKinguinButton
+  UpdatedKinguinButton,
+  KinguinConfirmModal
 } from './components/streamscout-ui'
 import { useFavorites } from './hooks/useFavorites'
 
@@ -319,6 +320,10 @@ export default function Home() {
   
   // US-002: Save Favorites state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
+  
+  // US-002: Kinguin modal state
+  const [showKinguinModal, setShowKinguinModal] = useState<boolean>(false)
+  const [kinguinGameName, setKinguinGameName] = useState<string>('')
   // US-002: Favorites hook
   const { favorites, isFavorited, addFavorite, removeFavorite, toggleFavorite, clearAllFavorites } = useFavorites()
 
@@ -394,6 +399,18 @@ export default function Home() {
           count: favorites.length
         })
       }
+    }
+  }
+  
+  const handleKinguinClick = (game: GameOpportunity) => {
+    setKinguinGameName(game.game_name)
+    setShowKinguinModal(true)
+    
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'kinguin_click', {
+        game_name: game.game_name,
+        game_id: game.game_id
+      })
     }
   }
   
@@ -918,7 +935,10 @@ export default function Home() {
 
                           <UpdatedKinguinButton 
                             gameName={game.game_name}
-                            onClick={() => trackExternalClick('kinguin', game)}
+                            onClick={() => {
+                              trackExternalClick('kinguin', game)
+                              handleKinguinClick(game)
+                            }}
                           />
 
                           {/* SMART PURCHASE LINKS (US-028) */}
@@ -1107,6 +1127,15 @@ export default function Home() {
           </main>
         </div>
 
+
+
+        {/* US-002: Kinguin Confirmation Modal */}
+        {showKinguinModal && (
+          <KinguinConfirmModal 
+            gameName={kinguinGameName}
+            onClose={() => setShowKinguinModal(false)}
+          />
+        )}
 
         <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
           <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span> (digitalvocalstv@gmail.com)</p>

@@ -378,6 +378,117 @@ export const WikipediaButton: React.FC<WikipediaButtonProps> = ({
 }
 
 // ============================================================================
+
+// KinguinConfirmModal Component - Confirmation after clicking Kinguin button
+interface KinguinConfirmModalProps {
+  gameName: string
+  onClose: () => void
+}
+
+export const KinguinConfirmModal: React.FC<KinguinConfirmModalProps> = ({ 
+  gameName,
+  onClose
+}) => {
+  const [countdown, setCountdown] = React.useState(3)
+
+  React.useEffect(() => {
+    // Auto-open Kinguin after 3 seconds
+    const openTimer = setTimeout(() => {
+      window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
+      onClose()
+    }, 3000)
+
+    // Countdown display
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => prev - 1)
+    }, 1000)
+
+    return () => {
+      clearTimeout(openTimer)
+      clearInterval(countdownInterval)
+    }
+  }, [gameName, onClose])
+
+  const handleGoNow = () => {
+    window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
+    onClose()
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/60 z-50 animate-fade-in"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-scale-in">
+        <div className="bg-slate-900 border-2 border-green-500 rounded-lg p-8 shadow-2xl max-w-md w-full mx-4 relative">
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Success icon */}
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Headline */}
+          <h3 className="text-2xl font-bold text-green-400 mb-3 text-center">
+            Code Copied!
+          </h3>
+
+          {/* Discount code */}
+          <div className="bg-slate-800 border border-green-500/30 rounded-lg p-4 mb-4">
+            <p className="text-3xl text-center text-green-400 font-mono font-bold tracking-wider">
+              STREAMSCOUT
+            </p>
+          </div>
+
+          {/* Value proposition */}
+          <div className="text-center mb-6">
+            <p className="text-white text-lg mb-1">
+              Get 5% off already-discounted games
+            </p>
+            <p className="text-gray-400 text-sm">
+              (Save up to 20% vs retail stores)
+            </p>
+          </div>
+
+          {/* Go button */}
+          <button
+            onClick={handleGoNow}
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
+          >
+            <span className="text-lg">Go to Kinguin</span>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+
+          {/* Auto-proceed countdown */}
+          <p className="text-center text-gray-500 text-sm mt-4">
+            Opening automatically in {countdown}s...
+          </p>
+        </div>
+      </div>
+    </>
+  )
+}
+
+
 // US-002: SAVE FAVORITES + KINGUIN ENHANCEMENT COMPONENTS
 // ============================================================================
 
@@ -535,60 +646,30 @@ export const UpdatedKinguinButton: React.FC<UpdatedKinguinButtonProps> = ({
   gameName,
   onClick
 }) => {
-  const [showCopied, setShowCopied] = React.useState(false)
-
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation()
     
     try {
       // Copy code to clipboard
       await navigator.clipboard.writeText('STREAMSCOUT')
-      
-      // Show "copied" feedback
-      setShowCopied(true)
-      setTimeout(() => setShowCopied(false), 2000)
-      
-      // Track GA4 event
-      onClick?.()
-      
-      // Open Kinguin after brief delay (so user sees feedback)
-      setTimeout(() => {
-        window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
-      }, 300)
-      
     } catch (err) {
       console.error('Failed to copy code:', err)
-      // Still open Kinguin even if copy fails
-      window.open(urls.kinguin(gameName), '_blank', 'noopener,noreferrer')
     }
+    
+    // Trigger callback (opens modal)
+    onClick?.()
   }
 
   return (
-    <div className="relative inline-block">
-      <button
-        onClick={handleClick}
-        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-105 leading-none"
-      >
-        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-        </svg>
-        5% OFF
-      </button>
-      
-      {/* Copied feedback tooltip */}
-      {showCopied && (
-        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-semibold whitespace-nowrap z-50 animate-fade-in">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            <span>STREAMSCOUT copied!</span>
-          </div>
-          {/* Arrow pointing down */}
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-green-500"></div>
-        </div>
-      )}
-    </div>
+    <button
+      onClick={handleClick}
+      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-105 leading-none"
+    >
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+      </svg>
+      5% OFF
+    </button>
   )
 }
 
