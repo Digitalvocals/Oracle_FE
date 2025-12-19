@@ -147,45 +147,66 @@ const Sparkline: React.FC<SparklineProps> = ({
   )
 }
 
-// HISTORICAL FEATURES - Best Time Formatter (with local timezone conversion)
-const formatBestTime = (block: string): string => {
-  // Block represents PST hours (UTC-8)
-  const blockStartHours: Record<string, number> = {
-    "00-04": 0,
-    "04-08": 4,
-    "08-12": 8,
-    "12-16": 12,
-    "16-20": 16,
-    "20-24": 20
-  }
+// HISTORICAL FEATURES - Best Time Formatter (Dynamic Timezone)
+const formatBestTime = (pstBlock: string): string => {
+  // Get user's timezone
+  const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
   
-  const startHourPST = blockStartHours[block]
-  if (startHourPST === undefined) return block
+  // Parse PST block
+  const [pstStart, pstEnd] = pstBlock.split('-').map(Number)
   
-  // Create a date in PST, convert to local
-  // PST is UTC-8, so add 8 to get UTC, then JS handles local conversion
+  // Create date objects in PST, convert to user timezone
+  const pstTz = 'America/Los_Angeles'
   const now = new Date()
-  const pstOffset = -8 // PST is UTC-8
   
-  // Create dates for start and end of block in UTC
-  const startUTC = new Date(now)
-  startUTC.setUTCHours(startHourPST - pstOffset, 0, 0, 0)
+  // Create start time in PST
+  const startDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
+  startDate.setHours(pstStart, 0, 0, 0)
   
-  const endUTC = new Date(now)
-  endUTC.setUTCHours(startHourPST - pstOffset + 4, 0, 0, 0)
+  // Create end time in PST
+  const endDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
+  endDate.setHours(pstEnd, 0, 0, 0)
   
-  // Format in user's local timezone
-  const formatHour = (date: Date): string => {
-    const hours = date.getHours()
-    const ampm = hours >= 12 ? 'PM' : 'AM'
-    const hour12 = hours % 12 || 12
-    return `${hour12} ${ampm}`
-  }
+  // Format in user's timezone with shortOffset
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    timeZone: userTz,
+    timeZoneName: 'shortOffset'
+  })
   
-  // Get timezone abbreviation
-  const shortTz = new Date().toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop()
+  // Extract formatted parts
+  const startFormatted = formatter.format(startDate)
+  const endFormatted = formatter.format(endDate)
   
-  return `${formatHour(startUTC)} - ${formatHour(endUTC)} ${shortTz}`
+  // Parse out the offset (appears at end)
+  const offsetMatch = startFormatted.match(/GMT[+-]\d+:?\d*/)
+  const offset = offsetMatch ? offsetMatch[0] : ''
+  
+  const startHour = startFormatted.replace(offset, '').trim()
+  const endHour = endFormatted.replace(offset, '').trim()
+  
+  return `${startHour} - ${endHour} ${offset}`
+}
+
+// HISTORICAL FEATURES - Get Localized Block Label
+const getLocalizedBlockLabel = (pstBlock: string): string => {
+  const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const pstStart = parseInt(pstBlock.split('-')[0])
+  
+  // Convert PST hour to user's timezone
+  const pstTz = 'America/Los_Angeles'
+  const date = new Date()
+  const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
+  const localDate = new Date(pstDateStr)
+  localDate.setHours(pstStart, 0, 0, 0)
+  
+  // Get the hour in user's timezone
+  const localHour = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    timeZone: userTz
+  }).format(localDate)
+  
+  return localHour.toLowerCase().replace(' ', '')
 }
 
 // HISTORICAL FEATURES - Clean Recommendation Text
@@ -237,7 +258,7 @@ const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
   )
 }
 
-// HISTORICAL FEATURES - Time Blocks Component
+// HISTORICAL FEATURES - Time Blocks Component (Dynamic Labels)
 interface TimeBlocksProps {
   blocks: {
     [key: string]: {
@@ -250,7 +271,9 @@ interface TimeBlocksProps {
 
 const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   const blockOrder = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
-  const blockLabels = ['12a', '4a', '8a', '12p', '4p', '8p']
+  
+  // Generate localized labels dynamically
+  const blockLabels = blockOrder.map(block => getLocalizedBlockLabel(block))
   
   const getStatus = (blockKey: string): 'good' | 'ok' | 'avoid' => {
     const block = blocks[blockKey]
@@ -1112,7 +1135,7 @@ export default function Home() {
                         {analytics && analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
                           <div className="mt-3">
                             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                              <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES (PST)</div>
+                              <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES</div>
                               <div className="flex flex-col gap-1">
                                 <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
                                 <div className="text-[10px] text-gray-500 flex gap-2">
