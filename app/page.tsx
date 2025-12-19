@@ -147,17 +147,130 @@ const Sparkline: React.FC<SparklineProps> = ({
   )
 }
 
-// HISTORICAL FEATURES - Best Time Formatter
-const formatBestTime = (block: string): string => {
-  const timeMap: Record<string, string> = {
-    "00-04": "12 AM - 4 AM PST",
-    "04-08": "4 AM - 8 AM PST",
-    "08-12": "8 AM - 12 PM PST",
-    "12-16": "12 PM - 4 PM PST",
-    "16-20": "4 PM - 8 PM PST",
-    "20-24": "8 PM - 12 AM PST"
-  }
-  return timeMap[block] || block
+// HISTORICAL FEATURES - Timezone Name Mapping
+const TIMEZONE_NAMES: Record<string, string> = {
+  // US Timezones
+  'America/Los_Angeles': 'PST',
+  'America/Denver': 'MST',
+  'America/Chicago': 'CST',
+  'America/New_York': 'EST',
+  'America/Anchorage': 'AKST',
+  'Pacific/Honolulu': 'HST',
+  
+  // Europe
+  'Europe/London': 'GMT',
+  'Europe/Paris': 'CET',
+  'Europe/Berlin': 'CET',
+  'Europe/Rome': 'CET',
+  'Europe/Madrid': 'CET',
+  'Europe/Amsterdam': 'CET',
+  'Europe/Brussels': 'CET',
+  'Europe/Vienna': 'CET',
+  'Europe/Stockholm': 'CET',
+  'Europe/Copenhagen': 'CET',
+  'Europe/Warsaw': 'CET',
+  'Europe/Prague': 'CET',
+  'Europe/Budapest': 'CET',
+  'Europe/Athens': 'EET',
+  'Europe/Helsinki': 'EET',
+  'Europe/Bucharest': 'EET',
+  'Europe/Moscow': 'MSK',
+  
+  // Asia
+  'Asia/Tokyo': 'JST',
+  'Asia/Seoul': 'KST',
+  'Asia/Shanghai': 'CST',
+  'Asia/Hong_Kong': 'HKT',
+  'Asia/Singapore': 'SGT',
+  'Asia/Bangkok': 'ICT',
+  'Asia/Jakarta': 'WIB',
+  'Asia/Manila': 'PHT',
+  'Asia/Kolkata': 'IST',
+  'Asia/Dubai': 'GST',
+  'Asia/Karachi': 'PKT',
+  
+  // Oceania
+  'Australia/Sydney': 'AEDT',
+  'Australia/Melbourne': 'AEDT',
+  'Australia/Brisbane': 'AEST',
+  'Australia/Perth': 'AWST',
+  'Pacific/Auckland': 'NZDT',
+  
+  // Americas (Other)
+  'America/Toronto': 'EST',
+  'America/Vancouver': 'PST',
+  'America/Mexico_City': 'CST',
+  'America/Sao_Paulo': 'BRT',
+  'America/Argentina/Buenos_Aires': 'ART',
+  
+  // Middle East
+  'Asia/Jerusalem': 'IST',
+  'Asia/Riyadh': 'AST',
+}
+
+// HISTORICAL FEATURES - Best Time Formatter (Named Timezones + Fallback)
+const formatBestTime = (pstBlock: string): string => {
+  // Get user's timezone
+  const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  
+  // Parse PST block
+  const [pstStart, pstEnd] = pstBlock.split('-').map(Number)
+  
+  // Create date objects in PST, convert to user timezone
+  const pstTz = 'America/Los_Angeles'
+  const now = new Date()
+  
+  // Create start time in PST
+  const startDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
+  startDate.setHours(pstStart, 0, 0, 0)
+  
+  // Create end time in PST
+  const endDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
+  endDate.setHours(pstEnd, 0, 0, 0)
+  
+  // Format in user's timezone
+  const hourFormatter = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    timeZone: userTz
+  })
+  
+  const startHour = hourFormatter.format(startDate)
+  const endHour = hourFormatter.format(endDate)
+  
+  // Get timezone name (named if available, GMT offset as fallback)
+  const timezoneName = TIMEZONE_NAMES[userTz] || (() => {
+    const offsetFormatter = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      timeZone: userTz,
+      timeZoneName: 'shortOffset'
+    })
+    const formatted = offsetFormatter.format(startDate)
+    const offsetMatch = formatted.match(/GMT[+-]\d+:?\d*/)
+    return offsetMatch ? offsetMatch[0] : 'Local'
+  })()
+  
+  return `${startHour} - ${endHour} ${timezoneName}`
+}
+
+// HISTORICAL FEATURES - Get Localized Block Label
+const getLocalizedBlockLabel = (pstBlock: string): string => {
+  const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const pstStart = parseInt(pstBlock.split('-')[0])
+  
+  // Convert PST hour to user's timezone
+  const pstTz = 'America/Los_Angeles'
+  const date = new Date()
+  const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
+  const localDate = new Date(pstDateStr)
+  localDate.setHours(pstStart, 0, 0, 0)
+  
+  // Get the hour in user's timezone
+  const localHour = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    timeZone: userTz
+  }).format(localDate)
+  
+  return localHour.toLowerCase().replace(' ', '')
 }
 
 // HISTORICAL FEATURES - Clean Recommendation Text
@@ -209,7 +322,7 @@ const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
   )
 }
 
-// HISTORICAL FEATURES - Time Blocks Component
+// HISTORICAL FEATURES - Time Blocks Component (Dynamic Labels)
 interface TimeBlocksProps {
   blocks: {
     [key: string]: {
@@ -222,7 +335,9 @@ interface TimeBlocksProps {
 
 const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   const blockOrder = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
-  const blockLabels = ['12a', '4a', '8a', '12p', '4p', '8p']
+  
+  // Generate localized labels dynamically
+  const blockLabels = blockOrder.map(block => getLocalizedBlockLabel(block))
   
   const getStatus = (blockKey: string): 'good' | 'ok' | 'avoid' => {
     const block = blocks[blockKey]
@@ -1084,7 +1199,7 @@ export default function Home() {
                         {analytics && analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
                           <div className="mt-3">
                             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                              <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES (PST)</div>
+                              <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES</div>
                               <div className="flex flex-col gap-1">
                                 <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
                                 <div className="text-[10px] text-gray-500 flex gap-2">
