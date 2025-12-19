@@ -953,7 +953,7 @@ export default function Home() {
                           <img
                             src={game.box_art_url}
                             alt={game.game_name}
-                            className="w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
+                            className="w-24 h-32 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none'
                             }}
@@ -985,8 +985,15 @@ export default function Home() {
                                 <TrendArrow direction={analytics.trend} change={analytics.trendMagnitude} />
                               )}
                             </div>
-                            <div className="text-xs sm:text-sm text-gray-300 mt-1">
-                              {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
+                            <div className="flex items-center gap-3 text-sm text-gray-300 mt-1">
+                              <span className="flex items-center gap-1">
+                                <span className="text-matrix-green">👁</span>
+                                {game.total_viewers?.toLocaleString() || 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="text-matrix-green">📺</span>
+                                {game.channels}
+                              </span>
                             </div>
 
                             {game.genres && game.genres.length > 0 && (
