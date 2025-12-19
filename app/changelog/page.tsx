@@ -13,6 +13,29 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "3.5.0",
+    date: "December 17, 2025",
+    title: "Save Favorites & Game Purchase Discounts",
+    added: [
+      "Save Favorites - Heart icon on every game card to save games you want to track",
+      "\"My Favorites\" filter - Toggle to see only your saved games",
+      "Favorites persist across sessions - Your saved games stay even after closing the browser",
+      "Untracked favorites indicator - See when your favorites aren't in the current results",
+      "Clear all favorites - Remove all saved games with confirmation dialog",
+      "Game purchase discounts at Kinguin - Get an extra 5% off with code STREAMSCOUT",
+      "Stacked savings - Kinguin's discounts + our code = 10-20% total savings vs retail",
+      "Auto-copy discount code - Code copies to your clipboard automatically",
+      "Optional support - Using our discount code helps keep StreamScout free",
+      "Localized timezone display - Best streaming times now show in your local timezone (PST, EST, CET, IST, etc.)"
+    ],
+    changed: [
+      "Game cards now include a heart icon for personalization",
+      "Added discount code button to help users save money on game purchases",
+      "Clear confirmation modal shows total savings potential",
+      "\"Best Time to Stream\" automatically converts to your timezone with familiar abbreviations"
+    ]
+  },
+  {
     version: "3.4.0",
     date: "December 16, 2025",
     title: "Smart Purchase Links",
