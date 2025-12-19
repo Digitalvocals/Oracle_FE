@@ -1254,7 +1254,7 @@ export default function Home() {
 
                     {selectedGame?.rank === game.rank && (
                       <div className="mt-4 pt-4 border-t border-matrix-green/30">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="matrix-stat relative">
                             <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                               DISCOVERABILITY
