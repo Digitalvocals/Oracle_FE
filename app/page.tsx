@@ -1090,6 +1090,16 @@ export default function Home() {
                           </div>
                         </div>
 
+                        {/* PHASE 4: BEST TIME - Always Visible on Collapsed Card */}
+                        {analytics && analytics.bestTime && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-xs text-gray-400">BEST TIME:</span>
+                            <span className="text-xs text-matrix-green font-semibold">
+                              {formatBestTime(analytics.bestTime)}
+                            </span>
+                          </div>
+                        )}
+
                         {/* PHASE 2: BUTTON HIERARCHY - Primary (Twitch + Kinguin) always visible */}
                         <div className="flex gap-2 mt-2">
                           <TwitchButton 
