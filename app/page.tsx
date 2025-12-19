@@ -147,17 +147,45 @@ const Sparkline: React.FC<SparklineProps> = ({
   )
 }
 
-// HISTORICAL FEATURES - Best Time Formatter
+// HISTORICAL FEATURES - Best Time Formatter (with local timezone conversion)
 const formatBestTime = (block: string): string => {
-  const timeMap: Record<string, string> = {
-    "00-04": "12 AM - 4 AM PST",
-    "04-08": "4 AM - 8 AM PST",
-    "08-12": "8 AM - 12 PM PST",
-    "12-16": "12 PM - 4 PM PST",
-    "16-20": "4 PM - 8 PM PST",
-    "20-24": "8 PM - 12 AM PST"
+  // Block represents PST hours (UTC-8)
+  const blockStartHours: Record<string, number> = {
+    "00-04": 0,
+    "04-08": 4,
+    "08-12": 8,
+    "12-16": 12,
+    "16-20": 16,
+    "20-24": 20
   }
-  return timeMap[block] || block
+  
+  const startHourPST = blockStartHours[block]
+  if (startHourPST === undefined) return block
+  
+  // Create a date in PST, convert to local
+  // PST is UTC-8, so add 8 to get UTC, then JS handles local conversion
+  const now = new Date()
+  const pstOffset = -8 // PST is UTC-8
+  
+  // Create dates for start and end of block in UTC
+  const startUTC = new Date(now)
+  startUTC.setUTCHours(startHourPST - pstOffset, 0, 0, 0)
+  
+  const endUTC = new Date(now)
+  endUTC.setUTCHours(startHourPST - pstOffset + 4, 0, 0, 0)
+  
+  // Format in user's local timezone
+  const formatHour = (date: Date): string => {
+    const hours = date.getHours()
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    const hour12 = hours % 12 || 12
+    return `${hour12} ${ampm}`
+  }
+  
+  // Get timezone abbreviation
+  const shortTz = new Date().toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop()
+  
+  return `${formatHour(startUTC)} - ${formatHour(endUTC)} ${shortTz}`
 }
 
 // HISTORICAL FEATURES - Clean Recommendation Text
