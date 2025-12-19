@@ -1009,15 +1009,6 @@ export default function Home() {
                               </div>
                             )}
 
-                            {/* HISTORICAL FEATURES - Best Time Display */}
-                            {analytics && analytics.bestTime && (
-                              <div className="mt-2 flex items-center gap-2">
-                                <span className="text-xs text-gray-400">BEST TIME:</span>
-                                <span className="text-xs text-matrix-green font-semibold">
-                                  {formatBestTime(analytics.bestTime)}
-                                </span>
-                              </div>
-                            )}
                           </div>
 
                           <div className="text-right flex-shrink-0 ml-2 pr-1 relative">
