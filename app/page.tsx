@@ -953,7 +953,7 @@ export default function Home() {
                           <img
                             src={game.box_art_url}
                             alt={game.game_name}
-                            className="w-20 h-28 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
+                            className="w-24 h-32 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none'
                             }}
