@@ -25,12 +25,14 @@ const changelog: ChangelogEntry[] = [
       "Game purchase discounts at Kinguin - Get an extra 5% off with code STREAMSCOUT",
       "Stacked savings - Kinguin's discounts + our code = 10-20% total savings vs retail",
       "Auto-copy discount code - Code copies to your clipboard automatically",
-      "Optional support - Using our discount code helps keep StreamScout free"
+      "Optional support - Using our discount code helps keep StreamScout free",
+      "Localized timezone display - Best streaming times now show in your local timezone (PST, EST, CET, IST, etc.)"
     ],
     changed: [
       "Game cards now include a heart icon for personalization",
       "Added discount code button to help users save money on game purchases",
-      "Clear confirmation modal shows total savings potential"
+      "Clear confirmation modal shows total savings potential",
+      "\"Best Time to Stream\" automatically converts to your timezone with familiar abbreviations"
     ]
   },
   {
