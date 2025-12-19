@@ -449,6 +449,16 @@ export default function Home() {
   // PHASE 1: MOBILE TOOLTIP STATE - Track which tooltip is open
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
+  // PHASE 2: MOBILE BUTTON HIERARCHY - Track which game's "More options" is open
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState<{ [gameRank: number]: boolean }>({})
+
+  const toggleMoreOptions = (gameRank: number) => {
+    setMoreOptionsOpen(prev => ({
+      ...prev,
+      [gameRank]: !prev[gameRank]
+    }))
+  }
+
   // Available genre filters
   const GENRE_OPTIONS = [
     'Action', 'Adventure', 'Battle Royale', 'Card Game', 'FPS', 'Fighting',
@@ -1073,7 +1083,8 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        {/* PHASE 2: BUTTON HIERARCHY - Primary (Twitch + Kinguin) always visible */}
+                        <div className="flex gap-2 mt-2">
                           <TwitchButton 
                             gameName={game.game_name}
                             onClick={() => trackExternalClick('twitch', game)}
@@ -1086,7 +1097,10 @@ export default function Home() {
                               handleKinguinClick(game)
                             }}
                           />
+                        </div>
 
+                        {/* PHASE 2: BUTTON HIERARCHY - Secondary buttons on tablet+ */}
+                        <div className="hidden sm:flex gap-2 mt-2 flex-wrap">
                           {/* SMART PURCHASE LINKS (US-028) */}
                           {(() => {
                             const buttons = getStoreButtons(game.game_id, game.game_name)
@@ -1148,6 +1162,84 @@ export default function Home() {
                             viewers={game.total_viewers}
                             onClick={() => trackExternalClick('share_twitter', game)}
                           />
+                        </div>
+
+                        {/* PHASE 2: BUTTON HIERARCHY - Mobile "More options" accordion */}
+                        <div className="sm:hidden mt-2">
+                          <button
+                            onClick={() => toggleMoreOptions(game.rank)}
+                            className="w-full py-3 text-sm text-matrix-green/70 border border-matrix-green/20 rounded-lg hover:bg-matrix-green/10 transition-colors flex items-center justify-center gap-2"
+                          >
+                            {moreOptionsOpen[game.rank] ? 'Less options' : 'More options'}
+                            <span className={`transition-transform ${moreOptionsOpen[game.rank] ? 'rotate-180' : ''}`}>▼</span>
+                          </button>
+
+                          {/* PHASE 2: Secondary buttons in 2-column grid when expanded */}
+                          {moreOptionsOpen[game.rank] && (
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              {/* SMART PURCHASE LINKS (US-028) */}
+                              {(() => {
+                                const buttons = getStoreButtons(game.game_id, game.game_name)
+                                
+                                return (
+                                  <>
+                                    {buttons.steam && (
+                                      <SteamButton 
+                                        gameName={game.game_name} 
+                                        url={buttons.steam}
+                                        isFree={buttons.isFree}
+                                        onClick={() => trackExternalClick('steam', game)}
+                                      />
+                                    )}
+                                    
+                                    {buttons.epic && (
+                                      <EpicButton 
+                                        gameName={game.game_name}
+                                        url={buttons.epic}
+                                        isFree={buttons.isFree}
+                                        onClick={() => trackExternalClick('epic', game)}
+                                      />
+                                    )}
+                                    
+                                    {buttons.battlenet && (
+                                      <BattleNetButton 
+                                        gameName={game.game_name}
+                                        url={buttons.battlenet}
+                                        isFree={buttons.isFree}
+                                        onClick={() => trackExternalClick('battlenet', game)}
+                                      />
+                                    )}
+                                    
+                                    {buttons.riot && (
+                                      <RiotButton 
+                                        gameName={game.game_name}
+                                        url={buttons.riot}
+                                        isFree={buttons.isFree}
+                                        onClick={() => trackExternalClick('riot', game)}
+                                      />
+                                    )}
+                                    
+                                    {buttons.official && (
+                                      <OfficialButton 
+                                        gameName={game.game_name}
+                                        url={buttons.official}
+                                        isFree={buttons.isFree}
+                                        onClick={() => trackExternalClick('official', game)}
+                                      />
+                                    )}
+                                  </>
+                                )
+                              })()}
+
+                              <ShareButton 
+                                gameName={game.game_name}
+                                score={getShareScore(game)}
+                                channels={game.channels}
+                                viewers={game.total_viewers}
+                                onClick={() => trackExternalClick('share_twitter', game)}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
