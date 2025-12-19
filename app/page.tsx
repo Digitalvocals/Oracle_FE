@@ -147,7 +147,68 @@ const Sparkline: React.FC<SparklineProps> = ({
   )
 }
 
-// HISTORICAL FEATURES - Best Time Formatter (Dynamic Timezone)
+// HISTORICAL FEATURES - Timezone Name Mapping
+const TIMEZONE_NAMES: Record<string, string> = {
+  // US Timezones
+  'America/Los_Angeles': 'PST',
+  'America/Denver': 'MST',
+  'America/Chicago': 'CST',
+  'America/New_York': 'EST',
+  'America/Anchorage': 'AKST',
+  'Pacific/Honolulu': 'HST',
+  
+  // Europe
+  'Europe/London': 'GMT',
+  'Europe/Paris': 'CET',
+  'Europe/Berlin': 'CET',
+  'Europe/Rome': 'CET',
+  'Europe/Madrid': 'CET',
+  'Europe/Amsterdam': 'CET',
+  'Europe/Brussels': 'CET',
+  'Europe/Vienna': 'CET',
+  'Europe/Stockholm': 'CET',
+  'Europe/Copenhagen': 'CET',
+  'Europe/Warsaw': 'CET',
+  'Europe/Prague': 'CET',
+  'Europe/Budapest': 'CET',
+  'Europe/Athens': 'EET',
+  'Europe/Helsinki': 'EET',
+  'Europe/Bucharest': 'EET',
+  'Europe/Moscow': 'MSK',
+  
+  // Asia
+  'Asia/Tokyo': 'JST',
+  'Asia/Seoul': 'KST',
+  'Asia/Shanghai': 'CST',
+  'Asia/Hong_Kong': 'HKT',
+  'Asia/Singapore': 'SGT',
+  'Asia/Bangkok': 'ICT',
+  'Asia/Jakarta': 'WIB',
+  'Asia/Manila': 'PHT',
+  'Asia/Kolkata': 'IST',
+  'Asia/Dubai': 'GST',
+  'Asia/Karachi': 'PKT',
+  
+  // Oceania
+  'Australia/Sydney': 'AEDT',
+  'Australia/Melbourne': 'AEDT',
+  'Australia/Brisbane': 'AEST',
+  'Australia/Perth': 'AWST',
+  'Pacific/Auckland': 'NZDT',
+  
+  // Americas (Other)
+  'America/Toronto': 'EST',
+  'America/Vancouver': 'PST',
+  'America/Mexico_City': 'CST',
+  'America/Sao_Paulo': 'BRT',
+  'America/Argentina/Buenos_Aires': 'ART',
+  
+  // Middle East
+  'Asia/Jerusalem': 'IST',
+  'Asia/Riyadh': 'AST',
+}
+
+// HISTORICAL FEATURES - Best Time Formatter (Named Timezones + Fallback)
 const formatBestTime = (pstBlock: string): string => {
   // Get user's timezone
   const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -167,25 +228,28 @@ const formatBestTime = (pstBlock: string): string => {
   const endDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
   endDate.setHours(pstEnd, 0, 0, 0)
   
-  // Format in user's timezone with shortOffset
-  const formatter = new Intl.DateTimeFormat('en-US', {
+  // Format in user's timezone
+  const hourFormatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
-    timeZone: userTz,
-    timeZoneName: 'shortOffset'
+    timeZone: userTz
   })
   
-  // Extract formatted parts
-  const startFormatted = formatter.format(startDate)
-  const endFormatted = formatter.format(endDate)
+  const startHour = hourFormatter.format(startDate)
+  const endHour = hourFormatter.format(endDate)
   
-  // Parse out the offset (appears at end)
-  const offsetMatch = startFormatted.match(/GMT[+-]\d+:?\d*/)
-  const offset = offsetMatch ? offsetMatch[0] : ''
+  // Get timezone name (named if available, GMT offset as fallback)
+  const timezoneName = TIMEZONE_NAMES[userTz] || (() => {
+    const offsetFormatter = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      timeZone: userTz,
+      timeZoneName: 'shortOffset'
+    })
+    const formatted = offsetFormatter.format(startDate)
+    const offsetMatch = formatted.match(/GMT[+-]\d+:?\d*/)
+    return offsetMatch ? offsetMatch[0] : 'Local'
+  })()
   
-  const startHour = startFormatted.replace(offset, '').trim()
-  const endHour = endFormatted.replace(offset, '').trim()
-  
-  return `${startHour} - ${endHour} ${offset}`
+  return `${startHour} - ${endHour} ${timezoneName}`
 }
 
 // HISTORICAL FEATURES - Get Localized Block Label
