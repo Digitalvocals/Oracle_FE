@@ -985,8 +985,15 @@ export default function Home() {
                                 <TrendArrow direction={analytics.trend} change={analytics.trendMagnitude} />
                               )}
                             </div>
-                            <div className="text-xs sm:text-sm text-gray-300 mt-1">
-                              {game.total_viewers?.toLocaleString() || 0} viewers • {game.channels} channels
+                            <div className="flex items-center gap-3 text-sm text-gray-300 mt-1">
+                              <span className="flex items-center gap-1">
+                                <span className="text-matrix-green">👁</span>
+                                {game.total_viewers?.toLocaleString() || 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="text-matrix-green">📺</span>
+                                {game.channels}
+                              </span>
                             </div>
 
                             {game.genres && game.genres.length > 0 && (
