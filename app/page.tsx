@@ -446,6 +446,9 @@ export default function Home() {
   const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
   const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: string]: boolean }>({})
 
+  // PHASE 1: MOBILE TOOLTIP STATE - Track which tooltip is open
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
+
   // Available genre filters
   const GENRE_OPTIONS = [
     'Action', 'Adventure', 'Battle Royale', 'Card Game', 'FPS', 'Fighting',
@@ -1002,11 +1005,39 @@ export default function Home() {
 
                           <div className="text-right flex-shrink-0 ml-2 pr-1 relative">
                             <div className="flex items-start justify-end gap-1">
-                              <div className="relative group/info mt-1">
-                                <span className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveTooltip(activeTooltip === `whyScore-${game.rank}` ? null : `whyScore-${game.rank}`)
+                                  }}
+                                  className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors flex-shrink-0"
+                                >
+                                  ?
+                                </button>
 
-                                <div className="absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                                  <div className="text-matrix-green font-bold text-xs mb-2">Why this score?</div>
+                                {/* PHASE 1: Tooltip with tap-to-toggle for mobile */}
+                                <div 
+                                  className={`absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                                    activeTooltip === `whyScore-${game.rank}`
+                                      ? 'opacity-100 visible pointer-events-auto'
+                                      : 'opacity-0 invisible pointer-events-none group-hover/info:opacity-100 group-hover/info:visible group-hover/info:pointer-events-auto'
+                                  }`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="text-matrix-green font-bold text-xs mb-2 flex justify-between items-center">
+                                    <span>Why this score?</span>
+                                    {/* Mobile close button */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setActiveTooltip(null)
+                                      }}
+                                      className="sm:hidden text-gray-400 hover:text-white text-sm"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
                                   {game.is_filtered ? (
                                     <div className="text-red-400 text-xs leading-relaxed">
                                       <p>{game.warning_text || 'This category is oversaturated.'}</p>
@@ -1124,55 +1155,163 @@ export default function Home() {
                     {selectedGame?.rank === game.rank && (
                       <div className="mt-4 pt-4 border-t border-matrix-green/30">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="matrix-stat relative group/disc">
+                          <div className="matrix-stat relative">
                             <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                               DISCOVERABILITY
-                              <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/disc:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setActiveTooltip(activeTooltip === `disc-${game.rank}` ? null : `disc-${game.rank}`)
+                                }}
+                                className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
+                              >
+                                ?
+                              </button>
                             </div>
                             <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
                               {(game.discoverability_score * 10).toFixed(1)}/10
                             </div>
-                            <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                              <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
+                            {/* PHASE 1: Tooltip with tap-to-toggle */}
+                            <div 
+                              className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                                activeTooltip === `disc-${game.rank}`
+                                  ? 'opacity-100 visible pointer-events-auto'
+                                  : 'opacity-0 invisible pointer-events-none group-hover/disc:opacity-100 group-hover/disc:visible group-hover/disc:pointer-events-auto'
+                              }`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex justify-between items-center mb-1">
+                                <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveTooltip(null)
+                                  }}
+                                  className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="matrix-stat relative group/viab">
+                          <div className="matrix-stat relative">
                             <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                               VIABILITY
-                              <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/viab:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setActiveTooltip(activeTooltip === `viab-${game.rank}` ? null : `viab-${game.rank}`)
+                                }}
+                                className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
+                              >
+                                ?
+                              </button>
                             </div>
                             <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
                               {(game.viability_score * 10).toFixed(1)}/10
                             </div>
-                            <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                              <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
+                            {/* PHASE 1: Tooltip with tap-to-toggle */}
+                            <div 
+                              className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                                activeTooltip === `viab-${game.rank}`
+                                  ? 'opacity-100 visible pointer-events-auto'
+                                  : 'opacity-0 invisible pointer-events-none group-hover/viab:opacity-100 group-hover/viab:visible group-hover/viab:pointer-events-auto'
+                              }`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex justify-between items-center mb-1">
+                                <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveTooltip(null)
+                                  }}
+                                  className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="matrix-stat relative group/eng">
+                          <div className="matrix-stat relative">
                             <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                               ENGAGEMENT
-                              <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/eng:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setActiveTooltip(activeTooltip === `eng-${game.rank}` ? null : `eng-${game.rank}`)
+                                }}
+                                className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
+                              >
+                                ?
+                              </button>
                             </div>
                             <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
                               {(game.engagement_score * 10).toFixed(1)}/10
                             </div>
-                            <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                              <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
+                            {/* PHASE 1: Tooltip with tap-to-toggle */}
+                            <div 
+                              className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                                activeTooltip === `eng-${game.rank}`
+                                  ? 'opacity-100 visible pointer-events-auto'
+                                  : 'opacity-0 invisible pointer-events-none group-hover/eng:opacity-100 group-hover/eng:visible group-hover/eng:pointer-events-auto'
+                              }`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex justify-between items-center mb-1">
+                                <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveTooltip(null)
+                                  }}
+                                  className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="matrix-stat relative group/avg">
+                          <div className="matrix-stat relative">
                             <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
                               AVG VIEWERS/CH
-                              <span className="w-4 h-4 rounded-full bg-matrix-green/50 group-hover/avg:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors">?</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setActiveTooltip(activeTooltip === `avg-${game.rank}` ? null : `avg-${game.rank}`)
+                                }}
+                                className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
+                              >
+                                ?
+                              </button>
                             </div>
                             <div className="text-2xl font-bold text-matrix-green">
                               {game.avg_viewers_per_channel.toFixed(1)}
                             </div>
-                            <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
-                              <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
+                            {/* PHASE 1: Tooltip with tap-to-toggle */}
+                            <div 
+                              className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                                activeTooltip === `avg-${game.rank}`
+                                  ? 'opacity-100 visible pointer-events-auto'
+                                  : 'opacity-0 invisible pointer-events-none group-hover/avg:opacity-100 group-hover/avg:visible group-hover/avg:pointer-events-auto'
+                              }`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex justify-between items-center mb-1">
+                                <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveTooltip(null)
+                                  }}
+                                  className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
