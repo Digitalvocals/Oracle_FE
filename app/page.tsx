@@ -782,7 +782,7 @@ export default function Home() {
             <img
               src="/streamscout-logo.jpg"
               alt="StreamScout - Find Your Audience. Grow Your Channel."
-              className="w-full max-w-2xl h-auto"
+              className="w-full max-w-md sm:max-w-xl md:max-w-2xl h-auto"
             />
           </div>
 
@@ -800,14 +800,14 @@ export default function Home() {
           </div>
 
           {data && (
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
+            <div className="flex overflow-x-auto gap-4 text-sm py-2 -mx-4 px-4 sm:flex-wrap sm:justify-center sm:overflow-visible">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50 whitespace-nowrap flex-shrink-0 sm:flex-shrink">
                 🎮 {data.total_games_analyzed} GAMES ANALYZED
               </div>
-              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50 whitespace-nowrap flex-shrink-0 sm:flex-shrink">
                 ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
               </div>
-              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50">
+              <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50 whitespace-nowrap flex-shrink-0 sm:flex-shrink">
                 🔄 NEXT UPDATE: {formatCountdown(countdown)}
               </div>
             </div>
