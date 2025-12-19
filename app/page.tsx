@@ -833,7 +833,7 @@ export default function Home() {
                   <button
                     key={genre}
                     onClick={() => toggleGenre(genre)}
-                    className={`px-3 py-1 rounded-full text-sm transition-all ${
+                    className={`px-3 py-2 rounded-full text-sm transition-all ${
                       selectedGenres.includes(genre)
                         ? 'bg-matrix-green text-black font-semibold'
                         : 'bg-matrix-green/10 text-matrix-green border border-matrix-green/30 hover:bg-matrix-green/20'
@@ -845,7 +845,7 @@ export default function Home() {
                 {selectedGenres.length > 0 && (
                   <button
                     onClick={() => setSelectedGenres([])}
-                    className="px-3 py-1 rounded-full text-sm bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 ml-2"
+                    className="px-3 py-2 rounded-full text-sm bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 ml-2"
                   >
                     Clear All
                   </button>
