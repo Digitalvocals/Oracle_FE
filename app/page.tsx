@@ -1423,7 +1423,7 @@ export default function Home() {
                         {(() => {
                           // Trigger fetch when expanded
                           const analytics = analyticsCache[game.game_id]
-                          if (!analytics && !loadingAnalytics[game.game_id]) {
+                          if (!analytics && !loadingAnalytics[game.game_id] && !failedAnalytics[game.game_id]) {
                             fetchAnalytics(game.game_id)
                           }
                           
