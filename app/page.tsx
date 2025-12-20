@@ -459,8 +459,8 @@ export default function Home() {
 
   const getItemSize = (index: number): number => {
     const game = displayedGames[index]
-    if (!game) return 200
-    return selectedGame?.rank === game.rank ? 500 : 200
+    if (!game) return 216  // 200px card + 16px pb-4 padding
+    return selectedGame?.rank === game.rank ? 516 : 216  // 500px or 200px + 16px padding
   }
 
   useEffect(() => {
