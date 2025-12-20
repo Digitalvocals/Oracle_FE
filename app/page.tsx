@@ -720,9 +720,16 @@ export default function Home() {
 
     const hasTrendData = game.trend != null
     const hasBestTime = game.bestTime != null
+    const isExpanded = selectedGame?.rank === game.rank
 
     return (
-      <div style={style} className="pb-6">
+      <div 
+        style={{
+          ...style,
+          zIndex: isExpanded ? 10 : 1
+        }} 
+        className="pb-6"
+      >
         <div
           key={game.rank}
           className={`matrix-card cursor-pointer ${
