@@ -466,12 +466,11 @@ export default function Home() {
 
   useEffect(() => {
     if (listRef.current) {
-      const changedIndex = displayedGames.findIndex(g => g.rank === selectedGame?.rank)
-      if (changedIndex !== -1) {
-        listRef.current.resetAfterIndex(changedIndex)
-      }
+      requestAnimationFrame(() => {
+        listRef.current?.resetAfterIndex(0, true)
+      })
     }
-  }, [selectedGame, displayedGames])
+  }, [selectedGame])
 
   const handleFavoriteToggle = (game: GameOpportunity) => {
     const wasFavorited = isFavorited(game.game_id)
