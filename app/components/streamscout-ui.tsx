@@ -1,16 +1,15 @@
 // StreamScout UI Components
 // Reusable button components with onClick support for GA4 tracking
 // 
-// v2.0 - Dec 16, 2025
-// - Added onClick to TwitchButton and YouTubeButton
-// - Added: KinguinButton, ShareButton, IGDBButton, WikipediaButton
+// v2.1 - Dec 20, 2025
+// - Fixed Twitch URL: use search instead of category slug
 
 import React from 'react'
 
 // URL Helper Functions
 export const urls = {
   twitch: (gameName: string) => 
-    `https://www.twitch.tv/directory/category/${encodeURIComponent(gameName)}`,
+    `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}&type=categories`,
   
   steam: (gameName: string) => 
     `https://store.steampowered.com/search/?term=${encodeURIComponent(gameName)}`,
