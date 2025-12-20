@@ -721,7 +721,7 @@ export default function Home() {
     const hasBestTime = game.bestTime != null
 
     return (
-      <div style={style} className="mb-4">
+      <div style={style} className="pb-4">
         <div
           key={game.rank}
           className={`matrix-card cursor-pointer ${
@@ -1457,9 +1457,9 @@ export default function Home() {
             ) : displayedGames.length > 0 ? (
               <List
                 ref={listRef}
-                height={typeof window !== 'undefined' && window.innerWidth < 640 
-                  ? window.innerHeight - 250
-                  : window.innerHeight - 300
+                height={typeof window !== 'undefined' 
+                  ? (window.innerWidth < 640 ? window.innerHeight - 250 : window.innerHeight - 300)
+                  : 600
                 }
                 itemCount={displayedGames.length}
                 itemSize={getItemSize}
