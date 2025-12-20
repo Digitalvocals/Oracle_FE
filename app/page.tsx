@@ -460,8 +460,8 @@ export default function Home() {
 
   const getItemSize = (index: number): number => {
     const game = displayedGames[index]
-    if (!game) return 224  // 200px card + 24px pb-6 padding
-    return selectedGame?.rank === game.rank ? 524 : 224  // 500px or 200px + 24px padding
+    if (!game) return 280  // Generous collapsed height (fits Best Time + padding)
+    return selectedGame?.rank === game.rank ? 550 : 280  // Expanded / Collapsed
   }
 
   useEffect(() => {
