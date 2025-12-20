@@ -1435,26 +1435,26 @@ export default function Home() {
                           
                           if (analytics && analytics.sparkline && analytics.sparkline.length > 0) {
                             return (
-                              <>
-                                <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                              <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                                {/* Desktop: inline row | Mobile: stacked */}
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+                                  {/* Sparkline section */}
                                   <div className="flex items-center gap-3">
-                                    <div className="text-gray-400 text-xs">{analytics.dataDays}-DAY TREND</div>
+                                    <div className="text-gray-400 text-xs whitespace-nowrap">{analytics.dataDays}-DAY TREND</div>
                                     <Sparkline 
                                       data={analytics.sparkline} 
                                       width={120} 
                                       height={40}
                                       className="text-matrix-green"
                                     />
-                                    <div className="text-xs text-gray-400">
+                                    <div className="text-xs text-gray-400 whitespace-nowrap">
                                       {analytics.trendMagnitude > 0 ? '+' : ''}{analytics.trendMagnitude.toFixed(1)}% change
                                     </div>
                                   </div>
-                                </div>
 
-                                {/* HISTORICAL FEATURES - Time Blocks Visualization */}
-                                {analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
-                                  <div className="mt-3">
-                                    <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                                  {/* Time Blocks section */}
+                                  {analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
+                                    <div className="flex items-center gap-3">
                                       <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES</div>
                                       <div className="flex flex-col gap-1">
                                         <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
@@ -1465,9 +1465,9 @@ export default function Home() {
                                         </div>
                                       </div>
                                     </div>
-                                  </div>
-                                )}
-                              </>
+                                  )}
+                                </div>
+                              </div>
                             )
                           }
                           
