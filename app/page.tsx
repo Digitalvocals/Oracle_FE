@@ -555,6 +555,7 @@ export default function Home() {
   }
 
   // HISTORICAL FEATURES - Fetch full analytics on card expand (lazy-load)
+  // PREFETCH ON HOVER - Also fetches when user hovers over card
   const fetchAnalytics = useCallback(async (gameId: string) => {
     if (analyticsCache[gameId] || loadingAnalytics[gameId]) {
       return // Already have it or loading it
@@ -767,7 +768,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="matrix-card max-w-md text-center">
-          <div className="text-3xl mb-4">❌ ERROR</div>
+          <div className="text-3xl mb-4">ERROR</div>
           <div className="text-matrix-green-dim">{error}</div>
           <button onClick={fetchData} className="matrix-button mt-6">
             RETRY
@@ -805,13 +806,13 @@ export default function Home() {
           {data && (
             <div className="flex overflow-x-auto gap-4 text-sm py-2 -mx-4 px-4 sm:flex-wrap sm:justify-center sm:overflow-visible">
               <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50 whitespace-nowrap flex-shrink-0 sm:flex-shrink">
-                🎮 {data.total_games_analyzed} GAMES ANALYZED
+                {data.total_games_analyzed} GAMES ANALYZED
               </div>
               <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50 whitespace-nowrap flex-shrink-0 sm:flex-shrink">
-                ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
+                UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
               </div>
               <div className="px-3 py-1.5 rounded border border-matrix-green/50 text-matrix-green bg-black/50 whitespace-nowrap flex-shrink-0 sm:flex-shrink">
-                🔄 NEXT UPDATE: {formatCountdown(countdown)}
+                NEXT UPDATE: {formatCountdown(countdown)}
               </div>
             </div>
           )}
@@ -935,6 +936,7 @@ export default function Home() {
                         : ''
                     }`}
                     onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
+                    onMouseEnter={() => fetchAnalytics(game.game_id)}
                   >
                     {game.is_filtered && game.warning_text && (
                       <div className="bg-red-500/20 border border-red-500/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
@@ -1044,7 +1046,7 @@ export default function Home() {
                                       }}
                                       className="sm:hidden text-gray-400 hover:text-white text-sm"
                                     >
-                                      ✕
+                                      X
                                     </button>
                                   </div>
                                   {game.is_filtered ? (
@@ -1180,7 +1182,7 @@ export default function Home() {
                             className="w-full py-3 text-sm text-matrix-green/70 border border-matrix-green/20 rounded-lg hover:bg-matrix-green/10 transition-colors flex items-center justify-center gap-2"
                           >
                             {moreOptionsOpen[game.rank] ? 'Less options' : 'More options'}
-                            <span className={`transition-transform ${moreOptionsOpen[game.rank] ? 'rotate-180' : ''}`}>▼</span>
+                            <span className={`transition-transform ${moreOptionsOpen[game.rank] ? 'rotate-180' : ''}`}>V</span>
                           </button>
 
                           {/* PHASE 2: Secondary buttons in 2-column grid when expanded */}
@@ -1290,7 +1292,7 @@ export default function Home() {
                                   }}
                                   className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
                                 >
-                                  ✕
+                                  X
                                 </button>
                               </div>
                             </div>
@@ -1330,7 +1332,7 @@ export default function Home() {
                                   }}
                                   className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
                                 >
-                                  ✕
+                                  X
                                 </button>
                               </div>
                             </div>
@@ -1370,7 +1372,7 @@ export default function Home() {
                                   }}
                                   className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
                                 >
-                                  ✕
+                                  X
                                 </button>
                               </div>
                             </div>
@@ -1410,7 +1412,7 @@ export default function Home() {
                                   }}
                                   className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
                                 >
-                                  ✕
+                                  X
                                 </button>
                               </div>
                             </div>
