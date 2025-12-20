@@ -451,6 +451,7 @@ export default function Home() {
   // HISTORICAL FEATURES - Analytics cache for expanded view (lazy-loaded)
   const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
   const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: string]: boolean }>({})
+  const [failedAnalytics, setFailedAnalytics] = useState<{ [gameId: string]: boolean }>({})
 
   // PHASE 2: MOBILE BUTTON HIERARCHY - Track which game's "More options" is open
   const [moreOptionsOpen, setMoreOptionsOpen] = useState<{ [gameRank: number]: boolean }>({})
@@ -557,7 +558,7 @@ export default function Home() {
   // HISTORICAL FEATURES - Fetch full analytics on card expand (lazy-load)
   // PREFETCH ON HOVER - Also fetches when user hovers over card
   const fetchAnalytics = useCallback(async (gameId: string) => {
-    if (analyticsCache[gameId] || loadingAnalytics[gameId]) {
+    if (analyticsCache[gameId] || loadingAnalytics[gameId] || failedAnalytics[gameId]) {
       return // Already have it or loading it
     }
 
@@ -567,11 +568,11 @@ export default function Home() {
       const response = await axios.get<GameAnalytics>(`${API_URL}/api/v1/analytics/${gameId}`)
       setAnalyticsCache(prev => ({ ...prev, [gameId]: response.data }))
     } catch (err) {
-      console.log(`No analytics available for game ${gameId}`)
+      setFailedAnalytics(prev => ({ ...prev, [gameId]: true }))
     } finally {
       setLoadingAnalytics(prev => ({ ...prev, [gameId]: false }))
     }
-  }, [analyticsCache, loadingAnalytics])
+  }, [analyticsCache, loadingAnalytics, failedAnalytics])
 
   // External click tracking for GA4
   const trackExternalClick = (linkType: 'steam' | 'epic' | 'battlenet' | 'riot' | 'official' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia' | 'share_twitter' | 'kinguin', game: GameOpportunity) => {
