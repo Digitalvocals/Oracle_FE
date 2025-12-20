@@ -1,8 +1,15 @@
+// ========================================
+// PART 1/4 - Imports, Interfaces, Helpers
+// Lines: 1-455
+// Ends at: getStoreButtons function closing brace
+// ========================================
+
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import axios from 'axios'
 import Link from 'next/link'
+import { VariableSizeList as List } from 'react-window'
 import mappingsData from './data/game_store_mappings.json'
 import { 
   TwitchButton, 
@@ -15,8 +22,7 @@ import {
   KinguinButton,
   ShareButton,
   IGDBButton,
-  WikipediaButton
-,
+  WikipediaButton,
   FavoriteButton,
   FavoritesFilter,
   EmptyFavoritesState,
@@ -61,7 +67,6 @@ interface GameOpportunity {
   warning_flags?: string[]
   warning_text?: string | null
   dominance_ratio?: number
-  // INLINE ANALYTICS - New fields from backend (v3.7.0)
   bestTime?: string | null
   trend?: 'up' | 'down' | 'stable' | null
   trendMagnitude?: number | null
@@ -88,7 +93,6 @@ interface StatusData {
   }
 }
 
-// HISTORICAL FEATURES - Full analytics data (lazy-loaded on expand)
 interface GameAnalytics {
   sparkline: number[]
   trend: 'up' | 'down' | 'stable'
@@ -104,7 +108,6 @@ interface GameAnalytics {
   }
 }
 
-// HISTORICAL FEATURES - Sparkline Component
 interface SparklineProps {
   data: number[]
   width?: number
@@ -120,7 +123,6 @@ const Sparkline: React.FC<SparklineProps> = ({
 }) => {
   if (!data || data.length < 2) return null
 
-  // ARCHITECT SPEC: Fixed 0-10 scale, not auto-scaled
   const max = 10
   const min = 0
   const range = max - min
@@ -150,17 +152,13 @@ const Sparkline: React.FC<SparklineProps> = ({
   )
 }
 
-// HISTORICAL FEATURES - Timezone Name Mapping
 const TIMEZONE_NAMES: Record<string, string> = {
-  // US Timezones
   'America/Los_Angeles': 'PST',
   'America/Denver': 'MST',
   'America/Chicago': 'CST',
   'America/New_York': 'EST',
   'America/Anchorage': 'AKST',
   'Pacific/Honolulu': 'HST',
-  
-  // Europe
   'Europe/London': 'GMT',
   'Europe/Paris': 'CET',
   'Europe/Berlin': 'CET',
@@ -178,8 +176,6 @@ const TIMEZONE_NAMES: Record<string, string> = {
   'Europe/Helsinki': 'EET',
   'Europe/Bucharest': 'EET',
   'Europe/Moscow': 'MSK',
-  
-  // Asia
   'Asia/Tokyo': 'JST',
   'Asia/Seoul': 'KST',
   'Asia/Shanghai': 'CST',
@@ -191,47 +187,32 @@ const TIMEZONE_NAMES: Record<string, string> = {
   'Asia/Kolkata': 'IST',
   'Asia/Dubai': 'GST',
   'Asia/Karachi': 'PKT',
-  
-  // Oceania
   'Australia/Sydney': 'AEDT',
   'Australia/Melbourne': 'AEDT',
   'Australia/Brisbane': 'AEST',
   'Australia/Perth': 'AWST',
   'Pacific/Auckland': 'NZDT',
-  
-  // Americas (Other)
   'America/Toronto': 'EST',
   'America/Vancouver': 'PST',
   'America/Mexico_City': 'CST',
   'America/Sao_Paulo': 'BRT',
   'America/Argentina/Buenos_Aires': 'ART',
-  
-  // Middle East
   'Asia/Jerusalem': 'IST',
   'Asia/Riyadh': 'AST',
 }
 
-// HISTORICAL FEATURES - Best Time Formatter (Named Timezones + Fallback)
 const formatBestTime = (pstBlock: string): string => {
-  // Get user's timezone
   const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
-  
-  // Parse PST block
   const [pstStart, pstEnd] = pstBlock.split('-').map(Number)
-  
-  // Create date objects in PST, convert to user timezone
   const pstTz = 'America/Los_Angeles'
   const now = new Date()
   
-  // Create start time in PST
   const startDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
   startDate.setHours(pstStart, 0, 0, 0)
   
-  // Create end time in PST
   const endDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
   endDate.setHours(pstEnd, 0, 0, 0)
   
-  // Format in user's timezone
   const hourFormatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     timeZone: userTz
@@ -240,7 +221,6 @@ const formatBestTime = (pstBlock: string): string => {
   const startHour = hourFormatter.format(startDate)
   const endHour = hourFormatter.format(endDate)
   
-  // Get timezone name (named if available, GMT offset as fallback)
   const timezoneName = TIMEZONE_NAMES[userTz] || (() => {
     const offsetFormatter = new Intl.DateTimeFormat('en-US', {
       hour: 'numeric',
@@ -255,12 +235,10 @@ const formatBestTime = (pstBlock: string): string => {
   return `${startHour} - ${endHour} ${timezoneName}`
 }
 
-// HISTORICAL FEATURES - Clean Recommendation Text
 const cleanRecommendation = (rating: string): string => {
   return rating.replace(/^\[.*?\]\s*/, '')
 }
 
-// HISTORICAL FEATURES - Trend Arrow Component
 interface TrendArrowProps {
   direction: 'up' | 'down' | 'stable'
   change: number | null
@@ -304,19 +282,15 @@ const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
   )
 }
 
-// HISTORICAL FEATURES - Get Localized Block Label
 const getLocalizedBlockLabel = (pstBlock: string): string => {
   const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
   const pstStart = parseInt(pstBlock.split('-')[0])
-  
-  // Convert PST hour to user's timezone
   const pstTz = 'America/Los_Angeles'
   const date = new Date()
   const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
   const localDate = new Date(pstDateStr)
   localDate.setHours(pstStart, 0, 0, 0)
   
-  // Get the hour in user's timezone
   const localHour = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     timeZone: userTz
@@ -325,7 +299,6 @@ const getLocalizedBlockLabel = (pstBlock: string): string => {
   return localHour.toLowerCase().replace(' ', '')
 }
 
-// HISTORICAL FEATURES - Time Blocks Component (Dynamic Labels)
 interface TimeBlocksProps {
   blocks: {
     [key: string]: {
@@ -338,8 +311,6 @@ interface TimeBlocksProps {
 
 const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   const blockOrder = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
-  
-  // Generate localized labels dynamically
   const blockLabels = blockOrder.map(block => getLocalizedBlockLabel(block))
   
   const getStatus = (blockKey: string): 'good' | 'ok' | 'avoid' => {
@@ -383,7 +354,6 @@ const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   )
 }
 
-// SMART PURCHASE LINKS - Store button visibility logic (US-028)
 interface StoreButtons {
   steam: string | null
   epic: string | null
@@ -397,7 +367,6 @@ function getStoreButtons(gameId: string, gameName: string): StoreButtons {
   const mapping = mappingsData.find(m => m.game_id === gameId)
   
   if (mapping) {
-    // Known game - use explicit mapping
     return {
       steam: mapping.steam === false ? null : (
         typeof mapping.steam === 'string' ? mapping.steam : 
@@ -413,7 +382,6 @@ function getStoreButtons(gameId: string, gameName: string): StoreButtons {
       isFree: mapping.free,
     }
   } else {
-    // Unknown game - default to search links
     return {
       steam: `https://store.steampowered.com/search/?term=${encodeURIComponent(gameName)}`,
       epic: `https://store.epicgames.com/browse?q=${encodeURIComponent(gameName)}`,
@@ -424,6 +392,12 @@ function getStoreButtons(gameId: string, gameName: string): StoreButtons {
     }
   }
 }
+// ========================================
+// PART 2/4 - Component State & Functions
+// Lines: 456-745
+// Starts: export default function Home()
+// Ends at: METRIC_TOOLTIPS object
+// ========================================
 
 export default function Home() {
   const [data, setData] = useState<AnalysisData | null>(null)
@@ -435,25 +409,16 @@ export default function Home() {
   const [warmupStatus, setWarmupStatus] = useState<string>('Initializing...')
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState<string>('')
-  
-  // US-002: Save Favorites state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
-  
-  // US-002: Kinguin modal state
   const [showKinguinModal, setShowKinguinModal] = useState<boolean>(false)
   const [kinguinGameName, setKinguinGameName] = useState<string>('')
-  // US-002: Favorites hook
   const { favorites, isFavorited, addFavorite, removeFavorite, toggleFavorite, clearAllFavorites } = useFavorites()
-
-  // PHASE 1: MOBILE TOOLTIP STATE - Track which tooltip is open
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
-
-  // HISTORICAL FEATURES - Analytics cache for expanded view (lazy-loaded)
   const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
   const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: string]: boolean }>({})
-
-  // PHASE 2: MOBILE BUTTON HIERARCHY - Track which game's "More options" is open
   const [moreOptionsOpen, setMoreOptionsOpen] = useState<{ [gameRank: number]: boolean }>({})
+  
+  const listRef = useRef<List>(null)
 
   const toggleMoreOptions = (gameRank: number) => {
     setMoreOptionsOpen(prev => ({
@@ -462,14 +427,12 @@ export default function Home() {
     }))
   }
 
-  // Available genre filters
   const GENRE_OPTIONS = [
     'Action', 'Adventure', 'Battle Royale', 'Card Game', 'FPS', 'Fighting',
     'Horror', 'Indie', 'MMO', 'MOBA', 'Party', 'Platformer', 'Puzzle',
     'RPG', 'Racing', 'Sandbox', 'Simulation', 'Sports', 'Strategy', 'Survival'
   ]
 
-  // Toggle genre filter
   const toggleGenre = (genre: string) => {
     setSelectedGenres(prev =>
       prev.includes(genre)
@@ -478,7 +441,6 @@ export default function Home() {
     )
   }
 
-  // Filter opportunities by selected genres AND search query
   const filteredOpportunities = data?.top_opportunities?.filter(game => {
     if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false
@@ -487,20 +449,29 @@ export default function Home() {
     return game.genres?.some(g => selectedGenres.includes(g))
   }) || []
   
-  // US-002: Apply favorites filter
   const displayedGames = showFavoritesOnly
     ? filteredOpportunities.filter(game => isFavorited(game.game_id))
     : filteredOpportunities
   
-  // US-002: Find untracked favorites (favorited but not in current opportunities)
   const untrackedFavorites = favorites.filter(fav => 
     !data?.top_opportunities?.some(game => game.game_id === fav.game_id)
   )
 
-  // NOTE: URL helper functions removed - now handled by component library
-  // Keeping only getTwitterShareUrl for special score computation
-  
-  // US-002: Favorites GA4 handlers
+  const getItemSize = (index: number): number => {
+    const game = displayedGames[index]
+    if (!game) return 200
+    return selectedGame?.rank === game.rank ? 500 : 200
+  }
+
+  useEffect(() => {
+    if (listRef.current) {
+      const changedIndex = displayedGames.findIndex(g => g.rank === selectedGame?.rank)
+      if (changedIndex !== -1) {
+        listRef.current.resetAfterIndex(changedIndex)
+      }
+    }
+  }, [selectedGame, displayedGames])
+
   const handleFavoriteToggle = (game: GameOpportunity) => {
     const wasFavorited = isFavorited(game.game_id)
     toggleFavorite(game.game_id, game.game_name)
@@ -544,21 +515,16 @@ export default function Home() {
       })
     }
   }
-  
-  
-  
- // Generate Twitter share URL (kept for score computation logic)
+
   const getShareScore = (game: GameOpportunity): number => {
     return game.discoverability_rating !== undefined 
       ? game.discoverability_rating 
       : game.overall_score * 10
   }
 
-  // HISTORICAL FEATURES - Fetch full analytics on card expand (lazy-load)
-  // PREFETCH ON HOVER - Also fetches when user hovers over card
   const fetchAnalytics = useCallback(async (gameId: string) => {
     if (analyticsCache[gameId] || loadingAnalytics[gameId]) {
-      return // Already have it or loading it
+      return
     }
 
     setLoadingAnalytics(prev => ({ ...prev, [gameId]: true }))
@@ -573,7 +539,6 @@ export default function Home() {
     }
   }, [analyticsCache, loadingAnalytics])
 
-  // External click tracking for GA4
   const trackExternalClick = (linkType: 'steam' | 'epic' | 'battlenet' | 'riot' | 'official' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia' | 'share_twitter' | 'kinguin', game: GameOpportunity) => {
     if (typeof window !== 'undefined' && (window as any).gtag) {
       const score = game.discoverability_rating !== undefined
@@ -592,7 +557,6 @@ export default function Home() {
     }
   }
 
-  // Check status endpoint for warmup progress
   const checkStatus = useCallback(async () => {
     try {
       const response = await axios.get<StatusData>(`${API_URL}/api/v1/status`)
@@ -648,12 +612,10 @@ export default function Home() {
     }
   }, [])
 
-  // Initial load
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  // Warmup polling
   useEffect(() => {
     if (!isWarmingUp) return
 
@@ -670,7 +632,6 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [isWarmingUp, checkStatus, fetchData])
 
-  // Countdown timer
   useEffect(() => {
     if (!data || countdown <= 0) return
 
@@ -687,7 +648,6 @@ export default function Home() {
     return () => clearInterval(timer)
   }, [data, countdown, fetchData])
 
-  // Poll for updates every 60 seconds
   useEffect(() => {
     if (!data) return
 
@@ -746,6 +706,583 @@ export default function Home() {
       description: 'Total viewers divided by total streamers. Higher ratio = more eyeballs per streamer on average. This metric helps calculate your discoverability score.'
     }
   }
+// ========================================
+// PART 3/4 - Row Component (Game Card)
+// Lines: 746-1150
+// Starts: const Row = ...
+// Ends at: Row component closing brace
+// ========================================
+
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const game = displayedGames[index]
+    if (!game) return null
+
+    const hasTrendData = game.trend != null
+    const hasBestTime = game.bestTime != null
+
+    return (
+      <div style={style} className="mb-4">
+        <div
+          key={game.rank}
+          className={`matrix-card cursor-pointer ${
+            game.is_filtered
+              ? 'border-red-500/50 bg-red-900/10'
+              : ''
+          }`}
+          onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
+          onMouseEnter={() => fetchAnalytics(game.game_id)}
+        >
+          {game.is_filtered && game.warning_text && (
+            <div className="bg-red-500/20 border border-red-500/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
+              <span className="text-red-400 font-bold text-sm">AVOID</span>
+              <span className="text-red-300/80 text-xs">{game.warning_text}</span>
+              {game.discoverability_rating !== undefined && (
+                <span className="ml-auto text-red-400 font-bold text-sm">
+                  {game.discoverability_rating}/10
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-4">
+            {game.box_art_url && (
+              <div className="flex-shrink-0">
+                <img
+                  src={game.box_art_url}
+                  alt={game.game_name}
+                  className="w-24 h-32 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0 flex flex-col">
+              <div className="flex items-start gap-2 mb-2">
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-matrix-green-bright flex-shrink-0">
+                  #{game.rank}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
+                      {game.game_name}
+                    </h2>
+                    <FavoriteButton 
+                      isFavorited={isFavorited(game.game_id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleFavoriteToggle(game)
+                      }}
+                    />
+                    {hasTrendData && game.trend && (
+                      <TrendArrow direction={game.trend as 'up' | 'down' | 'stable'} change={game.trendMagnitude ?? null} />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-300 mt-1">
+                    <span className="flex items-center gap-1">
+                      <span className="text-matrix-green">👁</span>
+                      {game.total_viewers?.toLocaleString() || 0}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-matrix-green">📺</span>
+                      {game.channels}
+                    </span>
+                  </div>
+
+                  {game.genres && game.genres.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {game.genres.slice(0, 3).map(genre => (
+                        <span
+                          key={genre}
+                          className="px-2 py-0.5 text-[10px] sm:text-xs rounded bg-matrix-green/10 text-matrix-green/70 border border-matrix-green/20"
+                        >
+                          {genre}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                </div>
+
+                <div className="text-right flex-shrink-0 ml-2 pr-1 relative">
+                  <div className="flex items-start justify-end gap-1">
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveTooltip(activeTooltip === `whyScore-${game.rank}` ? null : `whyScore-${game.rank}`)
+                        }}
+                        className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors flex-shrink-0"
+                      >
+                        ?
+                      </button>
+
+                      <div 
+                        className={`absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                          activeTooltip === `whyScore-${game.rank}`
+                            ? 'opacity-100 visible pointer-events-auto'
+                            : 'opacity-0 invisible pointer-events-none group-hover/info:opacity-100 group-hover/info:visible group-hover/info:pointer-events-auto'
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="text-matrix-green font-bold text-xs mb-2 flex justify-between items-center">
+                          <span>Why this score?</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setActiveTooltip(null)
+                            }}
+                            className="sm:hidden text-gray-400 hover:text-white text-sm"
+                          >
+                            X
+                          </button>
+                        </div>
+                        {game.is_filtered ? (
+                          <div className="text-red-400 text-xs leading-relaxed">
+                            <p>{game.warning_text || 'This category is oversaturated.'}</p>
+                            <p className="mt-2 text-red-300">Small streamers get buried pages deep in categories this large.</p>
+                          </div>
+                        ) : (
+                          <div className="text-xs leading-relaxed space-y-2">
+                            <p className="text-white">{getScoreContext(game).competition} ({game.channels} streamers)</p>
+                            <p className="text-white">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
+                            <p className="text-gray-300 text-[10px] mt-2">Click card for detailed breakdown →</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
+                      game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
+                    }`}>
+                      {game.is_filtered && game.discoverability_rating !== undefined
+                        ? `${game.discoverability_rating}/10`
+                        : `${(game.overall_score * 10).toFixed(1)}/10`
+                      }
+                    </div>
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-gray-400 mt-1">
+                    {game.is_filtered ? 'POOR' : (game.trend ? game.trend.toUpperCase() : '')}
+                  </div>
+                  <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
+                    game.is_filtered ? 'text-red-400' : 'text-amber-400'
+                  }`}>
+                    {game.is_filtered ? 'NOT RECOMMENDED' : cleanRecommendation(game.recommendation)}
+                  </div>
+                </div>
+              </div>
+
+              {hasBestTime && game.bestTime && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-gray-400">BEST TIME:</span>
+                  <span className="text-xs text-matrix-green font-semibold">
+                    {formatBestTime(game.bestTime)}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex gap-2 mt-2">
+                <TwitchButton 
+                  gameName={game.game_name}
+                  onClick={() => trackExternalClick('twitch', game)}
+                />
+
+                <UpdatedKinguinButton 
+                  gameName={game.game_name}
+                  onClick={() => {
+                    trackExternalClick('kinguin', game)
+                    handleKinguinClick(game)
+                  }}
+                />
+              </div>
+
+              <div className="hidden sm:flex gap-2 mt-2 flex-wrap">
+                {(() => {
+                  const buttons = getStoreButtons(game.game_id, game.game_name)
+                  
+                  return (
+                    <>
+                      {buttons.steam && (
+                        <SteamButton 
+                          gameName={game.game_name} 
+                          url={buttons.steam}
+                          isFree={buttons.isFree}
+                          onClick={() => trackExternalClick('steam', game)}
+                        />
+                      )}
+                      
+                      {buttons.epic && (
+                        <EpicButton 
+                          gameName={game.game_name}
+                          url={buttons.epic}
+                          isFree={buttons.isFree}
+                          onClick={() => trackExternalClick('epic', game)}
+                        />
+                      )}
+                      
+                      {buttons.battlenet && (
+                        <BattleNetButton 
+                          gameName={game.game_name}
+                          url={buttons.battlenet}
+                          isFree={buttons.isFree}
+                          onClick={() => trackExternalClick('battlenet', game)}
+                        />
+                      )}
+                      
+                      {buttons.riot && (
+                        <RiotButton 
+                          gameName={game.game_name}
+                          url={buttons.riot}
+                          isFree={buttons.isFree}
+                          onClick={() => trackExternalClick('riot', game)}
+                        />
+                      )}
+                      
+                      {buttons.official && (
+                        <OfficialButton 
+                          gameName={game.game_name}
+                          url={buttons.official}
+                          isFree={buttons.isFree}
+                          onClick={() => trackExternalClick('official', game)}
+                        />
+                      )}
+                    </>
+                  )
+                })()}
+
+                <ShareButton 
+                  gameName={game.game_name}
+                  score={getShareScore(game)}
+                  channels={game.channels}
+                  viewers={game.total_viewers}
+                  onClick={() => trackExternalClick('share_twitter', game)}
+                />
+              </div>
+
+              <div className="sm:hidden mt-2">
+                <button
+                  onClick={() => toggleMoreOptions(game.rank)}
+                  className="w-full py-3 text-sm text-matrix-green/70 border border-matrix-green/20 rounded-lg hover:bg-matrix-green/10 transition-colors flex items-center justify-center gap-2"
+                >
+                  {moreOptionsOpen[game.rank] ? 'Less options' : 'More options'}
+                  <span className={`transition-transform ${moreOptionsOpen[game.rank] ? 'rotate-180' : ''}`}>V</span>
+                </button>
+
+                {moreOptionsOpen[game.rank] && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {(() => {
+                      const buttons = getStoreButtons(game.game_id, game.game_name)
+                      
+                      return (
+                        <>
+                          {buttons.steam && (
+                            <SteamButton 
+                              gameName={game.game_name} 
+                              url={buttons.steam}
+                              isFree={buttons.isFree}
+                              onClick={() => trackExternalClick('steam', game)}
+                            />
+                          )}
+                          
+                          {buttons.epic && (
+                            <EpicButton 
+                              gameName={game.game_name}
+                              url={buttons.epic}
+                              isFree={buttons.isFree}
+                              onClick={() => trackExternalClick('epic', game)}
+                            />
+                          )}
+                          
+                          {buttons.battlenet && (
+                            <BattleNetButton 
+                              gameName={game.game_name}
+                              url={buttons.battlenet}
+                              isFree={buttons.isFree}
+                              onClick={() => trackExternalClick('battlenet', game)}
+                            />
+                          )}
+                          
+                          {buttons.riot && (
+                            <RiotButton 
+                              gameName={game.game_name}
+                              url={buttons.riot}
+                              isFree={buttons.isFree}
+                              onClick={() => trackExternalClick('riot', game)}
+                            />
+                          )}
+                          
+                          {buttons.official && (
+                            <OfficialButton 
+                              gameName={game.game_name}
+                              url={buttons.official}
+                              isFree={buttons.isFree}
+                              onClick={() => trackExternalClick('official', game)}
+                            />
+                          )}
+                        </>
+                      )
+                    })()}
+
+                    <ShareButton 
+                      gameName={game.game_name}
+                      score={getShareScore(game)}
+                      channels={game.channels}
+                      viewers={game.total_viewers}
+                      onClick={() => trackExternalClick('share_twitter', game)}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {selectedGame?.rank === game.rank && (
+            <div className="mt-4 pt-4 border-t border-matrix-green/30">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="matrix-stat relative">
+                  <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                    DISCOVERABILITY
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveTooltip(activeTooltip === `disc-${game.rank}` ? null : `disc-${game.rank}`)
+                      }}
+                      className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
+                    >
+                      ?
+                    </button>
+                  </div>
+                  <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
+                    {(game.discoverability_score * 10).toFixed(1)}/10
+                  </div>
+                  <div 
+                    className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                      activeTooltip === `disc-${game.rank}`
+                        ? 'opacity-100 visible pointer-events-auto'
+                        : 'opacity-0 invisible pointer-events-none group-hover/disc:opacity-100 group-hover/disc:visible group-hover/disc:pointer-events-auto'
+                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveTooltip(null)
+                        }}
+                        className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
+                      >
+                        X
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="matrix-stat relative">
+                  <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                    VIABILITY
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveTooltip(activeTooltip === `viab-${game.rank}` ? null : `viab-${game.rank}`)
+                      }}
+                      className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
+                    >
+                      ?
+                    </button>
+                  </div>
+                  <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
+                    {(game.viability_score * 10).toFixed(1)}/10
+                  </div>
+                  <div 
+                    className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                      activeTooltip === `viab-${game.rank}`
+                        ? 'opacity-100 visible pointer-events-auto'
+                        : 'opacity-0 invisible pointer-events-none group-hover/viab:opacity-100 group-hover/viab:visible group-hover/viab:pointer-events-auto'
+                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveTooltip(null)
+                        }}
+                        className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
+                      >
+                        X
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="matrix-stat relative">
+                  <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                    ENGAGEMENT
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveTooltip(activeTooltip === `eng-${game.rank}` ? null : `eng-${game.rank}`)
+                      }}
+                      className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
+                    >
+                      ?
+                    </button>
+                  </div>
+                  <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
+                    {(game.engagement_score * 10).toFixed(1)}/10
+                  </div>
+                  <div 
+                    className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                      activeTooltip === `eng-${game.rank}`
+                        ? 'opacity-100 visible pointer-events-auto'
+                        : 'opacity-0 invisible pointer-events-none group-hover/eng:opacity-100 group-hover/eng:visible group-hover/eng:pointer-events-auto'
+                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveTooltip(null)
+                        }}
+                        className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
+                      >
+                        X
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="matrix-stat relative">
+                  <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
+                    AVG VIEWERS/CH
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveTooltip(activeTooltip === `avg-${game.rank}` ? null : `avg-${game.rank}`)
+                      }}
+                      className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
+                    >
+                      ?
+                    </button>
+                  </div>
+                  <div className="text-2xl font-bold text-matrix-green">
+                    {game.avg_viewers_per_channel.toFixed(1)}
+                  </div>
+                  <div 
+                    className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
+                      activeTooltip === `avg-${game.rank}`
+                        ? 'opacity-100 visible pointer-events-auto'
+                        : 'opacity-0 invisible pointer-events-none group-hover/avg:opacity-100 group-hover/avg:visible group-hover/avg:pointer-events-auto'
+                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveTooltip(null)
+                        }}
+                        className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
+                      >
+                        X
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {(() => {
+                const analytics = analyticsCache[game.game_id]
+                if (!analytics && !loadingAnalytics[game.game_id]) {
+                  fetchAnalytics(game.game_id)
+                }
+                
+                if (loadingAnalytics[game.game_id]) {
+                  return (
+                    <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                      <div className="text-gray-400 text-xs">Loading trend data...</div>
+                    </div>
+                  )
+                }
+                
+                if (analytics && analytics.sparkline && analytics.sparkline.length > 0) {
+                  return (
+                    <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+                        <div className="flex items-center gap-3">
+                          <div className="text-gray-400 text-xs whitespace-nowrap">{analytics.dataDays}-DAY TREND</div>
+                          <Sparkline 
+                            data={analytics.sparkline} 
+                            width={120} 
+                            height={40}
+                            className="text-matrix-green"
+                          />
+                          <div className="text-xs text-gray-400 whitespace-nowrap">
+                            {analytics.trendMagnitude > 0 ? '+' : ''}{analytics.trendMagnitude.toFixed(1)}% change
+                          </div>
+                        </div>
+
+                        {analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
+                          <div className="flex items-center gap-3">
+                            <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES</div>
+                            <div className="flex flex-col gap-1">
+                              <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
+                              <div className="text-[10px] text-gray-500 flex gap-2">
+                                <span><span className="text-green-400">●</span> good</span>
+                                <span><span className="text-yellow-400">●</span> ok</span>
+                                <span><span className="text-red-400">●</span> avoid</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                }
+                
+                return null
+              })()}
+
+              <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
+                <div className="flex flex-wrap gap-2">
+                  <IGDBButton 
+                    gameName={game.game_name}
+                    onClick={() => trackExternalClick('igdb', game)}
+                  />
+                  <YouTubeButton 
+                    gameName={game.game_name}
+                    onClick={() => trackExternalClick('youtube', game)}
+                  />
+                  <WikipediaButton 
+                    gameName={game.game_name}
+                    onClick={() => trackExternalClick('wikipedia', game)}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 text-sm text-gray-400 text-center">
+                Click card again to collapse
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+// ========================================
+// PART 4/4 - Render & Return Statement
+// Lines: 1151-1326
+// Starts: if (isWarmingUp...
+// Ends at: Component closing brace
+// ========================================
 
   if (isWarmingUp || (loading && !data)) {
     return (
@@ -867,8 +1404,6 @@ export default function Home() {
               )}
             </div>
 
-
-            {/* US-002: Favorites Filter + Clear Button */}
             <FavoritesFilter 
               showFavoritesOnly={showFavoritesOnly}
               favoriteCount={favorites.length}
@@ -882,7 +1417,6 @@ export default function Home() {
               />
             )}
 
-            {/* US-002: Empty state when showing favorites but have none */}
             {showFavoritesOnly && favorites.length === 0 ? (
               <EmptyFavoritesState />
             ) : showFavoritesOnly && displayedGames.length === 0 && untrackedFavorites.length === 0 ? (
@@ -891,7 +1425,6 @@ export default function Home() {
               </div>
             ) : null}
             
-            {/* US-002: Show untracked favorites first when in favorites view */}
             {showFavoritesOnly && untrackedFavorites.length > 0 && (
               <div className="space-y-4 mb-6">
                 {untrackedFavorites.map(fav => (
@@ -914,601 +1447,31 @@ export default function Home() {
               </div>
             )}
 
-            <div className="grid gap-4">
-              {filteredOpportunities.length === 0 && (selectedGenres.length > 0 || searchQuery) ? (
-                <div className="text-center py-12 text-matrix-green/50">
-                  {searchQuery
-                    ? `No games found matching "${searchQuery}". Try a different search.`
-                    : 'No games found matching selected genres. Try different filters.'
-                  }
-                </div>
-              ) : displayedGames.map((game) => {
-                // INLINE ANALYTICS - Get trend info directly from game object
-                const hasTrendData = game.trend != null
-                const hasBestTime = game.bestTime != null
-
-                return (
-                  <div
-                    key={game.rank}
-                    className={`matrix-card cursor-pointer ${
-                      game.is_filtered
-                        ? 'border-red-500/50 bg-red-900/10'
-                        : ''
-                    }`}
-                    onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
-                    onMouseEnter={() => fetchAnalytics(game.game_id)}
-                  >
-                    {game.is_filtered && game.warning_text && (
-                      <div className="bg-red-500/20 border border-red-500/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
-                        <span className="text-red-400 font-bold text-sm">AVOID</span>
-                        <span className="text-red-300/80 text-xs">{game.warning_text}</span>
-                        {game.discoverability_rating !== undefined && (
-                          <span className="ml-auto text-red-400 font-bold text-sm">
-                            {game.discoverability_rating}/10
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex gap-4">
-                      {game.box_art_url && (
-                        <div className="flex-shrink-0">
-                          <img
-                            src={game.box_art_url}
-                            alt={game.game_name}
-                            className="w-24 h-32 sm:w-28 sm:h-40 md:w-32 md:h-44 object-cover rounded border-2 border-matrix-green/50"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none'
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex-1 min-w-0 flex flex-col">
-                        <div className="flex items-start gap-2 mb-2">
-                          <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-matrix-green-bright flex-shrink-0">
-                            #{game.rank}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
-                                {game.game_name}
-                              </h2>
-                              {/* US-002: Favorite Button */}
-                              <FavoriteButton 
-                                isFavorited={isFavorited(game.game_id)}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleFavoriteToggle(game)
-                                }}
-                              />
-                              {/* INLINE ANALYTICS - Trend Arrow from game object */}
-                              {hasTrendData && game.trend && (
-                                <TrendArrow direction={game.trend as 'up' | 'down' | 'stable'} change={game.trendMagnitude ?? null} />
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-300 mt-1">
-                              <span className="flex items-center gap-1">
-                                <span className="text-matrix-green">👁</span>
-                                {game.total_viewers?.toLocaleString() || 0}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className="text-matrix-green">📺</span>
-                                {game.channels}
-                              </span>
-                            </div>
-
-                            {game.genres && game.genres.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {game.genres.slice(0, 3).map(genre => (
-                                  <span
-                                    key={genre}
-                                    className="px-2 py-0.5 text-[10px] sm:text-xs rounded bg-matrix-green/10 text-matrix-green/70 border border-matrix-green/20"
-                                  >
-                                    {genre}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-
-                          </div>
-
-                          <div className="text-right flex-shrink-0 ml-2 pr-1 relative">
-                            <div className="flex items-start justify-end gap-1">
-                              <div className="relative">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setActiveTooltip(activeTooltip === `whyScore-${game.rank}` ? null : `whyScore-${game.rank}`)
-                                  }}
-                                  className="w-5 h-5 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors flex-shrink-0"
-                                >
-                                  ?
-                                </button>
-
-                                {/* PHASE 1: Tooltip with tap-to-toggle for mobile */}
-                                <div 
-                                  className={`absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
-                                    activeTooltip === `whyScore-${game.rank}`
-                                      ? 'opacity-100 visible pointer-events-auto'
-                                      : 'opacity-0 invisible pointer-events-none group-hover/info:opacity-100 group-hover/info:visible group-hover/info:pointer-events-auto'
-                                  }`}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div className="text-matrix-green font-bold text-xs mb-2 flex justify-between items-center">
-                                    <span>Why this score?</span>
-                                    {/* Mobile close button */}
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setActiveTooltip(null)
-                                      }}
-                                      className="sm:hidden text-gray-400 hover:text-white text-sm"
-                                    >
-                                      X
-                                    </button>
-                                  </div>
-                                  {game.is_filtered ? (
-                                    <div className="text-red-400 text-xs leading-relaxed">
-                                      <p>{game.warning_text || 'This category is oversaturated.'}</p>
-                                      <p className="mt-2 text-red-300">Small streamers get buried pages deep in categories this large.</p>
-                                    </div>
-                                  ) : (
-                                    <div className="text-xs leading-relaxed space-y-2">
-                                      <p className="text-white">{getScoreContext(game).competition} ({game.channels} streamers)</p>
-                                      <p className="text-white">{getScoreContext(game).audience} ({game.total_viewers.toLocaleString()} watching)</p>
-                                      <p className="text-gray-300 text-[10px] mt-2">Click card for detailed breakdown →</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${
-                                game.is_filtered ? 'text-red-500' : getScoreColor(game.overall_score)
-                              }`}>
-                                {game.is_filtered && game.discoverability_rating !== undefined
-                                  ? `${game.discoverability_rating}/10`
-                                  : `${(game.overall_score * 10).toFixed(1)}/10`
-                                }
-                              </div>
-                            </div>
-                            <div className="text-[10px] sm:text-xs text-gray-400 mt-1">
-                              {game.is_filtered ? 'POOR' : (game.trend ? game.trend.toUpperCase() : '')}
-                            </div>
-                            <div className={`text-[9px] sm:text-xs leading-tight max-w-[90px] sm:max-w-none font-bold tracking-wide ${
-                              game.is_filtered ? 'text-red-400' : 'text-amber-400'
-                            }`}>
-                              {game.is_filtered ? 'NOT RECOMMENDED' : cleanRecommendation(game.recommendation)}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* INLINE ANALYTICS - Best Time from game object */}
-                        {hasBestTime && game.bestTime && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <span className="text-xs text-gray-400">BEST TIME:</span>
-                            <span className="text-xs text-matrix-green font-semibold">
-                              {formatBestTime(game.bestTime)}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* PHASE 2: BUTTON HIERARCHY - Primary (Twitch + Kinguin) always visible */}
-                        <div className="flex gap-2 mt-2">
-                          <TwitchButton 
-                            gameName={game.game_name}
-                            onClick={() => trackExternalClick('twitch', game)}
-                          />
-
-                          <UpdatedKinguinButton 
-                            gameName={game.game_name}
-                            onClick={() => {
-                              trackExternalClick('kinguin', game)
-                              handleKinguinClick(game)
-                            }}
-                          />
-                        </div>
-
-                        {/* PHASE 2: BUTTON HIERARCHY - Secondary buttons on tablet+ */}
-                        <div className="hidden sm:flex gap-2 mt-2 flex-wrap">
-                          {/* SMART PURCHASE LINKS (US-028) */}
-                          {(() => {
-                            const buttons = getStoreButtons(game.game_id, game.game_name)
-                            
-                            return (
-                              <>
-                                {buttons.steam && (
-                                  <SteamButton 
-                                    gameName={game.game_name} 
-                                    url={buttons.steam}
-                                    isFree={buttons.isFree}
-                                    onClick={() => trackExternalClick('steam', game)}
-                                  />
-                                )}
-                                
-                                {buttons.epic && (
-                                  <EpicButton 
-                                    gameName={game.game_name}
-                                    url={buttons.epic}
-                                    isFree={buttons.isFree}
-                                    onClick={() => trackExternalClick('epic', game)}
-                                  />
-                                )}
-                                
-                                {buttons.battlenet && (
-                                  <BattleNetButton 
-                                    gameName={game.game_name}
-                                    url={buttons.battlenet}
-                                    isFree={buttons.isFree}
-                                    onClick={() => trackExternalClick('battlenet', game)}
-                                  />
-                                )}
-                                
-                                {buttons.riot && (
-                                  <RiotButton 
-                                    gameName={game.game_name}
-                                    url={buttons.riot}
-                                    isFree={buttons.isFree}
-                                    onClick={() => trackExternalClick('riot', game)}
-                                  />
-                                )}
-                                
-                                {buttons.official && (
-                                  <OfficialButton 
-                                    gameName={game.game_name}
-                                    url={buttons.official}
-                                    isFree={buttons.isFree}
-                                    onClick={() => trackExternalClick('official', game)}
-                                  />
-                                )}
-                              </>
-                            )
-                          })()}
-
-                          <ShareButton 
-                            gameName={game.game_name}
-                            score={getShareScore(game)}
-                            channels={game.channels}
-                            viewers={game.total_viewers}
-                            onClick={() => trackExternalClick('share_twitter', game)}
-                          />
-                        </div>
-
-                        {/* PHASE 2: BUTTON HIERARCHY - Mobile "More options" accordion */}
-                        <div className="sm:hidden mt-2">
-                          <button
-                            onClick={() => toggleMoreOptions(game.rank)}
-                            className="w-full py-3 text-sm text-matrix-green/70 border border-matrix-green/20 rounded-lg hover:bg-matrix-green/10 transition-colors flex items-center justify-center gap-2"
-                          >
-                            {moreOptionsOpen[game.rank] ? 'Less options' : 'More options'}
-                            <span className={`transition-transform ${moreOptionsOpen[game.rank] ? 'rotate-180' : ''}`}>V</span>
-                          </button>
-
-                          {/* PHASE 2: Secondary buttons in 2-column grid when expanded */}
-                          {moreOptionsOpen[game.rank] && (
-                            <div className="grid grid-cols-2 gap-2 mt-2">
-                              {/* SMART PURCHASE LINKS (US-028) */}
-                              {(() => {
-                                const buttons = getStoreButtons(game.game_id, game.game_name)
-                                
-                                return (
-                                  <>
-                                    {buttons.steam && (
-                                      <SteamButton 
-                                        gameName={game.game_name} 
-                                        url={buttons.steam}
-                                        isFree={buttons.isFree}
-                                        onClick={() => trackExternalClick('steam', game)}
-                                      />
-                                    )}
-                                    
-                                    {buttons.epic && (
-                                      <EpicButton 
-                                        gameName={game.game_name}
-                                        url={buttons.epic}
-                                        isFree={buttons.isFree}
-                                        onClick={() => trackExternalClick('epic', game)}
-                                      />
-                                    )}
-                                    
-                                    {buttons.battlenet && (
-                                      <BattleNetButton 
-                                        gameName={game.game_name}
-                                        url={buttons.battlenet}
-                                        isFree={buttons.isFree}
-                                        onClick={() => trackExternalClick('battlenet', game)}
-                                      />
-                                    )}
-                                    
-                                    {buttons.riot && (
-                                      <RiotButton 
-                                        gameName={game.game_name}
-                                        url={buttons.riot}
-                                        isFree={buttons.isFree}
-                                        onClick={() => trackExternalClick('riot', game)}
-                                      />
-                                    )}
-                                    
-                                    {buttons.official && (
-                                      <OfficialButton 
-                                        gameName={game.game_name}
-                                        url={buttons.official}
-                                        isFree={buttons.isFree}
-                                        onClick={() => trackExternalClick('official', game)}
-                                      />
-                                    )}
-                                  </>
-                                )
-                              })()}
-
-                              <ShareButton 
-                                gameName={game.game_name}
-                                score={getShareScore(game)}
-                                channels={game.channels}
-                                viewers={game.total_viewers}
-                                onClick={() => trackExternalClick('share_twitter', game)}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedGame?.rank === game.rank && (
-                      <div className="mt-4 pt-4 border-t border-matrix-green/30">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="matrix-stat relative">
-                            <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-                              DISCOVERABILITY
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setActiveTooltip(activeTooltip === `disc-${game.rank}` ? null : `disc-${game.rank}`)
-                                }}
-                                className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
-                              >
-                                ?
-                              </button>
-                            </div>
-                            <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
-                              {(game.discoverability_score * 10).toFixed(1)}/10
-                            </div>
-                            {/* PHASE 1: Tooltip with tap-to-toggle */}
-                            <div 
-                              className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
-                                activeTooltip === `disc-${game.rank}`
-                                  ? 'opacity-100 visible pointer-events-auto'
-                                  : 'opacity-0 invisible pointer-events-none group-hover/disc:opacity-100 group-hover/disc:visible group-hover/disc:pointer-events-auto'
-                              }`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.discoverability.description}</p>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setActiveTooltip(null)
-                                  }}
-                                  className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
-                                >
-                                  X
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="matrix-stat relative">
-                            <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-                              VIABILITY
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setActiveTooltip(activeTooltip === `viab-${game.rank}` ? null : `viab-${game.rank}`)
-                                }}
-                                className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
-                              >
-                                ?
-                              </button>
-                            </div>
-                            <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
-                              {(game.viability_score * 10).toFixed(1)}/10
-                            </div>
-                            {/* PHASE 1: Tooltip with tap-to-toggle */}
-                            <div 
-                              className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
-                                activeTooltip === `viab-${game.rank}`
-                                  ? 'opacity-100 visible pointer-events-auto'
-                                  : 'opacity-0 invisible pointer-events-none group-hover/viab:opacity-100 group-hover/viab:visible group-hover/viab:pointer-events-auto'
-                              }`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.viability.description}</p>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setActiveTooltip(null)
-                                  }}
-                                  className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
-                                >
-                                  X
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="matrix-stat relative">
-                            <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-                              ENGAGEMENT
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setActiveTooltip(activeTooltip === `eng-${game.rank}` ? null : `eng-${game.rank}`)
-                                }}
-                                className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
-                              >
-                                ?
-                              </button>
-                            </div>
-                            <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
-                              {(game.engagement_score * 10).toFixed(1)}/10
-                            </div>
-                            {/* PHASE 1: Tooltip with tap-to-toggle */}
-                            <div 
-                              className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
-                                activeTooltip === `eng-${game.rank}`
-                                  ? 'opacity-100 visible pointer-events-auto'
-                                  : 'opacity-0 invisible pointer-events-none group-hover/eng:opacity-100 group-hover/eng:visible group-hover/eng:pointer-events-auto'
-                              }`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.engagement.description}</p>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setActiveTooltip(null)
-                                  }}
-                                  className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
-                                >
-                                  X
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="matrix-stat relative">
-                            <div className="text-gray-400 text-xs flex items-center gap-1 cursor-help">
-                              AVG VIEWERS/CH
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setActiveTooltip(activeTooltip === `avg-${game.rank}` ? null : `avg-${game.rank}`)
-                                }}
-                                className="w-4 h-4 rounded-full bg-matrix-green/50 hover:bg-matrix-green text-black flex items-center justify-center text-[10px] font-bold transition-colors flex-shrink-0"
-                              >
-                                ?
-                              </button>
-                            </div>
-                            <div className="text-2xl font-bold text-matrix-green">
-                              {game.avg_viewers_per_channel.toFixed(1)}
-                            </div>
-                            {/* PHASE 1: Tooltip with tap-to-toggle */}
-                            <div 
-                              className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
-                                activeTooltip === `avg-${game.rank}`
-                                  ? 'opacity-100 visible pointer-events-auto'
-                                  : 'opacity-0 invisible pointer-events-none group-hover/avg:opacity-100 group-hover/avg:visible group-hover/avg:pointer-events-auto'
-                              }`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <p className="text-xs text-white leading-relaxed">{METRIC_TOOLTIPS.avgViewers.description}</p>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setActiveTooltip(null)
-                                  }}
-                                  className="sm:hidden text-gray-400 hover:text-white text-xs ml-2 flex-shrink-0"
-                                >
-                                  X
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* HISTORICAL FEATURES - Sparkline in Expanded Section (lazy-loaded) */}
-                        {(() => {
-                          // Trigger fetch when expanded
-                          const analytics = analyticsCache[game.game_id]
-                          if (!analytics && !loadingAnalytics[game.game_id]) {
-                            fetchAnalytics(game.game_id)
-                          }
-                          
-                          if (loadingAnalytics[game.game_id]) {
-                            return (
-                              <div className="mt-4 pt-4 border-t border-matrix-green/20">
-                                <div className="text-gray-400 text-xs">Loading trend data...</div>
-                              </div>
-                            )
-                          }
-                          
-                          if (analytics && analytics.sparkline && analytics.sparkline.length > 0) {
-                            return (
-                              <div className="mt-4 pt-4 border-t border-matrix-green/20">
-                                {/* Desktop: inline row | Mobile: stacked */}
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-                                  {/* Sparkline section */}
-                                  <div className="flex items-center gap-3">
-                                    <div className="text-gray-400 text-xs whitespace-nowrap">{analytics.dataDays}-DAY TREND</div>
-                                    <Sparkline 
-                                      data={analytics.sparkline} 
-                                      width={120} 
-                                      height={40}
-                                      className="text-matrix-green"
-                                    />
-                                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                                      {analytics.trendMagnitude > 0 ? '+' : ''}{analytics.trendMagnitude.toFixed(1)}% change
-                                    </div>
-                                  </div>
-
-                                  {/* Time Blocks section */}
-                                  {analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
-                                    <div className="flex items-center gap-3">
-                                      <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES</div>
-                                      <div className="flex flex-col gap-1">
-                                        <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
-                                        <div className="text-[10px] text-gray-500 flex gap-2">
-                                          <span><span className="text-green-400">●</span> good</span>
-                                          <span><span className="text-yellow-400">●</span> ok</span>
-                                          <span><span className="text-red-400">●</span> avoid</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          }
-                          
-                          return null
-                        })()}
-
-                        <div className="mt-4 pt-4 border-t border-matrix-green/20">
-                          <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
-                          <div className="flex flex-wrap gap-2">
-                            <IGDBButton 
-                              gameName={game.game_name}
-                              onClick={() => trackExternalClick('igdb', game)}
-                            />
-                            <YouTubeButton 
-                              gameName={game.game_name}
-                              onClick={() => trackExternalClick('youtube', game)}
-                            />
-                            <WikipediaButton 
-                              gameName={game.game_name}
-                              onClick={() => trackExternalClick('wikipedia', game)}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 text-sm text-gray-400 text-center">
-                          Click card again to collapse
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+            {filteredOpportunities.length === 0 && (selectedGenres.length > 0 || searchQuery) ? (
+              <div className="text-center py-12 text-matrix-green/50">
+                {searchQuery
+                  ? `No games found matching "${searchQuery}". Try a different search.`
+                  : 'No games found matching selected genres. Try different filters.'
+                }
+              </div>
+            ) : displayedGames.length > 0 ? (
+              <List
+                ref={listRef}
+                height={typeof window !== 'undefined' && window.innerWidth < 640 
+                  ? window.innerHeight - 250
+                  : window.innerHeight - 300
+                }
+                itemCount={displayedGames.length}
+                itemSize={getItemSize}
+                width="100%"
+                overscanCount={3}
+              >
+                {Row}
+              </List>
+            ) : null}
           </main>
         </div>
 
-
-
-        {/* US-002: Kinguin Confirmation Modal */}
         {showKinguinModal && (
           <KinguinConfirmModal 
             gameName={kinguinGameName}
