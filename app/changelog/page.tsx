@@ -13,6 +13,30 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "3.6.0",
+    date: "December 19, 2025",
+    title: "Mobile UX Overhaul",
+    added: [
+      "Tap-to-toggle tooltips - Mobile users can now tap the \"?\" icons to see score explanations",
+      "\"More options\" accordion on mobile - Secondary buttons (Steam, Epic, Share) now tucked into expandable menu",
+      "Best Time always visible - No need to expand cards to see optimal streaming windows",
+      "Mobile close buttons - Easy \"✕\" to dismiss tooltips on touch devices"
+    ],
+    changed: [
+      "Larger box art on mobile (96x128px) - Games are easier to recognize at a glance",
+      "Icon-based stats (👁 📺) - Faster scanning, less clutter on small screens",
+      "Single-column metrics on mobile - Expanded card data no longer cramped",
+      "Responsive header - Logo scales down on mobile, status badges scroll horizontally",
+      "Improved touch targets - Genre filter buttons now meet 40px+ accessibility standards",
+      "Button hierarchy - Twitch and Kinguin buttons always visible as primary actions"
+    ],
+    fixed: [
+      "Tooltips now work on mobile - Previously hover-only, now tap-to-toggle",
+      "Touch target sizes - Genre filters and buttons easier to tap accurately",
+      "Visual clutter on small screens - Better information hierarchy"
+    ]
+  },
+  {
     version: "3.5.0",
     date: "December 17, 2025",
     title: "Save Favorites & Game Purchase Discounts",
