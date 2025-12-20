@@ -88,6 +88,22 @@ interface StatusData {
   }
 }
 
+// HISTORICAL FEATURES - Full analytics data (lazy-loaded on expand)
+interface GameAnalytics {
+  sparkline: number[]
+  trend: 'up' | 'down' | 'stable'
+  trendMagnitude: number
+  bestTime: string
+  status: 'good' | 'ok' | 'avoid' | 'unknown'
+  dataDays: number
+  timeBlocks?: {
+    [key: string]: {
+      avg_ratio: number
+      sample_count: number
+    }
+  }
+}
+
 // HISTORICAL FEATURES - Sparkline Component
 interface SparklineProps {
   data: number[]
@@ -288,6 +304,85 @@ const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
   )
 }
 
+// HISTORICAL FEATURES - Get Localized Block Label
+const getLocalizedBlockLabel = (pstBlock: string): string => {
+  const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const pstStart = parseInt(pstBlock.split('-')[0])
+  
+  // Convert PST hour to user's timezone
+  const pstTz = 'America/Los_Angeles'
+  const date = new Date()
+  const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
+  const localDate = new Date(pstDateStr)
+  localDate.setHours(pstStart, 0, 0, 0)
+  
+  // Get the hour in user's timezone
+  const localHour = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    timeZone: userTz
+  }).format(localDate)
+  
+  return localHour.toLowerCase().replace(' ', '')
+}
+
+// HISTORICAL FEATURES - Time Blocks Component (Dynamic Labels)
+interface TimeBlocksProps {
+  blocks: {
+    [key: string]: {
+      avg_ratio: number
+      sample_count: number
+    }
+  }
+  bestBlock: string
+}
+
+const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
+  const blockOrder = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
+  
+  // Generate localized labels dynamically
+  const blockLabels = blockOrder.map(block => getLocalizedBlockLabel(block))
+  
+  const getStatus = (blockKey: string): 'good' | 'ok' | 'avoid' => {
+    const block = blocks[blockKey]
+    if (!block) return 'avoid'
+    
+    const allRatios = Object.values(blocks).map(b => b.avg_ratio)
+    const avgRatio = allRatios.reduce((sum, r) => sum + r, 0) / allRatios.length
+    
+    if (block.avg_ratio >= avgRatio) return 'good'
+    if (block.avg_ratio >= avgRatio * 0.75) return 'ok'
+    return 'avoid'
+  }
+
+  const getStatusColor = (status: 'good' | 'ok' | 'avoid') => {
+    switch (status) {
+      case 'good': return 'bg-green-500'
+      case 'ok': return 'bg-yellow-500'
+      case 'avoid': return 'bg-red-500'
+    }
+  }
+
+  return (
+    <div className="flex gap-2 sm:gap-3">
+      {blockOrder.map((blockKey, index) => {
+        const status = getStatus(blockKey)
+        const isBest = blockKey === bestBlock
+        return (
+          <div key={blockKey} className="flex flex-col items-center gap-1">
+            <div 
+              className={`w-5 h-5 rounded-full ${getStatusColor(status)} ${isBest ? 'ring-2 ring-matrix-green ring-offset-1 ring-offset-gray-900' : ''}`}
+              title={`${blockKey} PST: ${status} (ratio: ${blocks[blockKey]?.avg_ratio?.toFixed(1) || 'N/A'})`}
+            />
+            <span className={`text-[10px] ${isBest ? 'text-matrix-green font-bold' : 'text-gray-500'}`}>
+              {blockLabels[index]}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // SMART PURCHASE LINKS - Store button visibility logic (US-028)
 interface StoreButtons {
   steam: string | null
@@ -352,6 +447,10 @@ export default function Home() {
 
   // PHASE 1: MOBILE TOOLTIP STATE - Track which tooltip is open
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
+
+  // HISTORICAL FEATURES - Analytics cache for expanded view (lazy-loaded)
+  const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
+  const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: string]: boolean }>({})
 
   // PHASE 2: MOBILE BUTTON HIERARCHY - Track which game's "More options" is open
   const [moreOptionsOpen, setMoreOptionsOpen] = useState<{ [gameRank: number]: boolean }>({})
@@ -454,6 +553,24 @@ export default function Home() {
       ? game.discoverability_rating 
       : game.overall_score * 10
   }
+
+  // HISTORICAL FEATURES - Fetch full analytics on card expand (lazy-load)
+  const fetchAnalytics = useCallback(async (gameId: string) => {
+    if (analyticsCache[gameId] || loadingAnalytics[gameId]) {
+      return // Already have it or loading it
+    }
+
+    setLoadingAnalytics(prev => ({ ...prev, [gameId]: true }))
+
+    try {
+      const response = await axios.get<GameAnalytics>(`${API_URL}/api/v1/analytics/${gameId}`)
+      setAnalyticsCache(prev => ({ ...prev, [gameId]: response.data }))
+    } catch (err) {
+      console.log(`No analytics available for game ${gameId}`)
+    } finally {
+      setLoadingAnalytics(prev => ({ ...prev, [gameId]: false }))
+    }
+  }, [analyticsCache, loadingAnalytics])
 
   // External click tracking for GA4
   const trackExternalClick = (linkType: 'steam' | 'epic' | 'battlenet' | 'riot' | 'official' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia' | 'share_twitter' | 'kinguin', game: GameOpportunity) => {
@@ -1299,6 +1416,63 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
+
+                        {/* HISTORICAL FEATURES - Sparkline in Expanded Section (lazy-loaded) */}
+                        {(() => {
+                          // Trigger fetch when expanded
+                          const analytics = analyticsCache[game.game_id]
+                          if (!analytics && !loadingAnalytics[game.game_id]) {
+                            fetchAnalytics(game.game_id)
+                          }
+                          
+                          if (loadingAnalytics[game.game_id]) {
+                            return (
+                              <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                                <div className="text-gray-400 text-xs">Loading trend data...</div>
+                              </div>
+                            )
+                          }
+                          
+                          if (analytics && analytics.sparkline && analytics.sparkline.length > 0) {
+                            return (
+                              <>
+                                <div className="mt-4 pt-4 border-t border-matrix-green/20">
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-gray-400 text-xs">{analytics.dataDays}-DAY TREND</div>
+                                    <Sparkline 
+                                      data={analytics.sparkline} 
+                                      width={120} 
+                                      height={40}
+                                      className="text-matrix-green"
+                                    />
+                                    <div className="text-xs text-gray-400">
+                                      {analytics.trendMagnitude > 0 ? '+' : ''}{analytics.trendMagnitude.toFixed(1)}% change
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* HISTORICAL FEATURES - Time Blocks Visualization */}
+                                {analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
+                                  <div className="mt-3">
+                                    <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                                      <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES</div>
+                                      <div className="flex flex-col gap-1">
+                                        <TimeBlocks blocks={analytics.timeBlocks} bestBlock={analytics.bestTime} />
+                                        <div className="text-[10px] text-gray-500 flex gap-2">
+                                          <span><span className="text-green-400">●</span> good</span>
+                                          <span><span className="text-yellow-400">●</span> ok</span>
+                                          <span><span className="text-red-400">●</span> avoid</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )
+                          }
+                          
+                          return null
+                        })()}
 
                         <div className="mt-4 pt-4 border-t border-matrix-green/20">
                           <div className="text-gray-400 text-xs mb-2">LEARN ABOUT THIS GAME</div>
