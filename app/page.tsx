@@ -416,6 +416,7 @@ export default function Home() {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
   const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
   const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: string]: boolean }>({})
+  const [failedAnalytics, setFailedAnalytics] = useState<{ [gameId: string]: boolean }>({})
   const [moreOptionsOpen, setMoreOptionsOpen] = useState<{ [gameRank: number]: boolean }>({})
   
   const listRef = useRef<List>(null)
@@ -459,8 +460,8 @@ export default function Home() {
 
   const getItemSize = (index: number): number => {
     const game = displayedGames[index]
-    if (!game) return 216  // 200px card + 16px pb-4 padding
-    return selectedGame?.rank === game.rank ? 516 : 216  // 500px or 200px + 16px padding
+    if (!game) return 224  // 200px card + 24px pb-6 padding
+    return selectedGame?.rank === game.rank ? 524 : 224  // 500px or 200px + 24px padding
   }
 
   useEffect(() => {
@@ -523,7 +524,7 @@ export default function Home() {
   }
 
   const fetchAnalytics = useCallback(async (gameId: string) => {
-    if (analyticsCache[gameId] || loadingAnalytics[gameId]) {
+    if (analyticsCache[gameId] || loadingAnalytics[gameId] || failedAnalytics[gameId]) {
       return
     }
 
@@ -533,11 +534,12 @@ export default function Home() {
       const response = await axios.get<GameAnalytics>(`${API_URL}/api/v1/analytics/${gameId}`)
       setAnalyticsCache(prev => ({ ...prev, [gameId]: response.data }))
     } catch (err) {
-      console.log(`No analytics available for game ${gameId}`)
+      // Silently cache the failure to prevent retry spam
+      setFailedAnalytics(prev => ({ ...prev, [gameId]: true }))
     } finally {
       setLoadingAnalytics(prev => ({ ...prev, [gameId]: false }))
     }
-  }, [analyticsCache, loadingAnalytics])
+  }, [analyticsCache, loadingAnalytics, failedAnalytics])
 
   const trackExternalClick = (linkType: 'steam' | 'epic' | 'battlenet' | 'riot' | 'official' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia' | 'share_twitter' | 'kinguin', game: GameOpportunity) => {
     if (typeof window !== 'undefined' && (window as any).gtag) {
@@ -721,7 +723,7 @@ export default function Home() {
     const hasBestTime = game.bestTime != null
 
     return (
-      <div style={style} className="pb-4">
+      <div style={style} className="pb-6">
         <div
           key={game.rank}
           className={`matrix-card cursor-pointer ${
