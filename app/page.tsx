@@ -5,6 +5,7 @@ import axios from 'axios'
 import Link from 'next/link'
 import mappingsData from './data/game_store_mappings.json'
 import { 
+  MomentumBadge,
   TwitchButton, 
   YouTubeButton, 
   SteamButton, 
@@ -65,6 +66,10 @@ interface GameOpportunity {
   bestTime?: string | null
   trend?: 'up' | 'down' | 'stable' | null
   trendMagnitude?: number | null
+  // US-035: GROWTH SIGNALS - New fields from backend (v3.8.0)
+  viewerGrowth?: number | null
+  channelGrowth?: number | null
+  momentum?: string | null
 }
 
 interface AnalysisData {
@@ -780,6 +785,7 @@ export default function Home() {
   }
 
   return (
+  return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
@@ -1010,6 +1016,17 @@ export default function Home() {
                                     {genre}
                                   </span>
                                 ))}
+                              </div>
+                            )}
+
+                            {/* US-035: GROWTH SIGNALS - Momentum Badge */}
+                            {game.momentum && game.momentum !== 'insufficient_data' && (
+                              <div className="mt-2">
+                                <MomentumBadge 
+                                  momentum={game.momentum}
+                                  viewerGrowth={game.viewerGrowth}
+                                  channelGrowth={game.channelGrowth}
+                                />
                               </div>
                             )}
 
