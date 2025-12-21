@@ -1,8 +1,8 @@
 // StreamScout UI Components
 // Reusable button components with onClick support for GA4 tracking
 // 
-// v2.1 - Dec 20, 2025
-// - Fixed Twitch URL: use search instead of category slug
+// v3.8.0 - Dec 21, 2025
+// - Added MomentumBadge component (US-035 Growth Signals)
 
 import React from 'react'
 
@@ -743,6 +743,80 @@ export const KinguinCodeToast: React.FC<KinguinCodeToastProps> = ({
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// US-035: GROWTH SIGNALS - MOMENTUM BADGE COMPONENT
+// ============================================================================
+
+interface MomentumBadgeProps {
+  momentum: string
+  viewerGrowth?: number | null
+  channelGrowth?: number | null
+}
+
+const MOMENTUM_CONFIG: Record<string, { emoji: string; label: string; color: string; bg: string }> = {
+  hidden_gem: { 
+    emoji: '💎', 
+    label: 'HIDDEN GEM', 
+    color: 'text-cyan-400', 
+    bg: 'bg-cyan-400/10' 
+  },
+  rising: { 
+    emoji: '🚀', 
+    label: 'RISING', 
+    color: 'text-green-400', 
+    bg: 'bg-green-400/10' 
+  },
+  expanding: { 
+    emoji: '📈', 
+    label: 'EXPANDING', 
+    color: 'text-emerald-400', 
+    bg: 'bg-emerald-400/10' 
+  },
+  crowding: { 
+    emoji: '⚠️', 
+    label: 'CROWDING', 
+    color: 'text-yellow-400', 
+    bg: 'bg-yellow-400/10' 
+  },
+  declining: { 
+    emoji: '📉', 
+    label: 'DECLINING', 
+    color: 'text-red-400', 
+    bg: 'bg-red-400/10' 
+  },
+  stable: { 
+    emoji: '➡️', 
+    label: 'STABLE', 
+    color: 'text-gray-400', 
+    bg: 'bg-gray-400/10' 
+  }
+}
+
+export const MomentumBadge: React.FC<MomentumBadgeProps> = ({ 
+  momentum, 
+  viewerGrowth, 
+  channelGrowth 
+}) => {
+  const config = MOMENTUM_CONFIG[momentum]
+  if (!config) return null
+  
+  const showGrowth = viewerGrowth !== null && viewerGrowth !== undefined
+  
+  return (
+    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md ${config.bg}`}>
+      <span>{config.emoji}</span>
+      <span className={`text-xs font-medium ${config.color}`}>
+        {config.label}
+      </span>
+      {showGrowth && (
+        <span className={`text-[10px] ${config.color} opacity-75`}>
+          ({viewerGrowth > 0 ? '+' : ''}{viewerGrowth?.toFixed(0)}%)
+        </span>
+      )}
     </div>
   )
 }
