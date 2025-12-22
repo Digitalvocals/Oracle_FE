@@ -988,9 +988,13 @@ export default function Home() {
                                   handleFavoriteToggle(game)
                                 }}
                               />
-                              {/* INLINE ANALYTICS - Trend Arrow from game object */}
-                              {hasTrendData && game.trend && (
-                                <TrendArrow direction={game.trend as 'up' | 'down' | 'stable'} change={game.trendMagnitude ?? null} />
+                              {/* US-035: GROWTH SIGNALS - Momentum Badge */}
+                              {game.momentum && game.momentum !== 'insufficient_data' && (
+                                <MomentumBadge 
+                                  momentum={game.momentum}
+                                  viewerGrowth={game.viewerGrowth}
+                                  channelGrowth={game.channelGrowth}
+                                />
                               )}
                             </div>
                             <div className="flex items-center gap-3 text-sm text-gray-300 mt-1">
@@ -1014,17 +1018,6 @@ export default function Home() {
                                     {genre}
                                   </span>
                                 ))}
-                              </div>
-                            )}
-
-                            {/* US-035: GROWTH SIGNALS - Momentum Badge */}
-                            {game.momentum && game.momentum !== 'insufficient_data' && (
-                              <div className="mt-2">
-                                <MomentumBadge 
-                                  momentum={game.momentum}
-                                  viewerGrowth={game.viewerGrowth}
-                                  channelGrowth={game.channelGrowth}
-                                />
                               </div>
                             )}
 
