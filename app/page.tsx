@@ -891,6 +891,7 @@ export default function Home() {
                 return (
                   <div
                     key={game.rank}
+                    data-game-id={game.game_id}
                     className={`matrix-card cursor-pointer ${
                       game.is_filtered
                         ? 'border-red-500/50 bg-red-900/10'
