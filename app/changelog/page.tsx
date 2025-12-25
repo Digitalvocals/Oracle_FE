@@ -13,6 +13,32 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: "3.7.0",
+    date: "December 25, 2025",
+    title: "Sparkline & Badge Clarity",
+    changed: [
+      "Viewer Trend sparkline - Now shows actual viewer counts instead of discoverability scores. No more flat lines on stable games.",
+      "Dynamic scaling - Sparklines auto-scale to show meaningful movement regardless of game size",
+      "Trend percentages color-coded - Green for rising, red for declining, gray for stable",
+      "Momentum badges simplified - Removed percentage from badges (RISING, DECLINING, etc.) to reduce confusion",
+      "Badge tooltips - Hover any momentum badge to see what it means"
+    ],
+    fixed: [
+      "Flat sparklines on games with stable discoverability scores",
+      "User confusion from two different percentages on game cards"
+    ]
+  },
+  {
+    version: "3.6.1",
+    date: "December 24, 2025",
+    title: "Find Alternatives",
+    added: [
+      "Find Alternatives button - Feeling burnt out on a game? Click \"Find Alternatives\" to get 3 similar games with good opportunity scores",
+      "Smart matching - Suggestions based on genre overlap, similar audience size, and discoverability",
+      "Match reasons - See why each alternative was suggested (Genre Match, Hidden Gem, Same Audience, etc.)"
+    ]
+  },
+  {
     version: "3.6.0",
     date: "December 19, 2025",
     title: "Mobile UX Overhaul",
