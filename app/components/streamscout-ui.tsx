@@ -1,8 +1,9 @@
 // StreamScout UI Components
 // Reusable button components with onClick support for GA4 tracking
 // 
-// v3.9.0 - Dec 24, 2025
-// - Added US-060 Alternatives components (MatchReasonBadge, AlternativeCard, AlternativesModal)
+// v3.10.0 - Dec 25, 2025
+// - Badge Clarity: Removed percentage from momentum badges, added tooltips
+// - US-060 Alternatives components (MatchReasonBadge, AlternativeCard, AlternativesModal)
 
 import React from 'react'
 
@@ -749,6 +750,7 @@ export const KinguinCodeToast: React.FC<KinguinCodeToastProps> = ({
 
 // ============================================================================
 // US-035: GROWTH SIGNALS - MOMENTUM BADGE COMPONENT
+// v3.10.0 - Badge Clarity: Removed percentage, added tooltips
 // ============================================================================
 
 interface MomentumBadgeProps {
@@ -796,6 +798,16 @@ const MOMENTUM_CONFIG: Record<string, { emoji: string; label: string; color: str
   }
 }
 
+// Tooltip explanations for each badge type (per Oracle spec)
+const BADGE_TOOLTIPS: Record<string, string> = {
+  hidden_gem: 'Good ratio, low competition',
+  rising: 'More viewers and streamers than last week',
+  expanding: 'Growing viewer base',
+  crowding: 'More streamers flooding in',
+  declining: 'Fewer viewers than last week',
+  stable: 'Viewer count holding steady'
+}
+
 export const MomentumBadge: React.FC<MomentumBadgeProps> = ({ 
   momentum, 
   viewerGrowth, 
@@ -804,19 +816,22 @@ export const MomentumBadge: React.FC<MomentumBadgeProps> = ({
   const config = MOMENTUM_CONFIG[momentum]
   if (!config) return null
   
-  const showGrowth = viewerGrowth !== null && viewerGrowth !== undefined
+  // Get tooltip text for this badge type
+  const tooltipText = BADGE_TOOLTIPS[momentum] || ''
+  
+  // REMOVED: Percentage display (per Oracle spec - Badge Clarity)
+  // Badge now shows only the category word, not numbers
+  // Sparkline shows the percentage instead
   
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md ${config.bg}`}>
+    <div 
+      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md ${config.bg} cursor-help`}
+      title={tooltipText}
+    >
       <span>{config.emoji}</span>
       <span className={`text-xs font-medium ${config.color}`}>
         {config.label}
       </span>
-      {showGrowth && (
-        <span className={`text-[10px] ${config.color} opacity-75`}>
-          ({viewerGrowth > 0 ? '+' : ''}{viewerGrowth?.toFixed(0)}%)
-        </span>
-      )}
     </div>
   )
 }
