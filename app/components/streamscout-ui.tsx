@@ -1103,6 +1103,12 @@ export const AlternativesModal: React.FC<AlternativesModalProps> = ({
     const gameCard = document.querySelector(`[data-game-id="${alternative.game_id}"]`)
     if (gameCard) {
       gameCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      
+      // Auto-expand the game card after scroll completes
+      setTimeout(() => {
+        (gameCard as HTMLElement).click()
+      }, 600) // Wait for smooth scroll animation to finish
+      
       handleClose()
     }
   }
