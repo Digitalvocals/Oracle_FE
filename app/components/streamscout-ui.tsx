@@ -1,8 +1,8 @@
 // StreamScout UI Components
 // Reusable button components with onClick support for GA4 tracking
 // 
-// v3.8.0 - Dec 21, 2025
-// - Added MomentumBadge component (US-035 Growth Signals)
+// v3.9.0 - Dec 24, 2025
+// - Added US-060 Alternatives components (MatchReasonBadge, AlternativeCard, AlternativesModal)
 
 import React from 'react'
 
@@ -818,5 +818,398 @@ export const MomentumBadge: React.FC<MomentumBadgeProps> = ({
         </span>
       )}
     </div>
+  )
+}
+
+// ============================================================================
+// US-060: BACKUP GAME SUGGESTER COMPONENTS
+// ============================================================================
+
+// Match Reason Badge - Shows why games match with color coding
+interface MatchReasonBadgeProps {
+  reason: string
+}
+
+const REASON_CONFIG: Record<string, { label: string; emoji: string; color: string; bg: string }> = {
+  strong_genre_match: { 
+    label: '2+ SHARED GENRES', 
+    emoji: '*', 
+    color: 'text-green-400', 
+    bg: 'bg-green-400/10' 
+  },
+  genre_match: { 
+    label: 'SIMILAR GENRE', 
+    emoji: '+', 
+    color: 'text-emerald-400', 
+    bg: 'bg-emerald-400/10' 
+  },
+  similar_audience_size: { 
+    label: 'SIMILAR SIZE', 
+    emoji: '=', 
+    color: 'text-blue-400', 
+    bg: 'bg-blue-400/10' 
+  },
+  smaller_more_intimate: { 
+    label: 'SMALLER & INTIMATE', 
+    emoji: 'v', 
+    color: 'text-cyan-400', 
+    bg: 'bg-cyan-400/10' 
+  },
+  larger_potential: { 
+    label: 'LARGER AUDIENCE', 
+    emoji: '^', 
+    color: 'text-purple-400', 
+    bg: 'bg-purple-400/10' 
+  },
+  hidden_gem: { 
+    label: 'HIDDEN GEM', 
+    emoji: 'o', 
+    color: 'text-cyan-400', 
+    bg: 'bg-cyan-400/10' 
+  },
+  trending_up: { 
+    label: 'TRENDING UP', 
+    emoji: '>', 
+    color: 'text-green-400', 
+    bg: 'bg-green-400/10' 
+  },
+  better_discoverability: { 
+    label: 'EASY TO FIND', 
+    emoji: '@', 
+    color: 'text-amber-400', 
+    bg: 'bg-amber-400/10' 
+  }
+}
+
+export const MatchReasonBadge: React.FC<MatchReasonBadgeProps> = ({ reason }) => {
+  const config = REASON_CONFIG[reason]
+  if (!config) return null
+
+  return (
+    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium ${config.bg} ${config.color}`}>
+      <span>{config.emoji}</span>
+      <span>{config.label}</span>
+    </div>
+  )
+}
+
+// Alternative Game Card - Shows alternative game with stats and CTAs
+interface AlternativeCardProps {
+  game: {
+    game_id: string
+    game_name: string
+    box_art_url: string | null
+    viewers: number
+    channels: number
+    discoverability_rating: number
+    shared_genres: string[]
+    match_score: number
+    match_reasons: string[]
+    momentum: string
+  }
+  onTwitchClick: () => void
+  onMoreInfo: () => void
+}
+
+export const AlternativeCard: React.FC<AlternativeCardProps> = ({ 
+  game,
+  onTwitchClick,
+  onMoreInfo
+}) => {
+  return (
+    <div className="matrix-card bg-gray-900/50 border-matrix-green/30">
+      <div className="flex gap-3">
+        {/* Box Art */}
+        {game.box_art_url && (
+          <div className="flex-shrink-0">
+            <img
+              src={game.box_art_url}
+              alt={game.game_name}
+              className="w-20 h-28 object-cover rounded border border-matrix-green/30"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
+            />
+          </div>
+        )}
+
+        {/* Game Info */}
+        <div className="flex-1 min-w-0">
+          <h4 className="text-lg font-bold text-white mb-1 truncate">
+            {game.game_name}
+          </h4>
+
+          {/* Stats Row */}
+          <div className="flex items-center gap-3 text-xs text-gray-400 mb-2">
+            <span className="flex items-center gap-1">
+              <span className="text-matrix-green">[V]</span>
+              {game.viewers.toLocaleString()}
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="text-matrix-green">[C]</span>
+              {game.channels}
+            </span>
+            <span className="text-matrix-green font-bold">
+              {game.discoverability_rating.toFixed(1)}/10
+            </span>
+          </div>
+
+          {/* Genres */}
+          {game.shared_genres && game.shared_genres.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {game.shared_genres.map(genre => (
+                <span
+                  key={genre}
+                  className="px-2 py-0.5 text-[10px] rounded bg-matrix-green/10 text-matrix-green/70 border border-matrix-green/20"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Match Reasons */}
+          <div className="flex flex-wrap gap-1 mb-3">
+            {game.match_reasons.map(reason => (
+              <MatchReasonBadge key={reason} reason={reason} />
+            ))}
+          </div>
+
+          {/* CTAs */}
+          <div className="flex gap-2">
+            <button
+              onClick={onTwitchClick}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-colors"
+            >
+              <span>[T]</span> View on Twitch
+            </button>
+            <button
+              onClick={onMoreInfo}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-matrix-green/20 hover:bg-matrix-green/30 text-matrix-green text-xs font-semibold transition-colors border border-matrix-green/30"
+            >
+              More Info
+            </button>
+          </div>
+        </div>
+
+        {/* Match Score Badge */}
+        <div className="flex-shrink-0 text-right">
+          <div className="text-2xl font-bold text-matrix-green">
+            {game.match_score}%
+          </div>
+          <div className="text-[10px] text-gray-400">
+            MATCH
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Alternatives Modal - Full modal showing 3 alternative games
+interface AlternativesModalProps {
+  sourceGameName: string
+  sourceGameId: string
+  onClose: () => void
+}
+
+export const AlternativesModal: React.FC<AlternativesModalProps> = ({
+  sourceGameName,
+  sourceGameId,
+  onClose
+}) => {
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [alternatives, setAlternatives] = React.useState<any[]>([])
+  const [candidatesEvaluated, setCandidatesEvaluated] = React.useState(0)
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+
+  React.useEffect(() => {
+    const fetchAlternatives = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await fetch(`${API_URL}/api/v1/alternatives/${sourceGameId}?limit=3`)
+        
+        if (!response.ok) {
+          throw new Error('Failed to load alternatives')
+        }
+
+        const data = await response.json()
+        setAlternatives(data.alternatives || [])
+        setCandidatesEvaluated(data.candidates_evaluated || 0)
+
+        // GA4 - Modal opened
+        if (typeof window !== 'undefined' && (window as any).gtag) {
+          (window as any).gtag('event', 'alternatives_opened', {
+            source_game_id: sourceGameId,
+            source_game_name: sourceGameName,
+            alternatives_count: data.alternatives?.length || 0
+          })
+          console.log(`[TRACK] alternatives_opened: ${sourceGameName} (${data.alternatives?.length || 0} alternatives)`)
+        }
+      } catch (err) {
+        setError('Could not load alternatives. Try again later.')
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAlternatives()
+  }, [sourceGameId, sourceGameName, API_URL])
+
+  const handleClose = () => {
+    // GA4 - Modal closed
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'alternatives_closed', {
+        source_game_id: sourceGameId,
+        source_game_name: sourceGameName,
+        viewed_count: alternatives.length
+      })
+      console.log(`[TRACK] alternatives_closed: ${sourceGameName} (viewed ${alternatives.length} alternatives)`)
+    }
+    onClose()
+  }
+
+  const handleTwitchClick = (alternative: any) => {
+    // GA4 - Twitch click on alternative
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'alternative_twitch_click', {
+        source_game_id: sourceGameId,
+        source_game_name: sourceGameName,
+        alternative_game_id: alternative.game_id,
+        alternative_game_name: alternative.game_name
+      })
+      console.log(`[TRACK] alternative_twitch_click: ${alternative.game_name} (from ${sourceGameName})`)
+    }
+
+    const twitchUrl = `https://www.twitch.tv/search?term=${encodeURIComponent(alternative.game_name)}&type=categories`
+    window.open(twitchUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleMoreInfo = (alternative: any) => {
+    // GA4 - More info click
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'alternative_more_info', {
+        source_game_id: sourceGameId,
+        source_game_name: sourceGameName,
+        alternative_game_id: alternative.game_id,
+        alternative_game_name: alternative.game_name
+      })
+      console.log(`[TRACK] alternative_more_info: ${alternative.game_name} (from ${sourceGameName})`)
+    }
+
+    // Scroll to game in main list (if visible)
+    // Note: This will only work if the alternative is in the current filtered view
+    const gameCard = document.querySelector(`[data-game-id="${alternative.game_id}"]`)
+    if (gameCard) {
+      gameCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      
+      // Auto-expand the game card after scroll completes
+      setTimeout(() => {
+        (gameCard as HTMLElement).click()
+      }, 600) // Wait for smooth scroll animation to finish
+      
+      handleClose()
+    }
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/70 z-50 animate-fade-in"
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4">
+        <div className="bg-slate-900 border-2 border-matrix-green rounded-lg p-6 shadow-2xl relative">
+          {/* Close button */}
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+            aria-label="Close"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Header */}
+          <div className="mb-6">
+            <h3 className="text-2xl font-bold text-matrix-green mb-2">
+              Alternative Games
+            </h3>
+            <p className="text-gray-300 text-sm">
+              Burnt out on <span className="text-white font-semibold">{sourceGameName}</span>? Try these similar games with good discoverability.
+            </p>
+          </div>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="inline-block w-8 h-8 border-2 border-matrix-green border-t-transparent rounded-full animate-spin mb-4"></div>
+              <p className="text-gray-400">Finding alternatives...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="text-center py-12">
+              <p className="text-red-400 mb-4">{error}</p>
+              <button
+                onClick={handleClose}
+                className="px-4 py-2 bg-matrix-green/20 hover:bg-matrix-green/30 text-matrix-green rounded transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && alternatives.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-400 mb-2">No alternatives found</p>
+              <p className="text-gray-500 text-sm">
+                We could not find similar games with good discoverability right now.
+              </p>
+              <button
+                onClick={handleClose}
+                className="mt-6 px-4 py-2 bg-matrix-green/20 hover:bg-matrix-green/30 text-matrix-green rounded transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          )}
+
+          {/* Alternatives List */}
+          {!loading && !error && alternatives.length > 0 && (
+            <>
+              <div className="space-y-4 mb-4">
+                {alternatives.map((alt, index) => (
+                  <AlternativeCard
+                    key={alt.game_id}
+                    game={alt}
+                    onTwitchClick={() => handleTwitchClick(alt)}
+                    onMoreInfo={() => handleMoreInfo(alt)}
+                  />
+                ))}
+              </div>
+
+              {/* Footer Stats */}
+              <div className="text-center pt-4 border-t border-matrix-green/30">
+                <p className="text-gray-400 text-sm">
+                  Evaluated {candidatesEvaluated} games - Showing top 3 matches
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
   )
 }

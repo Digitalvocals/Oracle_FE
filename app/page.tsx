@@ -16,15 +16,17 @@ import {
   KinguinButton,
   ShareButton,
   IGDBButton,
-  WikipediaButton
-,
+  WikipediaButton,
   FavoriteButton,
   FavoritesFilter,
   EmptyFavoritesState,
   UntrackedFavoriteCard,
   ClearFavoritesButton,
   UpdatedKinguinButton,
-  KinguinConfirmModal
+  KinguinConfirmModal,
+  AlternativesModal,
+  AlternativeCard,
+  MatchReasonBadge
 } from './components/streamscout-ui'
 import { useFavorites } from './hooks/useFavorites'
 
@@ -62,11 +64,9 @@ interface GameOpportunity {
   warning_flags?: string[]
   warning_text?: string | null
   dominance_ratio?: number
-  // INLINE ANALYTICS - New fields from backend (v3.7.0)
   bestTime?: string | null
   trend?: 'up' | 'down' | 'stable' | null
   trendMagnitude?: number | null
-  // US-035: GROWTH SIGNALS - New fields from backend (v3.8.0)
   viewerGrowth?: number | null
   channelGrowth?: number | null
   momentum?: string | null
@@ -93,7 +93,6 @@ interface StatusData {
   }
 }
 
-// HISTORICAL FEATURES - Full analytics data (lazy-loaded on expand)
 interface GameAnalytics {
   sparkline: number[]
   trend: 'up' | 'down' | 'stable'
@@ -109,7 +108,6 @@ interface GameAnalytics {
   }
 }
 
-// HISTORICAL FEATURES - Sparkline Component
 interface SparklineProps {
   data: number[]
   width?: number
@@ -125,7 +123,6 @@ const Sparkline: React.FC<SparklineProps> = ({
 }) => {
   if (!data || data.length < 2) return null
 
-  // ARCHITECT SPEC: Fixed 0-10 scale, not auto-scaled
   const max = 10
   const min = 0
   const range = max - min
@@ -155,17 +152,13 @@ const Sparkline: React.FC<SparklineProps> = ({
   )
 }
 
-// HISTORICAL FEATURES - Timezone Name Mapping
 const TIMEZONE_NAMES: Record<string, string> = {
-  // US Timezones
   'America/Los_Angeles': 'PST',
   'America/Denver': 'MST',
   'America/Chicago': 'CST',
   'America/New_York': 'EST',
   'America/Anchorage': 'AKST',
   'Pacific/Honolulu': 'HST',
-  
-  // Europe
   'Europe/London': 'GMT',
   'Europe/Paris': 'CET',
   'Europe/Berlin': 'CET',
@@ -183,8 +176,6 @@ const TIMEZONE_NAMES: Record<string, string> = {
   'Europe/Helsinki': 'EET',
   'Europe/Bucharest': 'EET',
   'Europe/Moscow': 'MSK',
-  
-  // Asia
   'Asia/Tokyo': 'JST',
   'Asia/Seoul': 'KST',
   'Asia/Shanghai': 'CST',
@@ -196,47 +187,32 @@ const TIMEZONE_NAMES: Record<string, string> = {
   'Asia/Kolkata': 'IST',
   'Asia/Dubai': 'GST',
   'Asia/Karachi': 'PKT',
-  
-  // Oceania
   'Australia/Sydney': 'AEDT',
   'Australia/Melbourne': 'AEDT',
   'Australia/Brisbane': 'AEST',
   'Australia/Perth': 'AWST',
   'Pacific/Auckland': 'NZDT',
-  
-  // Americas (Other)
   'America/Toronto': 'EST',
   'America/Vancouver': 'PST',
   'America/Mexico_City': 'CST',
   'America/Sao_Paulo': 'BRT',
   'America/Argentina/Buenos_Aires': 'ART',
-  
-  // Middle East
   'Asia/Jerusalem': 'IST',
   'Asia/Riyadh': 'AST',
 }
 
-// HISTORICAL FEATURES - Best Time Formatter (Named Timezones + Fallback)
 const formatBestTime = (pstBlock: string): string => {
-  // Get user's timezone
   const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
-  
-  // Parse PST block
   const [pstStart, pstEnd] = pstBlock.split('-').map(Number)
-  
-  // Create date objects in PST, convert to user timezone
   const pstTz = 'America/Los_Angeles'
   const now = new Date()
   
-  // Create start time in PST
   const startDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
   startDate.setHours(pstStart, 0, 0, 0)
   
-  // Create end time in PST
   const endDate = new Date(now.toLocaleDateString('en-US', { timeZone: pstTz }))
   endDate.setHours(pstEnd, 0, 0, 0)
   
-  // Format in user's timezone
   const hourFormatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     timeZone: userTz
@@ -245,7 +221,6 @@ const formatBestTime = (pstBlock: string): string => {
   const startHour = hourFormatter.format(startDate)
   const endHour = hourFormatter.format(endDate)
   
-  // Get timezone name (named if available, GMT offset as fallback)
   const timezoneName = TIMEZONE_NAMES[userTz] || (() => {
     const offsetFormatter = new Intl.DateTimeFormat('en-US', {
       hour: 'numeric',
@@ -260,12 +235,10 @@ const formatBestTime = (pstBlock: string): string => {
   return `${startHour} - ${endHour} ${timezoneName}`
 }
 
-// HISTORICAL FEATURES - Clean Recommendation Text
 const cleanRecommendation = (rating: string): string => {
   return rating.replace(/^\[.*?\]\s*/, '')
 }
 
-// HISTORICAL FEATURES - Trend Arrow Component
 interface TrendArrowProps {
   direction: 'up' | 'down' | 'stable'
   change: number | null
@@ -309,19 +282,16 @@ const TrendArrow: React.FC<TrendArrowProps> = ({ direction, change }) => {
   )
 }
 
-// HISTORICAL FEATURES - Get Localized Block Label
 const getLocalizedBlockLabel = (pstBlock: string): string => {
   const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
   const pstStart = parseInt(pstBlock.split('-')[0])
   
-  // Convert PST hour to user's timezone
   const pstTz = 'America/Los_Angeles'
   const date = new Date()
   const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
   const localDate = new Date(pstDateStr)
   localDate.setHours(pstStart, 0, 0, 0)
   
-  // Get the hour in user's timezone
   const localHour = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     timeZone: userTz
@@ -330,7 +300,6 @@ const getLocalizedBlockLabel = (pstBlock: string): string => {
   return localHour.toLowerCase().replace(' ', '')
 }
 
-// HISTORICAL FEATURES - Time Blocks Component (Dynamic Labels)
 interface TimeBlocksProps {
   blocks: {
     [key: string]: {
@@ -344,7 +313,6 @@ interface TimeBlocksProps {
 const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   const blockOrder = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
   
-  // Generate localized labels dynamically
   const blockLabels = blockOrder.map(block => getLocalizedBlockLabel(block))
   
   const getStatus = (blockKey: string): 'good' | 'ok' | 'avoid' => {
@@ -388,7 +356,6 @@ const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   )
 }
 
-// SMART PURCHASE LINKS - Store button visibility logic (US-028)
 interface StoreButtons {
   steam: string | null
   epic: string | null
@@ -402,7 +369,6 @@ function getStoreButtons(gameId: string, gameName: string): StoreButtons {
   const mapping = mappingsData.find(m => m.game_id === gameId)
   
   if (mapping) {
-    // Known game - use explicit mapping
     return {
       steam: mapping.steam === false ? null : (
         typeof mapping.steam === 'string' ? mapping.steam : 
@@ -418,7 +384,6 @@ function getStoreButtons(gameId: string, gameName: string): StoreButtons {
       isFree: mapping.free,
     }
   } else {
-    // Unknown game - default to search links
     return {
       steam: `https://store.steampowered.com/search/?term=${encodeURIComponent(gameName)}`,
       epic: `https://store.epicgames.com/browse?q=${encodeURIComponent(gameName)}`,
@@ -441,24 +406,25 @@ export default function Home() {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState<string>('')
   
-  // US-002: Save Favorites state
   const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
   
-  // US-002: Kinguin modal state
   const [showKinguinModal, setShowKinguinModal] = useState<boolean>(false)
   const [kinguinGameName, setKinguinGameName] = useState<string>('')
-  // US-002: Favorites hook
+  
+  const [showAlternativesModal, setShowAlternativesModal] = useState<boolean>(false)
+  const [alternativesSourceGame, setAlternativesSourceGame] = useState<{
+    game_id: string
+    game_name: string
+  } | null>(null)
+  
   const { favorites, isFavorited, addFavorite, removeFavorite, toggleFavorite, clearAllFavorites } = useFavorites()
 
-  // PHASE 1: MOBILE TOOLTIP STATE - Track which tooltip is open
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
-  // HISTORICAL FEATURES - Analytics cache for expanded view (lazy-loaded)
   const [analyticsCache, setAnalyticsCache] = useState<{ [gameId: string]: GameAnalytics }>({})
   const [loadingAnalytics, setLoadingAnalytics] = useState<{ [gameId: string]: boolean }>({})
   const [failedAnalytics, setFailedAnalytics] = useState<{ [gameId: string]: boolean }>({})
 
-  // PHASE 2: MOBILE BUTTON HIERARCHY - Track which game's "More options" is open
   const [moreOptionsOpen, setMoreOptionsOpen] = useState<{ [gameRank: number]: boolean }>({})
 
   const toggleMoreOptions = (gameRank: number) => {
@@ -468,14 +434,12 @@ export default function Home() {
     }))
   }
 
-  // Available genre filters
   const GENRE_OPTIONS = [
     'Action', 'Adventure', 'Battle Royale', 'Card Game', 'FPS', 'Fighting',
     'Horror', 'Indie', 'MMO', 'MOBA', 'Party', 'Platformer', 'Puzzle',
     'RPG', 'Racing', 'Sandbox', 'Simulation', 'Sports', 'Strategy', 'Survival'
   ]
 
-  // Toggle genre filter
   const toggleGenre = (genre: string) => {
     setSelectedGenres(prev =>
       prev.includes(genre)
@@ -484,7 +448,6 @@ export default function Home() {
     )
   }
 
-  // Filter opportunities by selected genres AND search query
   const filteredOpportunities = data?.top_opportunities?.filter(game => {
     if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false
@@ -493,20 +456,14 @@ export default function Home() {
     return game.genres?.some(g => selectedGenres.includes(g))
   }) || []
   
-  // US-002: Apply favorites filter
   const displayedGames = showFavoritesOnly
     ? filteredOpportunities.filter(game => isFavorited(game.game_id))
     : filteredOpportunities
   
-  // US-002: Find untracked favorites (favorited but not in current opportunities)
   const untrackedFavorites = favorites.filter(fav => 
     !data?.top_opportunities?.some(game => game.game_id === fav.game_id)
   )
 
-  // NOTE: URL helper functions removed - now handled by component library
-  // Keeping only getTwitterShareUrl for special score computation
-  
-  // US-002: Favorites GA4 handlers
   const handleFavoriteToggle = (game: GameOpportunity) => {
     const wasFavorited = isFavorited(game.game_id)
     toggleFavorite(game.game_id, game.game_name)
@@ -551,20 +508,31 @@ export default function Home() {
     }
   }
   
+  const handleFindAlternatives = (game: GameOpportunity) => {
+    setAlternativesSourceGame({
+      game_id: game.game_id,
+      game_name: game.game_name
+    })
+    setShowAlternativesModal(true)
+    
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'alternatives_button_click', {
+        game_name: game.game_name,
+        game_id: game.game_id
+      })
+      console.log(`[TRACK] alternatives_button_click: ${game.game_name}`)
+    }
+  }
   
-  
- // Generate Twitter share URL (kept for score computation logic)
   const getShareScore = (game: GameOpportunity): number => {
     return game.discoverability_rating !== undefined 
       ? game.discoverability_rating 
       : game.overall_score * 10
   }
 
-  // HISTORICAL FEATURES - Fetch full analytics on card expand (lazy-load)
-  // PREFETCH ON HOVER - Also fetches when user hovers over card
   const fetchAnalytics = useCallback(async (gameId: string) => {
     if (analyticsCache[gameId] || loadingAnalytics[gameId] || failedAnalytics[gameId]) {
-      return // Already have it or loading it
+      return
     }
 
     setLoadingAnalytics(prev => ({ ...prev, [gameId]: true }))
@@ -579,7 +547,6 @@ export default function Home() {
     }
   }, [analyticsCache, loadingAnalytics, failedAnalytics])
 
-  // External click tracking for GA4
   const trackExternalClick = (linkType: 'steam' | 'epic' | 'battlenet' | 'riot' | 'official' | 'twitch' | 'igdb' | 'youtube' | 'wikipedia' | 'share_twitter' | 'kinguin', game: GameOpportunity) => {
     if (typeof window !== 'undefined' && (window as any).gtag) {
       const score = game.discoverability_rating !== undefined
@@ -598,7 +565,6 @@ export default function Home() {
     }
   }
 
-  // Check status endpoint for warmup progress
   const checkStatus = useCallback(async () => {
     try {
       const response = await axios.get<StatusData>(`${API_URL}/api/v1/status`)
@@ -654,12 +620,10 @@ export default function Home() {
     }
   }, [])
 
-  // Initial load
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  // Warmup polling
   useEffect(() => {
     if (!isWarmingUp) return
 
@@ -676,7 +640,6 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [isWarmingUp, checkStatus, fetchData])
 
-  // Countdown timer
   useEffect(() => {
     if (!data || countdown <= 0) return
 
@@ -693,7 +656,6 @@ export default function Home() {
     return () => clearInterval(timer)
   }, [data, countdown, fetchData])
 
-  // Poll for updates every 60 seconds
   useEffect(() => {
     if (!data) return
 
@@ -872,8 +834,6 @@ export default function Home() {
               )}
             </div>
 
-
-            {/* US-002: Favorites Filter + Clear Button */}
             <FavoritesFilter 
               showFavoritesOnly={showFavoritesOnly}
               favoriteCount={favorites.length}
@@ -887,7 +847,6 @@ export default function Home() {
               />
             )}
 
-            {/* US-002: Empty state when showing favorites but have none */}
             {showFavoritesOnly && favorites.length === 0 ? (
               <EmptyFavoritesState />
             ) : showFavoritesOnly && displayedGames.length === 0 && untrackedFavorites.length === 0 ? (
@@ -896,7 +855,6 @@ export default function Home() {
               </div>
             ) : null}
             
-            {/* US-002: Show untracked favorites first when in favorites view */}
             {showFavoritesOnly && untrackedFavorites.length > 0 && (
               <div className="space-y-4 mb-6">
                 {untrackedFavorites.map(fav => (
@@ -928,13 +886,13 @@ export default function Home() {
                   }
                 </div>
               ) : displayedGames.map((game) => {
-                // INLINE ANALYTICS - Get trend info directly from game object
                 const hasTrendData = game.trend != null
                 const hasBestTime = game.bestTime != null
 
                 return (
                   <div
                     key={game.rank}
+                    data-game-id={game.game_id}
                     className={`matrix-card cursor-pointer ${
                       game.is_filtered
                         ? 'border-red-500/50 bg-red-900/10'
@@ -980,7 +938,6 @@ export default function Home() {
                               <h2 className="text-base sm:text-xl md:text-2xl font-bold leading-tight break-words">
                                 {game.game_name}
                               </h2>
-                              {/* US-002: Favorite Button */}
                               <FavoriteButton 
                                 isFavorited={isFavorited(game.game_id)}
                                 onClick={(e) => {
@@ -988,7 +945,6 @@ export default function Home() {
                                   handleFavoriteToggle(game)
                                 }}
                               />
-                              {/* US-035: GROWTH SIGNALS - Momentum Badge */}
                               {game.momentum && game.momentum !== 'insufficient_data' && (
                                 <MomentumBadge 
                                   momentum={game.momentum}
@@ -1036,7 +992,6 @@ export default function Home() {
                                   ?
                                 </button>
 
-                                {/* PHASE 1: Tooltip with tap-to-toggle for mobile */}
                                 <div 
                                   className={`absolute right-full top-0 mr-2 w-56 p-3 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
                                     activeTooltip === `whyScore-${game.rank}`
@@ -1047,7 +1002,6 @@ export default function Home() {
                                 >
                                   <div className="text-matrix-green font-bold text-xs mb-2 flex justify-between items-center">
                                     <span>Why this score?</span>
-                                    {/* Mobile close button */}
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
@@ -1093,7 +1047,6 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* INLINE ANALYTICS - Best Time from game object */}
                         {hasBestTime && game.bestTime && (
                           <div className="mt-2 flex items-center gap-2">
                             <span className="text-xs text-gray-400">BEST TIME:</span>
@@ -1103,7 +1056,6 @@ export default function Home() {
                           </div>
                         )}
 
-                        {/* PHASE 2: BUTTON HIERARCHY - Primary (Twitch + Kinguin) always visible */}
                         <div className="flex gap-2 mt-2">
                           <TwitchButton 
                             gameName={game.game_name}
@@ -1119,9 +1071,7 @@ export default function Home() {
                           />
                         </div>
 
-                        {/* PHASE 2: BUTTON HIERARCHY - Secondary buttons on tablet+ */}
                         <div className="hidden sm:flex gap-2 mt-2 flex-wrap">
-                          {/* SMART PURCHASE LINKS (US-028) */}
                           {(() => {
                             const buttons = getStoreButtons(game.game_id, game.game_name)
                             
@@ -1182,9 +1132,18 @@ export default function Home() {
                             viewers={game.total_viewers}
                             onClick={() => trackExternalClick('share_twitter', game)}
                           />
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFindAlternatives(game)
+                            }}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-matrix-green/20 hover:bg-matrix-green/30 text-matrix-green text-xs font-semibold transition-colors border border-matrix-green/30"
+                          >
+                            Find Alternatives
+                          </button>
                         </div>
 
-                        {/* PHASE 2: BUTTON HIERARCHY - Mobile "More options" accordion */}
                         <div className="sm:hidden mt-2">
                           <button
                             onClick={() => toggleMoreOptions(game.rank)}
@@ -1194,10 +1153,8 @@ export default function Home() {
                             <span className={`transition-transform ${moreOptionsOpen[game.rank] ? 'rotate-180' : ''}`}>V</span>
                           </button>
 
-                          {/* PHASE 2: Secondary buttons in 2-column grid when expanded */}
                           {moreOptionsOpen[game.rank] && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
-                              {/* SMART PURCHASE LINKS (US-028) */}
                               {(() => {
                                 const buttons = getStoreButtons(game.game_id, game.game_name)
                                 
@@ -1251,6 +1208,16 @@ export default function Home() {
                                 )
                               })()}
 
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleFindAlternatives(game)
+                                }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-matrix-green/20 hover:bg-matrix-green/30 text-matrix-green text-xs font-semibold transition-colors border border-matrix-green/30"
+                              >
+                                Find Alternatives
+                              </button>
+
                               <ShareButton 
                                 gameName={game.game_name}
                                 score={getShareScore(game)}
@@ -1263,7 +1230,6 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-
                     {selectedGame?.rank === game.rank && (
                       <div className="mt-4 pt-4 border-t border-matrix-green/30">
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -1283,7 +1249,6 @@ export default function Home() {
                             <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
                               {(game.discoverability_score * 10).toFixed(1)}/10
                             </div>
-                            {/* PHASE 1: Tooltip with tap-to-toggle */}
                             <div 
                               className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
                                 activeTooltip === `disc-${game.rank}`
@@ -1323,7 +1288,6 @@ export default function Home() {
                             <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
                               {(game.viability_score * 10).toFixed(1)}/10
                             </div>
-                            {/* PHASE 1: Tooltip with tap-to-toggle */}
                             <div 
                               className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
                                 activeTooltip === `viab-${game.rank}`
@@ -1363,7 +1327,6 @@ export default function Home() {
                             <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
                               {(game.engagement_score * 10).toFixed(1)}/10
                             </div>
-                            {/* PHASE 1: Tooltip with tap-to-toggle */}
                             <div 
                               className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
                                 activeTooltip === `eng-${game.rank}`
@@ -1403,7 +1366,6 @@ export default function Home() {
                             <div className="text-2xl font-bold text-matrix-green">
                               {game.avg_viewers_per_channel.toFixed(1)}
                             </div>
-                            {/* PHASE 1: Tooltip with tap-to-toggle */}
                             <div 
                               className={`absolute left-0 bottom-full mb-2 w-48 p-2 bg-gray-900 border border-matrix-green/50 rounded-lg shadow-lg z-50 text-left transition-all duration-200 ${
                                 activeTooltip === `avg-${game.rank}`
@@ -1428,9 +1390,7 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* HISTORICAL FEATURES - Sparkline in Expanded Section (lazy-loaded) */}
                         {(() => {
-                          // Trigger fetch when expanded
                           const analytics = analyticsCache[game.game_id]
                           if (!analytics && !loadingAnalytics[game.game_id] && !failedAnalytics[game.game_id]) {
                             fetchAnalytics(game.game_id)
@@ -1447,9 +1407,7 @@ export default function Home() {
                           if (analytics && analytics.sparkline && analytics.sparkline.length > 0) {
                             return (
                               <div className="mt-4 pt-4 border-t border-matrix-green/20">
-                                {/* Desktop: inline row | Mobile: stacked */}
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-                                  {/* Sparkline section */}
                                   <div className="flex items-center gap-3">
                                     <div className="text-gray-400 text-xs whitespace-nowrap">{analytics.dataDays}-DAY TREND</div>
                                     <Sparkline 
@@ -1463,7 +1421,6 @@ export default function Home() {
                                     </div>
                                   </div>
 
-                                  {/* Time Blocks section */}
                                   {analytics.timeBlocks && Object.keys(analytics.timeBlocks).length > 0 && (
                                     <div className="flex items-center gap-3">
                                       <div className="text-gray-400 text-xs whitespace-nowrap">BEST TIMES</div>
@@ -1515,13 +1472,21 @@ export default function Home() {
           </main>
         </div>
 
-
-
-        {/* US-002: Kinguin Confirmation Modal */}
         {showKinguinModal && (
           <KinguinConfirmModal 
             gameName={kinguinGameName}
             onClose={() => setShowKinguinModal(false)}
+          />
+        )}
+
+        {showAlternativesModal && alternativesSourceGame && (
+          <AlternativesModal 
+            sourceGameName={alternativesSourceGame.game_name}
+            sourceGameId={alternativesSourceGame.game_id}
+            onClose={() => {
+              setShowAlternativesModal(false)
+              setAlternativesSourceGame(null)
+            }}
           />
         )}
 
