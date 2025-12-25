@@ -520,6 +520,7 @@ export default function Home() {
         game_name: game.game_name,
         game_id: game.game_id
       })
+      console.log(`[TRACK] alternatives_button_click: ${game.game_name}`)
     }
   }
   

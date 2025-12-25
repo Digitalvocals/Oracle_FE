@@ -1048,6 +1048,7 @@ export const AlternativesModal: React.FC<AlternativesModalProps> = ({
             source_game_name: sourceGameName,
             alternatives_count: data.alternatives?.length || 0
           })
+          console.log(`[TRACK] alternatives_opened: ${sourceGameName} (${data.alternatives?.length || 0} alternatives)`)
         }
       } catch (err) {
         setError('Could not load alternatives. Try again later.')
@@ -1068,6 +1069,7 @@ export const AlternativesModal: React.FC<AlternativesModalProps> = ({
         source_game_name: sourceGameName,
         viewed_count: alternatives.length
       })
+      console.log(`[TRACK] alternatives_closed: ${sourceGameName} (viewed ${alternatives.length} alternatives)`)
     }
     onClose()
   }
@@ -1081,6 +1083,7 @@ export const AlternativesModal: React.FC<AlternativesModalProps> = ({
         alternative_game_id: alternative.game_id,
         alternative_game_name: alternative.game_name
       })
+      console.log(`[TRACK] alternative_twitch_click: ${alternative.game_name} (from ${sourceGameName})`)
     }
 
     const twitchUrl = `https://www.twitch.tv/search?term=${encodeURIComponent(alternative.game_name)}&type=categories`
@@ -1096,6 +1099,7 @@ export const AlternativesModal: React.FC<AlternativesModalProps> = ({
         alternative_game_id: alternative.game_id,
         alternative_game_name: alternative.game_name
       })
+      console.log(`[TRACK] alternative_more_info: ${alternative.game_name} (from ${sourceGameName})`)
     }
 
     // Scroll to game in main list (if visible)
