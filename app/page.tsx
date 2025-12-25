@@ -93,10 +93,11 @@ interface StatusData {
   }
 }
 
+// Updated interface per Architect spec - viewerSparkline replaces sparkline
 interface GameAnalytics {
-  sparkline: number[]
-  trend: 'up' | 'down' | 'stable'
-  trendMagnitude: number
+  viewerSparkline: number[]
+  viewerTrend: 'up' | 'down' | 'stable'
+  viewerTrendPercent: number
   bestTime: string
   status: 'good' | 'ok' | 'avoid' | 'unknown'
   dataDays: number
@@ -115,6 +116,18 @@ interface SparklineProps {
   className?: string
 }
 
+// Format large viewer numbers for tooltips (per Oracle spec)
+const formatViewers = (count: number): string => {
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1)}M viewers`
+  }
+  if (count >= 1_000) {
+    return `${Math.round(count / 1_000)}K viewers`
+  }
+  return `${count} viewers`
+}
+
+// Updated Sparkline component with dynamic Y-axis scaling (per Oracle spec)
 const Sparkline: React.FC<SparklineProps> = ({ 
   data, 
   width = 120, 
@@ -123,13 +136,18 @@ const Sparkline: React.FC<SparklineProps> = ({
 }) => {
   if (!data || data.length < 2) return null
 
-  const max = 10
-  const min = 0
-  const range = max - min
+  // Dynamic min-max scaling with 10% padding (per Oracle spec)
+  const dataMin = Math.min(...data)
+  const dataMax = Math.max(...data)
+  const min = dataMin * 0.9
+  const max = dataMax * 1.1
+  const range = max - min || 1 // Prevent division by zero
 
   const points = data.map((value, index) => {
     const x = (index / (data.length - 1)) * width
-    const y = height - ((value - min) / range) * height
+    // Normalize to 0-100 range then scale to height
+    const normalized = ((value - min) / range) * 100
+    const y = height - (normalized / 100) * height
     return `${x},${y}`
   }).join(' ')
 
@@ -1390,6 +1408,7 @@ export default function Home() {
                           </div>
                         </div>
 
+                        {/* UPDATED: Analytics section with viewerSparkline per Oracle spec */}
                         {(() => {
                           const analytics = analyticsCache[game.game_id]
                           if (!analytics && !loadingAnalytics[game.game_id] && !failedAnalytics[game.game_id]) {
@@ -1404,20 +1423,35 @@ export default function Home() {
                             )
                           }
                           
-                          if (analytics && analytics.sparkline && analytics.sparkline.length > 0) {
+                          // UPDATED: Check viewerSparkline instead of sparkline (per Oracle spec)
+                          // Hide row if < 2 data points (per Oracle spec)
+                          if (analytics && analytics.viewerSparkline && analytics.viewerSparkline.length >= 2) {
+                            // Calculate percentage display with color (per Oracle spec)
+                            const percentText = analytics.viewerTrendPercent >= 0 
+                              ? `+${analytics.viewerTrendPercent.toFixed(1)}%`
+                              : `${analytics.viewerTrendPercent.toFixed(1)}%`
+                            
+                            const percentColor = 
+                              analytics.viewerTrend === 'up' ? 'text-green-400' :
+                              analytics.viewerTrend === 'down' ? 'text-red-400' :
+                              'text-gray-400'
+                            
                             return (
                               <div className="mt-4 pt-4 border-t border-matrix-green/20">
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
                                   <div className="flex items-center gap-3">
-                                    <div className="text-gray-400 text-xs whitespace-nowrap">{analytics.dataDays}-DAY TREND</div>
+                                    {/* UPDATED: Label from "4-DAY TREND" to "VIEWER TREND" (per Oracle spec) */}
+                                    <div className="text-gray-400 text-xs whitespace-nowrap">VIEWER TREND</div>
+                                    {/* UPDATED: Use viewerSparkline data (per Oracle spec) */}
                                     <Sparkline 
-                                      data={analytics.sparkline} 
+                                      data={analytics.viewerSparkline} 
                                       width={120} 
                                       height={40}
                                       className="text-matrix-green"
                                     />
-                                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                                      {analytics.trendMagnitude > 0 ? '+' : ''}{analytics.trendMagnitude.toFixed(1)}% change
+                                    {/* UPDATED: Colored percentage with sign (per Oracle spec) */}
+                                    <div className={`text-xs whitespace-nowrap ${percentColor}`}>
+                                      {percentText}
                                     </div>
                                   </div>
 
