@@ -191,6 +191,12 @@ export function GameCard({ game }: GameCardProps) {
     }
   }
   
+  const handleKinguinClick = () => {
+    setKinguinGameName(game.game_name)
+    setShowKinguinModal(true)
+    trackClick('kinguin')
+  }
+  
   useEffect(() => {
     if (isExpanded && !analytics && !loadingAnalytics && !failedAnalytics) {
       fetchAnalytics()
@@ -316,7 +322,10 @@ export function GameCard({ game }: GameCardProps) {
               {/* FEATURE 5: UpdatedKinguinButton */}
               {game.purchase_links && !game.purchase_links.free && (
                 <div onClick={(e) => e.stopPropagation()}>
-                  <UpdatedKinguinButton gameName={game.game_name} platforms={game.purchase_links.platforms} primaryUrl={game.purchase_links.primary_url} onKinguinClick={(name) => { setKinguinGameName(name); setShowKinguinModal(true) }} trackClick={(platform) => trackClick(platform)} />
+                  <UpdatedKinguinButton 
+                    gameName={game.game_name}
+                    onClick={handleKinguinClick}
+                  />
                 </div>
               )}
               
