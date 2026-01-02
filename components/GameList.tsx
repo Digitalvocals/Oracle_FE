@@ -1,5 +1,5 @@
 // US-073: GameList Client Component
-// Fixed: Always load full game list in background
+// Single-select genre filter (Oracle's UX improvement)
 
 'use client'
 
@@ -49,11 +49,11 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   const [isLoadingAll, setIsLoadingAll] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   
-  // Filters
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  // Filters - CHANGED: Single-select genre
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
   
-  // ALWAYS load full game list in background (per Oracle spec)
+  // ALWAYS load full game list in background
   useEffect(() => {
     if (!hasError) {
       loadAllGames()
@@ -83,7 +83,6 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   function loadMore() {
     setIsLoadingMore(true)
     
-    // Simulate loading delay for UX (per Oracle spec)
     setTimeout(() => {
       const currentCount = displayedGames.length
       const nextBatch = filteredGames.slice(currentCount, currentCount + 100)
@@ -93,15 +92,16 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     }, 300)
   }
   
-  // Filter logic
+  // Filter logic - CHANGED: Single genre + search
   const filteredGames = allGames.filter(game => {
+    // Search filter
     if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false
     }
     
-    if (selectedGenres.length > 0) {
-      const hasMatchingGenre = game.genres?.some(g => selectedGenres.includes(g))
-      if (!hasMatchingGenre) return false
+    // Genre filter (single select)
+    if (selectedGenre && !game.genres?.includes(selectedGenre)) {
+      return false
     }
     
     return true
@@ -111,14 +111,15 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   useEffect(() => {
     setDisplayedGames(filteredGames.slice(0, 100))
     setHasMore(filteredGames.length > 100)
-  }, [selectedGenres, searchQuery, allGames])
+  }, [selectedGenre, searchQuery, allGames])
   
-  function toggleGenre(genre: string) {
-    setSelectedGenres(prev =>
-      prev.includes(genre)
-        ? prev.filter(g => g !== genre)
-        : [...prev, genre]
-    )
+  // CHANGED: selectGenre instead of toggleGenre
+  function selectGenre(genre: string) {
+    setSelectedGenre(genre)
+  }
+  
+  function clearGenre() {
+    setSelectedGenre(null)
   }
   
   // Error state
@@ -148,38 +149,50 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
         />
       </div>
       
-      {/* Genre filters */}
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-text-secondary text-sm mr-2">Filter by genre:</span>
+      {/* Genre filters - CHANGED: Single-select UI */}
+      <div className="mb-6 space-y-2">
+        {/* Header with count */}
+        <div className="flex items-center justify-between">
+          <span className="text-text-secondary text-sm">Filter by genre:</span>
+          <span className="text-text-tertiary text-xs">
+            {selectedGenre 
+              ? `${filteredGames.length} ${selectedGenre} games`
+              : `${allGames.length} games total`
+            }
+          </span>
+        </div>
+        
+        {/* Genre buttons */}
+        <div className="flex flex-wrap gap-2">
           {GENRE_OPTIONS.map(genre => (
             <button
               key={genre}
-              onClick={() => toggleGenre(genre)}
+              onClick={() => selectGenre(genre)}
               className={`px-3 py-2 rounded-full text-sm transition-all ${
-                selectedGenres.includes(genre)
-                  ? 'bg-brand-primary text-black font-semibold'
+                selectedGenre === genre
+                  ? 'bg-brand-primary text-bg-primary font-semibold border border-brand-primary'
                   : 'bg-brand-primary/10 text-brand-primary border border-brand-primary/30 hover:bg-brand-primary/20'
               }`}
             >
               {genre}
             </button>
           ))}
-          {selectedGenres.length > 0 && (
+          
+          {/* Clear All - only shows when filter active */}
+          {selectedGenre && (
             <button
-              onClick={() => setSelectedGenres([])}
-              className="px-3 py-2 rounded-full text-sm bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30 ml-2"
+              onClick={clearGenre}
+              className="px-3 py-2 rounded-full text-sm bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30"
             >
               Clear All
             </button>
           )}
         </div>
         
-        {/* Results count */}
-        {(selectedGenres.length > 0 || searchQuery) && (
-          <div className="text-text-tertiary text-sm mt-2">
-            {searchQuery && `Search results for "${searchQuery}": `}
-            {filteredGames.length} of {allGames.length} games
+        {/* Search results indicator */}
+        {searchQuery && (
+          <div className="text-text-tertiary text-sm">
+            Search results for "{searchQuery}": {filteredGames.length} games
           </div>
         )}
       </div>
@@ -190,7 +203,9 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
           <div className="text-center py-12 text-text-secondary">
             {searchQuery
               ? `No games found matching "${searchQuery}". Try a different search.`
-              : 'No games found matching selected genres. Try different filters.'
+              : selectedGenre
+              ? `No ${selectedGenre} games found. Try a different genre.`
+              : 'No games found.'
             }
           </div>
         ) : (
