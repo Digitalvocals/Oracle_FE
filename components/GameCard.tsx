@@ -1,18 +1,38 @@
 // US-073: GameCard Component - Phase 1 
-// Using actual streamscout-ui components
+// Conditional store buttons based on purchase_links.platforms
 
 'use client'
 
 import { useState } from 'react'
 import {
   TwitchButton,
+  KinguinButton,
   SteamButton,
+  EpicButton,
+  BattleNetButton,
+  RiotButton,
   ShareButton,
   IGDBButton,
   YouTubeButton,
   WikipediaButton,
   urls
 } from '@/app/components/streamscout-ui'
+
+interface Platform {
+  id: string
+  name: string
+  url: string
+  icon: string
+  color: string
+}
+
+interface PurchaseLinks {
+  platforms: Platform[]
+  primary_url: string
+  free: boolean
+  steam?: string
+  epic?: string
+}
 
 interface GameOpportunity {
   rank: number
@@ -34,6 +54,7 @@ interface GameOpportunity {
   trend?: 'up' | 'down' | 'stable' | null
   momentum?: string | null
   bestTime?: string | null
+  purchase_links?: PurchaseLinks
 }
 
 interface GameCardProps {
@@ -66,6 +87,23 @@ export function GameCard({ game }: GameCardProps) {
         'game_rank': game.rank
       });
     }
+  }
+  
+  // Check which platforms are available
+  const platforms = game.purchase_links?.platforms || []
+  const hasSteam = platforms.some(p => p.id === 'steam')
+  const hasEpic = platforms.some(p => p.id === 'epic')
+  const hasBattleNet = platforms.some(p => p.id === 'battlenet')
+  const hasRiot = platforms.some(p => p.id === 'riot')
+  
+  const getSteamUrl = () => {
+    const steamPlatform = platforms.find(p => p.id === 'steam')
+    return steamPlatform?.url || urls.steam(game.game_name)
+  }
+  
+  const getEpicUrl = () => {
+    const epicPlatform = platforms.find(p => p.id === 'epic')
+    return epicPlatform?.url || urls.epic(game.game_name)
   }
   
   return (
@@ -159,12 +197,41 @@ export function GameCard({ game }: GameCardProps) {
               onClick={() => trackClick('twitch')}
             />
             
-            <SteamButton 
+            <KinguinButton 
               gameName={game.game_name}
-              url={urls.steam(game.game_name)}
-              isFree={false}
-              onClick={() => trackClick('steam')}
+              onClick={() => trackClick('kinguin')}
             />
+            
+            {hasSteam && (
+              <SteamButton 
+                gameName={game.game_name}
+                url={getSteamUrl()}
+                isFree={game.purchase_links?.free || false}
+                onClick={() => trackClick('steam')}
+              />
+            )}
+            
+            {hasEpic && (
+              <EpicButton 
+                gameName={game.game_name}
+                url={getEpicUrl()}
+                onClick={() => trackClick('epic')}
+              />
+            )}
+            
+            {hasBattleNet && (
+              <BattleNetButton 
+                gameName={game.game_name}
+                onClick={() => trackClick('battlenet')}
+              />
+            )}
+            
+            {hasRiot && (
+              <RiotButton 
+                gameName={game.game_name}
+                onClick={() => trackClick('riot')}
+              />
+            )}
             
             <ShareButton 
               gameName={game.game_name}
