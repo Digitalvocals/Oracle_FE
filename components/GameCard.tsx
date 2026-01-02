@@ -1,5 +1,5 @@
 // US-073: GameCard Component - Phase 1 
-// Conditional store buttons based on purchase_links.platforms
+// Conditional store buttons with proper URL props
 
 'use client'
 
@@ -104,6 +104,16 @@ export function GameCard({ game }: GameCardProps) {
   const getEpicUrl = () => {
     const epicPlatform = platforms.find(p => p.id === 'epic')
     return epicPlatform?.url || urls.epic(game.game_name)
+  }
+  
+  const getBattleNetUrl = () => {
+    const battlenetPlatform = platforms.find(p => p.id === 'battlenet')
+    return battlenetPlatform?.url || urls.battlenet(game.game_name)
+  }
+  
+  const getRiotUrl = () => {
+    const riotPlatform = platforms.find(p => p.id === 'riot')
+    return riotPlatform?.url || urls.riot(game.game_name)
   }
   
   return (
@@ -222,6 +232,7 @@ export function GameCard({ game }: GameCardProps) {
             {hasBattleNet && (
               <BattleNetButton 
                 gameName={game.game_name}
+                url={getBattleNetUrl()}
                 onClick={() => trackClick('battlenet')}
               />
             )}
@@ -229,6 +240,7 @@ export function GameCard({ game }: GameCardProps) {
             {hasRiot && (
               <RiotButton 
                 gameName={game.game_name}
+                url={getRiotUrl()}
                 onClick={() => trackClick('riot')}
               />
             )}
