@@ -1,6 +1,5 @@
-// US-073: GameCard Component - Phase 1 Enhanced
-// Integrates existing streamscout-ui components with Oracle's design system
-// Uses existing buttons, adds new color palette
+// US-073: GameCard Component - Phase 1 
+// Using actual streamscout-ui components
 
 'use client'
 
@@ -8,14 +7,11 @@ import { useState } from 'react'
 import {
   TwitchButton,
   SteamButton,
-  EpicButton,
   ShareButton,
-  InfoButton,
+  IGDBButton,
   YouTubeButton,
-  MetricStat,
-  getScoreColorClass,
-  urls,
-  METRIC_DESCRIPTIONS
+  WikipediaButton,
+  urls
 } from '@/app/components/streamscout-ui'
 
 interface GameOpportunity {
@@ -81,7 +77,6 @@ export function GameCard({ game }: GameCardProps) {
       }`}
       onClick={() => setIsExpanded(!isExpanded)}
     >
-      {/* Warning banner for filtered games */}
       {game.is_filtered && game.warning_text && (
         <div className="bg-brand-danger/20 border border-brand-danger/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
           <span className="text-brand-danger font-bold text-sm">AVOID</span>
@@ -90,7 +85,6 @@ export function GameCard({ game }: GameCardProps) {
       )}
       
       <div className="flex gap-4">
-        {/* Box art */}
         {game.box_art_url && (
           <div className="flex-shrink-0">
             <img
@@ -105,7 +99,6 @@ export function GameCard({ game }: GameCardProps) {
         )}
         
         <div className="flex-1 min-w-0 flex flex-col">
-          {/* Header: Rank + Title + Score */}
           <div className="flex items-start gap-2 mb-2">
             <div className="text-h1 font-bold text-brand-primary flex-shrink-0">
               #{game.rank}
@@ -126,7 +119,6 @@ export function GameCard({ game }: GameCardProps) {
                 </span>
               </div>
               
-              {/* Genres */}
               {game.genres && game.genres.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
                   {game.genres.slice(0, 3).map(genre => (
@@ -141,7 +133,6 @@ export function GameCard({ game }: GameCardProps) {
               )}
             </div>
             
-            {/* Score */}
             <div className="text-right flex-shrink-0 ml-2">
               <div className={`text-display font-bold leading-none ${
                 game.is_filtered ? 'text-brand-danger' : getScoreColor(game.overall_score)
@@ -162,116 +153,79 @@ export function GameCard({ game }: GameCardProps) {
             </div>
           </div>
           
-          {/* Action buttons - using existing components */}
           <div className="flex gap-2 mt-2 flex-wrap">
             <TwitchButton 
-              href={`https://www.twitch.tv/directory/game/${encodeURIComponent(game.game_name)}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                trackClick('twitch')
-              }}
-            >
-              View on Twitch
-            </TwitchButton>
+              gameName={game.game_name}
+              onClick={() => trackClick('twitch')}
+            />
             
             <SteamButton 
-              href={urls.steam(game.game_name)}
-              onClick={(e) => {
-                e.stopPropagation()
-                trackClick('steam')
-              }}
-            >
-              Steam
-            </SteamButton>
+              gameName={game.game_name}
+              url={urls.steam(game.game_name)}
+              isFree={false}
+              onClick={() => trackClick('steam')}
+            />
             
             <ShareButton 
-              href={urls.twitterShare(
-                game.game_name,
-                game.discoverability_rating !== undefined ? game.discoverability_rating : game.overall_score * 10,
-                game.channels,
-                game.total_viewers
-              )}
-              onClick={(e) => {
-                e.stopPropagation()
-                trackClick('share')
-              }}
-            >
-              Share
-            </ShareButton>
+              gameName={game.game_name}
+              score={game.discoverability_rating !== undefined ? game.discoverability_rating : game.overall_score * 10}
+              channels={game.channels}
+              viewers={game.total_viewers}
+              onClick={() => trackClick('share')}
+            />
           </div>
         </div>
       </div>
       
-      {/* Expanded details */}
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-text-tertiary/20">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <MetricStat
-              label="DISCOVERABILITY"
-              value={`${(game.discoverability_score * 10).toFixed(1)}/10`}
-              valueClass={getScoreColor(game.discoverability_score)}
-              tooltip={METRIC_DESCRIPTIONS.discoverability}
-              groupName="disc"
-            />
+            <div className="bg-bg-primary rounded-lg p-3 text-center">
+              <div className="text-text-tertiary text-xs mb-1">DISCOVERABILITY</div>
+              <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>
+                {(game.discoverability_score * 10).toFixed(1)}/10
+              </div>
+            </div>
             
-            <MetricStat
-              label="VIABILITY"
-              value={`${(game.viability_score * 10).toFixed(1)}/10`}
-              valueClass={getScoreColor(game.viability_score)}
-              tooltip={METRIC_DESCRIPTIONS.viability}
-              groupName="viab"
-            />
+            <div className="bg-bg-primary rounded-lg p-3 text-center">
+              <div className="text-text-tertiary text-xs mb-1">VIABILITY</div>
+              <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>
+                {(game.viability_score * 10).toFixed(1)}/10
+              </div>
+            </div>
             
-            <MetricStat
-              label="ENGAGEMENT"
-              value={`${(game.engagement_score * 10).toFixed(1)}/10`}
-              valueClass={getScoreColor(game.engagement_score)}
-              tooltip={METRIC_DESCRIPTIONS.engagement}
-              groupName="eng"
-            />
+            <div className="bg-bg-primary rounded-lg p-3 text-center">
+              <div className="text-text-tertiary text-xs mb-1">ENGAGEMENT</div>
+              <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>
+                {(game.engagement_score * 10).toFixed(1)}/10
+              </div>
+            </div>
             
-            <MetricStat
-              label="AVG VIEWERS/CH"
-              value={game.avg_viewers_per_channel.toFixed(1)}
-              valueClass="text-brand-primary"
-              tooltip={METRIC_DESCRIPTIONS.avgViewers}
-              groupName="avg"
-            />
+            <div className="bg-bg-primary rounded-lg p-3 text-center">
+              <div className="text-text-tertiary text-xs mb-1">AVG VIEWERS/CH</div>
+              <div className="text-2xl font-bold text-brand-primary">
+                {game.avg_viewers_per_channel.toFixed(1)}
+              </div>
+            </div>
           </div>
           
-          {/* Learn more section */}
           <div className="mt-4 pt-4 border-t border-text-tertiary/20">
             <div className="text-text-tertiary text-xs mb-2">LEARN ABOUT THIS GAME</div>
             <div className="flex flex-wrap gap-2">
-              <InfoButton 
-                href={urls.igdb(game.game_name)}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  trackClick('igdb')
-                }}
-              >
-                IGDB
-              </InfoButton>
+              <IGDBButton 
+                gameName={game.game_name}
+                onClick={() => trackClick('igdb')}
+              />
               
               <YouTubeButton 
-                href={urls.youtube(game.game_name)}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  trackClick('youtube')
-                }}
-              >
-                YouTube
-              </YouTubeButton>
+                gameName={game.game_name}
+                onClick={() => trackClick('youtube')}
+              />
               
-              <InfoButton 
-                href={urls.wikipedia(game.game_name)}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  trackClick('wikipedia')
-                }}
-              >
-                Wikipedia
-              </InfoButton>
+              <WikipediaButton 
+                gameName={game.game_name}
+                onClick={() => trackClick('wikipedia')}
+              />
             </div>
           </div>
           
