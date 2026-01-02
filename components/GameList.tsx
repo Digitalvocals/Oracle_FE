@@ -1,5 +1,5 @@
 // US-073: GameList Client Component
-// Single-select genre filter (Oracle's UX improvement)
+// Single-select genre filter - CORRECT STYLING (Oracle's spec)
 
 'use client'
 
@@ -49,7 +49,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   const [isLoadingAll, setIsLoadingAll] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   
-  // Filters - CHANGED: Single-select genre
+  // Filters - Single-select genre
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
   
@@ -92,7 +92,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     }, 300)
   }
   
-  // Filter logic - CHANGED: Single genre + search
+  // Filter logic - Single genre + search
   const filteredGames = allGames.filter(game => {
     // Search filter
     if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -113,7 +113,6 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     setHasMore(filteredGames.length > 100)
   }, [selectedGenre, searchQuery, allGames])
   
-  // CHANGED: selectGenre instead of toggleGenre
   function selectGenre(genre: string) {
     setSelectedGenre(genre)
   }
@@ -149,7 +148,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
         />
       </div>
       
-      {/* Genre filters - CHANGED: Single-select UI */}
+      {/* Genre filters - ORACLE'S CORRECT STYLING */}
       <div className="mb-6 space-y-2">
         {/* Header with count */}
         <div className="flex items-center justify-between">
@@ -162,17 +161,17 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
           </span>
         </div>
         
-        {/* Genre buttons */}
+        {/* Genre buttons - CORRECT: Active=green, Inactive=gray */}
         <div className="flex flex-wrap gap-2">
           {GENRE_OPTIONS.map(genre => (
             <button
               key={genre}
               onClick={() => selectGenre(genre)}
-              className={`px-3 py-2 rounded-full text-sm transition-all ${
+              className={
                 selectedGenre === genre
-                  ? 'bg-brand-primary text-bg-primary font-semibold border border-brand-primary'
-                  : 'bg-brand-primary/10 text-brand-primary border border-brand-primary/30 hover:bg-brand-primary/20'
-              }`}
+                  ? 'px-4 py-2 rounded-full bg-brand-primary text-bg-primary font-semibold border border-brand-primary transition-colors'
+                  : 'px-4 py-2 rounded-full bg-transparent text-text-secondary border border-text-tertiary/30 hover:border-brand-primary hover:text-text-primary transition-colors'
+              }
             >
               {genre}
             </button>
@@ -182,7 +181,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
           {selectedGenre && (
             <button
               onClick={clearGenre}
-              className="px-3 py-2 rounded-full text-sm bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30"
+              className="px-4 py-2 rounded-full bg-transparent text-brand-danger border border-brand-danger/50 hover:bg-brand-danger/10 transition-colors"
             >
               Clear All
             </button>
