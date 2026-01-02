@@ -53,7 +53,6 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   // Filters
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
   
   // Load remaining games in background (per Oracle spec)
   useEffect(() => {
@@ -72,6 +71,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
       
       const data = await res.json()
       const games = data.top_opportunities || []
+      
       setAllGames(games)
       setHasMore(games.length > 100)
     } catch (error) {
@@ -99,13 +99,22 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false
     }
+    
     if (selectedGenres.length > 0) {
-      return game.genres?.some(g => selectedGenres.includes(g))
+      const hasMatchingGenre = game.genres?.some(g => selectedGenres.includes(g))
+      if (!hasMatchingGenre) return false
     }
+    
     return true
   })
   
-  const toggleGenre = (genre: string) => {
+  // Update displayed games when filters change
+  useEffect(() => {
+    setDisplayedGames(filteredGames.slice(0, 100))
+    setHasMore(filteredGames.length > 100)
+  }, [selectedGenres, searchQuery, allGames])
+  
+  function toggleGenre(genre: string) {
     setSelectedGenres(prev =>
       prev.includes(genre)
         ? prev.filter(g => g !== genre)
