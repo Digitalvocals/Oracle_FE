@@ -1,6 +1,5 @@
 // US-073: GameList Client Component
-// Oracle's Spec: Handles interactivity, maintains existing features
-// Receives server-rendered initial games, loads rest in background
+// Fixed: Always load full game list in background
 
 'use client'
 
@@ -54,9 +53,9 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState<string>('')
   
-  // Load remaining games in background (per Oracle spec)
+  // ALWAYS load full game list in background (per Oracle spec)
   useEffect(() => {
-    if (initialGames.length < 100 && !hasError) {
+    if (!hasError) {
       loadAllGames()
     }
   }, [])
