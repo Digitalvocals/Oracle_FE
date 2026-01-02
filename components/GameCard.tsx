@@ -23,6 +23,7 @@ import {
   AlternativesModal,
   urls
 } from '@/app/components/streamscout-ui'
+import { useFavorites } from '@/app/hooks/useFavorites'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-bcd88.up.railway.app'
 
@@ -174,6 +175,22 @@ export function GameCard({ game }: GameCardProps) {
   const [kinguinGameName, setKinguinGameName] = useState('')
   const [showAlternativesModal, setShowAlternativesModal] = useState(false)
   
+  // Favorites hook
+  const { isFavorited, toggleFavorite } = useFavorites()
+  
+  const handleFavoriteToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const wasFavorited = isFavorited(game.game_id)
+    toggleFavorite(game.game_id, game.game_name)
+    
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', wasFavorited ? 'remove_favorite' : 'add_favorite', {
+        game_name: game.game_name,
+        game_id: game.game_id
+      })
+    }
+  }
+  
   useEffect(() => {
     if (isExpanded && !analytics && !loadingAnalytics && !failedAnalytics) {
       fetchAnalytics()
@@ -228,11 +245,16 @@ export function GameCard({ game }: GameCardProps) {
         
         {/* FEATURE 1 & 2: Favorite + Momentum */}
         <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
-          <div onClick={(e) => e.stopPropagation()}>
-            <FavoriteButton gameId={game.game_id} gameName={game.game_name} />
-          </div>
-          {game.viewerGrowth !== null && game.viewerGrowth !== undefined && (
-            <MomentumBadge trend={game.trend || 'stable'} magnitude={game.viewerGrowth} momentum={game.momentum || undefined} />
+          <FavoriteButton 
+            isFavorited={isFavorited(game.game_id)}
+            onClick={handleFavoriteToggle}
+          />
+          {game.momentum && game.momentum !== 'insufficient_data' && (
+            <MomentumBadge 
+              momentum={game.momentum}
+              viewerGrowth={game.viewerGrowth}
+              channelGrowth={game.channelGrowth}
+            />
           )}
         </div>
         
