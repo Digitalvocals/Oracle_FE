@@ -349,7 +349,9 @@ export function GameCard({ game }: GameCardProps) {
             </div>
             
             <div className="flex gap-2 mt-2 flex-wrap">
-              <TwitchButton gameName={game.game_name} onClick={() => trackExternalClick('twitch')} />
+              <TwitchButton href={urls.twitch(game.game_name)} onClick={(e) => trackExternalClick('twitch')}>
+                Twitch
+              </TwitchButton>
               
               {/* FEATURE 5: UpdatedKinguinButton */}
               {game.purchase_links && !game.purchase_links.free && (
@@ -361,12 +363,38 @@ export function GameCard({ game }: GameCardProps) {
                 </div>
               )}
               
-              {hasSteam && <SteamButton gameName={game.game_name} url={getSteamUrl()} isFree={game.purchase_links?.free || false} onClick={() => trackExternalClick('steam')} />}
-              {hasEpic && <EpicButton gameName={game.game_name} url={getEpicUrl()} onClick={() => trackExternalClick('epic')} />}
-              {hasBattleNet && <BattleNetButton gameName={game.game_name} url={getBattleNetUrl()} onClick={() => trackExternalClick('battlenet')} />}
-              {hasRiot && <RiotButton gameName={game.game_name} url={getRiotUrl()} onClick={() => trackExternalClick('riot')} />}
+              {hasSteam && (
+                <SteamButton href={urls.steam(game.game_name)} onClick={(e) => trackExternalClick('steam')}>
+                  Steam
+                </SteamButton>
+              )}
+              {hasEpic && (
+                <EpicButton href={urls.epic(game.game_name)} onClick={(e) => trackExternalClick('epic')}>
+                  Epic
+                </EpicButton>
+              )}
+              {hasBattleNet && (
+                <BattleNetButton href={urls.battlenet(game.game_name)} onClick={(e) => trackExternalClick('battlenet')}>
+                  Battle.net
+                </BattleNetButton>
+              )}
+              {hasRiot && (
+                <RiotButton href={urls.riot(game.game_name)} onClick={(e) => trackExternalClick('riot')}>
+                  Riot
+                </RiotButton>
+              )}
               
-              <ShareButton gameName={game.game_name} score={game.discoverability_rating !== undefined ? game.discoverability_rating : game.overall_score * 10} channels={game.channels} viewers={game.total_viewers} onClick={() => trackExternalClick('share')} />
+              <ShareButton 
+                href={urls.twitterShare(
+                  game.game_name, 
+                  game.discoverability_rating !== undefined ? game.discoverability_rating : game.overall_score * 10,
+                  game.channels,
+                  game.total_viewers
+                )} 
+                onClick={(e) => trackExternalClick('share')}
+              >
+                Share
+              </ShareButton>
               
               {/* FEATURE 4: Find Alternatives */}
               <button onClick={handleFindAlternatives} className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-bg-primary text-sm font-semibold rounded-lg transition-colors">
@@ -434,9 +462,15 @@ export function GameCard({ game }: GameCardProps) {
             <div className="mt-4 pt-4 border-t border-text-tertiary/20">
               <div className="text-text-tertiary text-xs mb-2">LEARN ABOUT THIS GAME</div>
               <div className="flex flex-wrap gap-2">
-                <IGDBButton gameName={game.game_name} onClick={() => trackExternalClick('igdb')} />
-                <YouTubeButton gameName={game.game_name} onClick={() => trackExternalClick('youtube')} />
-                <WikipediaButton gameName={game.game_name} onClick={() => trackExternalClick('wikipedia')} />
+                <IGDBButton href={urls.igdb(game.game_name)} onClick={(e) => trackExternalClick('igdb')}>
+                  IGDB
+                </IGDBButton>
+                <YouTubeButton href={urls.youtube(game.game_name)} onClick={(e) => trackExternalClick('youtube')}>
+                  YouTube
+                </YouTubeButton>
+                <WikipediaButton href={urls.wikipedia(game.game_name)} onClick={(e) => trackExternalClick('wikipedia')}>
+                  Wikipedia
+                </WikipediaButton>
               </div>
             </div>
             
@@ -445,8 +479,25 @@ export function GameCard({ game }: GameCardProps) {
         )}
       </div>
       
-      {showKinguinModal && <KinguinConfirmModal gameName={kinguinGameName} onClose={() => setShowKinguinModal(false)} />}
-      {showAlternativesModal && <AlternativesModal sourceGameName={game.game_name} sourceGameId={game.game_id} onClose={() => setShowAlternativesModal(false)} />}
+      {showKinguinModal && (
+        <KinguinConfirmModal 
+          isOpen={showKinguinModal}
+          onClose={() => setShowKinguinModal(false)}
+          onConfirm={() => {
+            window.open('https://www.kinguin.net/', '_blank')
+            setShowKinguinModal(false)
+          }}
+          gameName={kinguinGameName}
+        />
+      )}
+      {showAlternativesModal && (
+        <AlternativesModal 
+          isOpen={showAlternativesModal}
+          onClose={() => setShowAlternativesModal(false)}
+          currentGame={game.game_name}
+          alternatives={[]}
+        />
+      )}
     </>
   )
 }
