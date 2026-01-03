@@ -148,7 +148,7 @@ export function UpdatedKinguinButton({ gameName, onClick }: { gameName: string; 
 }
 
 /** Favorite button - heart icon toggle */
-export function FavoriteButton({ isFavorited, onClick }: { isFavorited: boolean; onClick: () => void }) {
+export function FavoriteButton({ isFavorited, onClick }: { isFavorited: boolean; onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
       onClick={onClick}
