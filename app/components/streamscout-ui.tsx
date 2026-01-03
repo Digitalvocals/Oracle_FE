@@ -245,6 +245,119 @@ export function Tagline({ children, className = '' }: { children: ReactNode, cla
 }
 
 // =============================================================================
+// FAVORITES FILTER - Toggle between All Games and My Favorites
+// =============================================================================
+
+interface FavoritesFilterProps {
+  showFavoritesOnly: boolean
+  favoriteCount: number
+  onToggle: () => void
+}
+
+/** Two-button toggle: All Games / My Favorites - matches genre filter styling */
+export function FavoritesFilter({ showFavoritesOnly, favoriteCount, onToggle }: FavoritesFilterProps) {
+  return (
+    <div className="mb-6 flex items-center gap-3">
+      <button
+        onClick={onToggle}
+        className={
+          !showFavoritesOnly
+            ? 'px-6 py-3 rounded-lg bg-brand-primary text-background font-semibold border border-brand-primary transition-colors'
+            : 'px-6 py-3 rounded-lg bg-transparent text-text-secondary border border-border hover:border-brand-primary hover:text-text-primary transition-colors'
+        }
+      >
+        All Games
+      </button>
+      
+      <button
+        onClick={onToggle}
+        className={
+          showFavoritesOnly
+            ? 'px-6 py-3 rounded-lg bg-brand-primary text-background font-semibold border border-brand-primary transition-colors'
+            : 'px-6 py-3 rounded-lg bg-transparent text-text-secondary border border-border hover:border-brand-primary hover:text-text-primary transition-colors'
+        }
+      >
+        My Favorites ({favoriteCount})
+      </button>
+    </div>
+  )
+}
+
+/** Clear all favorites button - red danger styling */
+export function ClearFavoritesButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-4 py-2 rounded-lg bg-transparent text-brand-danger border border-brand-danger/50 hover:bg-brand-danger/10 transition-colors text-sm font-medium"
+    >
+      Clear All Favorites
+    </button>
+  )
+}
+
+/** Empty state when no favorites */
+export function EmptyFavoritesState() {
+  return (
+    <div className="text-center py-12 px-4">
+      <div className="text-6xl mb-4">💚</div>
+      <h3 className="text-xl font-semibold text-text-primary mb-2">No favorites yet</h3>
+      <p className="text-text-secondary">
+        Click the heart icon on any game to add it to your favorites
+      </p>
+    </div>
+  )
+}
+
+/** Card for favorited games not in current top 2000 */
+export function UntrackedFavoriteCard({ gameName, onRemove }: { gameName: string, onRemove: () => void }) {
+  return (
+    <div className="p-4 bg-bg-elevated border border-border rounded-lg flex items-center justify-between">
+      <div>
+        <h3 className="text-text-primary font-semibold">{gameName}</h3>
+        <p className="text-text-tertiary text-sm">Not currently in top 2000 games</p>
+      </div>
+      <button
+        onClick={onRemove}
+        className="px-3 py-1.5 text-brand-danger hover:bg-brand-danger/10 rounded transition-colors text-sm"
+      >
+        Remove
+      </button>
+    </div>
+  )
+}
+
+// =============================================================================
+// MOMENTUM BADGES - Game trend indicators
+// =============================================================================
+
+interface MomentumBadgeProps {
+  momentum: string | null
+  viewerGrowth?: number
+  channelGrowth?: number
+}
+
+/** Rising/Falling/Stable/Hidden Gem badge */
+export function MomentumBadge({ momentum, viewerGrowth, channelGrowth }: MomentumBadgeProps) {
+  if (!momentum || momentum === 'insufficient_data') return null
+  
+  const badges = {
+    rising: { text: '📈 Rising', color: 'text-green-400 border-green-400/50 bg-green-400/10' },
+    falling: { text: '📉 Falling', color: 'text-red-400 border-red-400/50 bg-red-400/10' },
+    stable: { text: '➡️ Stable', color: 'text-blue-400 border-blue-400/50 bg-blue-400/10' },
+    hidden_gem: { text: '💎 Hidden Gem', color: 'text-purple-400 border-purple-400/50 bg-purple-400/10' }
+  }
+  
+  const badge = badges[momentum as keyof typeof badges]
+  if (!badge) return null
+  
+  return (
+    <span className={`px-2 py-1 rounded text-xs font-semibold border ${badge.color} whitespace-nowrap`}>
+      {badge.text}
+    </span>
+  )
+}
+
+// =============================================================================
 // UTILITY - Score colors, URL helpers
 // =============================================================================
 
@@ -310,12 +423,21 @@ Buttons:
   - YouTubeButton    (red)
   - MatrixButton     (green CTA)
 
+Favorites:
+  - FavoritesFilter       (All Games / My Favorites toggle)
+  - ClearFavoritesButton  (red danger button)
+  - EmptyFavoritesState   (empty state message)
+  - UntrackedFavoriteCard (for games not in top 2000)
+
+Badges:
+  - MomentumBadge    (Rising/Falling/Stable/Hidden Gem)
+  - MatrixBadge      (header stat badges)
+
 Tooltips:
   - InfoTooltip      (? icon with hover content)
   - MetricTooltip    (bottom-positioned for stats)
 
 Display:
-  - MatrixBadge      (header stat badges)
   - MetricStat       (expanded view stat boxes)
 
 Text:
@@ -330,4 +452,16 @@ Usage Example:
   <TwitchButton href={urls.twitch(game.game_name)} onClick={handleClick}>
     Twitch
   </TwitchButton>
+  
+  <FavoritesFilter 
+    showFavoritesOnly={showFavorites}
+    favoriteCount={5}
+    onToggle={handleToggle}
+  />
+  
+  <MomentumBadge 
+    momentum="rising"
+    viewerGrowth={15.5}
+    channelGrowth={8.2}
+  />
 */
