@@ -1,6 +1,5 @@
 // US-073: GameList Client Component
-// Oracle's Spec: Handles interactivity, maintains existing features
-// Receives server-rendered initial games, loads rest in background
+// Single-select genre filter - CORRECT STYLING (Oracle's spec)
 
 'use client'
 
@@ -60,14 +59,14 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   // Favorites hook
   const { favorites, isFavorited, removeFavorite, clearAllFavorites } = useFavorites()
   
-  // Filters
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  // Filters - Single-select genre
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
   
-  // Load remaining games in background (per Oracle spec)
+  // ALWAYS load full game list in background
   useEffect(() => {
-    if (initialGames.length < 100 && !hasError) {
+    if (!hasError) {
       loadAllGames()
     }
   }, [])
@@ -82,6 +81,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
       
       const data = await res.json()
       const games = data.top_opportunities || []
+      
       setAllGames(games)
       setHasMore(games.length > 100)
     } catch (error) {
@@ -89,6 +89,57 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     } finally {
       setIsLoadingAll(false)
     }
+  }
+  
+  function loadMore() {
+    setIsLoadingMore(true)
+    
+    setTimeout(() => {
+      const currentCount = displayedGames.length
+      const nextBatch = finalFilteredGames.slice(currentCount, currentCount + 100)
+      setDisplayedGames([...displayedGames, ...nextBatch])
+      setIsLoadingMore(false)
+      setHasMore(currentCount + 100 < finalFilteredGames.length)
+    }, 300)
+  }
+  
+  // Filter logic - Single genre + search
+  const filteredGames = allGames.filter(game => {
+    // Search filter
+    if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false
+    }
+    
+    // Genre filter (single select)
+    if (selectedGenre && !game.genres?.includes(selectedGenre)) {
+      return false
+    }
+    
+    return true
+  })
+  
+  // Apply favorites filter
+  const finalFilteredGames = showFavoritesOnly
+    ? filteredGames.filter(game => isFavorited(game.game_id))
+    : filteredGames
+  
+  // Untracked favorites (favorited games not in top 2000)
+  const untrackedFavorites = favorites.filter(fav => 
+    !allGames.some(game => game.game_id === fav.game_id)
+  )
+  
+  // Update displayed games when filters change
+  useEffect(() => {
+    setDisplayedGames(finalFilteredGames.slice(0, 100))
+    setHasMore(finalFilteredGames.length > 100)
+  }, [selectedGenre, searchQuery, allGames, showFavoritesOnly, finalFilteredGames])
+  
+  function selectGenre(genre: string) {
+    setSelectedGenre(genre)
+  }
+  
+  function clearGenre() {
+    setSelectedGenre(null)
   }
   
   const handleViewFavorites = () => {
@@ -109,62 +160,6 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
         })
       }
     }
-  }
-  
-  // Filter logic
-  const filteredGames = allGames.filter(game => {
-    if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false
-    }
-    if (selectedGenres.length > 0) {
-      return game.genres?.some(g => selectedGenres.includes(g))
-    }
-    return true
-  })
-  
-  // Apply favorites filter
-  const finalFilteredGames = showFavoritesOnly
-    ? filteredGames.filter(game => isFavorited(game.game_id))
-    : filteredGames
-  
-  // Untracked favorites (favorited games not in top 2000)
-  const untrackedFavorites = favorites.filter(fav => 
-    !allGames.some(game => game.game_id === fav.game_id)
-  )
-  
-  // Update displayed games when filters change
-  useEffect(() => {
-    setDisplayedGames(finalFilteredGames.slice(0, 100))
-    setHasMore(finalFilteredGames.length > 100)
-  }, [selectedGenres, searchQuery, allGames, showFavoritesOnly, finalFilteredGames])
-  
-  function loadMore() {
-    setIsLoadingMore(true)
-    
-    // Simulate loading delay for UX (per Oracle spec)
-    setTimeout(() => {
-      const currentCount = displayedGames.length
-      const nextBatch = finalFilteredGames.slice(currentCount, currentCount + 100)
-      setDisplayedGames([...displayedGames, ...nextBatch])
-      setIsLoadingMore(false)
-      setHasMore(currentCount + 100 < finalFilteredGames.length)
-    }, 300)
-  }
-  
-  const toggleGenre = (genre: string) => {
-    setSelectedGenres(prev =>
-      prev.includes(genre)
-        ? prev.filter(g => g !== genre)
-        : [...prev, genre]
-    )
-  }
-  
-  // Error state
-    setSelectedGenres(prev =>
-      prev.includes(genre)
-        ? prev.filter(g => g !== genre)
-        : [...prev, genre]
-    )
   }
   
   // Error state
@@ -194,38 +189,50 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
         />
       </div>
       
-      {/* Genre filters */}
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-text-secondary text-sm mr-2">Filter by genre:</span>
+      {/* Genre filters - ORACLE'S CORRECT STYLING */}
+      <div className="mb-6 space-y-2">
+        {/* Header with count */}
+        <div className="flex items-center justify-between">
+          <span className="text-text-secondary text-sm">Filter by genre:</span>
+          <span className="text-text-tertiary text-xs">
+            {selectedGenre 
+              ? `${filteredGames.length} ${selectedGenre} games`
+              : `${allGames.length} games total`
+            }
+          </span>
+        </div>
+        
+        {/* Genre buttons - CORRECT: Active=green, Inactive=gray */}
+        <div className="flex flex-wrap gap-2">
           {GENRE_OPTIONS.map(genre => (
             <button
               key={genre}
-              onClick={() => toggleGenre(genre)}
-              className={`px-3 py-2 rounded-full text-sm transition-all ${
-                selectedGenres.includes(genre)
-                  ? 'bg-brand-primary text-black font-semibold'
-                  : 'bg-brand-primary/10 text-brand-primary border border-brand-primary/30 hover:bg-brand-primary/20'
-              }`}
+              onClick={() => selectGenre(genre)}
+              className={
+                selectedGenre === genre
+                  ? 'px-4 py-2 rounded-full bg-brand-primary text-bg-primary font-semibold border border-brand-primary transition-colors'
+                  : 'px-4 py-2 rounded-full bg-transparent text-text-secondary border border-text-tertiary/30 hover:border-brand-primary hover:text-text-primary transition-colors'
+              }
             >
               {genre}
             </button>
           ))}
-          {selectedGenres.length > 0 && (
+          
+          {/* Clear All - only shows when filter active */}
+          {selectedGenre && (
             <button
-              onClick={() => setSelectedGenres([])}
-              className="px-3 py-2 rounded-full text-sm bg-brand-danger/20 text-brand-danger border border-brand-danger/30 hover:bg-brand-danger/30 ml-2"
+              onClick={clearGenre}
+              className="px-4 py-2 rounded-full bg-transparent text-brand-danger border border-brand-danger/50 hover:bg-brand-danger/10 transition-colors"
             >
               Clear All
             </button>
           )}
         </div>
         
-        {/* Results count */}
-        {(selectedGenres.length > 0 || searchQuery) && (
-          <div className="text-text-tertiary text-sm mt-2">
-            {searchQuery && `Search results for "${searchQuery}": `}
-            {finalFilteredGames.length} of {allGames.length} games
+        {/* Search results indicator */}
+        {searchQuery && (
+          <div className="text-text-tertiary text-sm">
+            Search results for "{searchQuery}": {finalFilteredGames.length} games
           </div>
         )}
       </div>
@@ -283,7 +290,9 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
           <div className="text-center py-12 text-text-secondary">
             {searchQuery
               ? `No games found matching "${searchQuery}". Try a different search.`
-              : 'No games found matching selected genres. Try different filters.'
+              : selectedGenre
+              ? `No ${selectedGenre} games found. Try a different genre.`
+              : 'No games found.'
             }
           </div>
         ) : (
