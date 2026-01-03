@@ -249,7 +249,6 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
       {showFavoritesOnly && favorites.length > 0 && (
         <ClearFavoritesButton 
           onClick={handleClearAllFavorites}
-          count={favorites.length}
         />
       )}
 
@@ -269,7 +268,6 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
             <UntrackedFavoriteCard 
               key={fav.game_id}
               gameName={fav.game_name}
-              addedAt={fav.added_at}
               onRemove={() => {
                 removeFavorite(fav.game_id)
                 if (typeof window !== 'undefined' && (window as any).gtag) {
