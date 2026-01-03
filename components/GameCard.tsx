@@ -249,21 +249,6 @@ export function GameCard({ game }: GameCardProps) {
     <>
       <div className={`bg-bg-elevated border-2 rounded-lg p-6 cursor-pointer transition-all hover:border-brand-primary hover:shadow-lg hover:shadow-brand-primary/20 relative ${game.is_filtered ? 'border-brand-danger/50 bg-brand-danger/5' : 'border-bg-hover'}`} onClick={() => setIsExpanded(!isExpanded)}>
         
-        {/* FEATURE 1 & 2: Favorite + Momentum */}
-        <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
-          <FavoriteButton 
-            isFavorited={isFavorited(game.game_id)}
-            onClick={handleFavoriteToggle}
-          />
-          {game.momentum && game.momentum !== 'insufficient_data' && (
-            <MomentumBadge 
-              momentum={game.momentum}
-              viewerGrowth={game.viewerGrowth}
-              channelGrowth={game.channelGrowth}
-            />
-          )}
-        </div>
-        
         {game.is_filtered && game.warning_text && (
           <div className="bg-brand-danger/20 border border-brand-danger/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
             <span className="text-brand-danger font-bold text-sm">AVOID</span>
@@ -283,7 +268,20 @@ export function GameCard({ game }: GameCardProps) {
               <div className="text-h1 font-bold text-brand-primary flex-shrink-0">#{game.rank}</div>
               
               <div className="flex-1 min-w-0">
-                <h2 className="text-h2 font-semibold leading-tight break-words text-text-primary">{game.game_name}</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-h2 font-semibold leading-tight break-words text-text-primary">{game.game_name}</h2>
+                  <FavoriteButton 
+                    isFavorited={isFavorited(game.game_id)}
+                    onClick={handleFavoriteToggle}
+                  />
+                  {game.momentum && game.momentum !== 'insufficient_data' && (
+                    <MomentumBadge 
+                      momentum={game.momentum}
+                      viewerGrowth={game.viewerGrowth}
+                      channelGrowth={game.channelGrowth}
+                    />
+                  )}
+                </div>
                 <div className="flex items-center gap-3 text-caption text-text-secondary mt-1">
                   <span className="flex items-center gap-1"><span className="text-brand-primary">👁</span>{game.total_viewers?.toLocaleString() || 0}</span>
                   <span className="flex items-center gap-1"><span className="text-brand-primary">📺</span>{game.channels}</span>
