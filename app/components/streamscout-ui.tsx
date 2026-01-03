@@ -128,6 +128,42 @@ export function WikipediaButton({ href, onClick, children }: ButtonProps) {
   )
 }
 
+/** Kinguin affiliate button with discount badge */
+export function UpdatedKinguinButton({ gameName, onClick }: { gameName: string; onClick?: (e: React.MouseEvent) => void }) {
+  return (
+    <a
+      href={`https://www.kinguin.net/`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
+      onClick={onClick}
+    >
+      <span className="text-sm">🎮</span> Buy
+      {/* Discount badge */}
+      <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+        5% OFF
+      </span>
+    </a>
+  )
+}
+
+/** Favorite button - heart icon toggle */
+export function FavoriteButton({ isFavorited, onClick }: { isFavorited: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-xl transition-all ${
+        isFavorited 
+          ? 'text-red-500 scale-110' 
+          : 'text-gray-500 hover:text-red-400 hover:scale-110'
+      }`}
+      aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+    >
+      {isFavorited ? '❤️' : '🤍'}
+    </button>
+  )
+}
+
 /** Sky blue share button */
 export function ShareButton({ href, onClick, children }: ButtonProps) {
   return (
@@ -573,17 +609,21 @@ export const METRIC_DESCRIPTIONS = {
 // =============================================================================
 /*
 Buttons:
-  - TwitchButton      (purple)
-  - SteamButton       (steam blue)
-  - EpicButton        (dark gray + border)
-  - BattleNetButton   (battle.net blue)
-  - RiotButton        (riot red)
-  - ShareButton       (sky blue)
-  - InfoButton        (gray)
-  - IGDBButton        (gray info)
-  - WikipediaButton   (gray info)
-  - YouTubeButton     (red)
-  - MatrixButton      (green CTA)
+  - TwitchButton         (purple)
+  - SteamButton          (steam blue)
+  - EpicButton           (dark gray + border)
+  - BattleNetButton      (battle.net blue)
+  - RiotButton           (riot red)
+  - ShareButton          (sky blue)
+  - InfoButton           (gray)
+  - IGDBButton           (gray info)
+  - WikipediaButton      (gray info)
+  - YouTubeButton        (red)
+  - UpdatedKinguinButton (orange with 5% OFF badge)
+  - MatrixButton         (green CTA)
+
+Interactive:
+  - FavoriteButton       (heart toggle ❤️/🤍)
 
 Favorites:
   - FavoritesFilter       (All Games / My Favorites toggle)
@@ -618,6 +658,16 @@ Usage Example:
   <TwitchButton href={urls.twitch(game.game_name)} onClick={handleClick}>
     Twitch
   </TwitchButton>
+  
+  <FavoriteButton 
+    isFavorited={isFavorited(game.game_id)}
+    onClick={handleFavoriteToggle}
+  />
+  
+  <UpdatedKinguinButton 
+    gameName="The Bazaar"
+    onClick={handleKinguinClick}
+  />
   
   <FavoritesFilter 
     showFavoritesOnly={showFavorites}
