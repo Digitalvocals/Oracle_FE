@@ -188,6 +188,7 @@ export function GameCard({ game }: GameCardProps) {
         game_name: game.game_name,
         game_id: game.game_id
       })
+      console.log(`[TRACK] ${wasFavorited ? 'remove_favorite' : 'add_favorite'}: ${game.game_name}`)
     }
   }
   

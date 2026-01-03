@@ -148,6 +148,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
       (window as any).gtag('event', 'view_favorites', {
         showing_favorites: !showFavoritesOnly
       })
+      console.log(`[TRACK] view_favorites: ${!showFavoritesOnly}`)
     }
   }
   

@@ -1,95 +1,63 @@
-'use client';
+import { useState, useEffect } from 'react'
 
-import { useState, useEffect, useCallback } from 'react';
+const STORAGE_KEY = 'streamscout_favorites'
 
-interface FavoriteGame {
-  game_id: string;
-  game_name: string;
-  added_at: number;
+interface Favorite {
+  game_id: string
+  game_name: string
+  added_at: number
 }
 
-interface UseFavoritesReturn {
-  favorites: FavoriteGame[];
-  isFavorited: (gameId: string) => boolean;
-  addFavorite: (gameId: string, gameName: string) => void;
-  removeFavorite: (gameId: string) => void;
-  toggleFavorite: (gameId: string, gameName: string) => void;
-  clearAllFavorites: () => void;
-}
-
-const STORAGE_KEY = 'streamscout_favorites';
-
-export function useFavorites(): UseFavoritesReturn {
-  const [favorites, setFavorites] = useState<FavoriteGame[]>([]);
-  const [isClient, setIsClient] = useState(false);
-
-  // Initialize from localStorage on mount
-  useEffect(() => {
-    setIsClient(true);
+export function useFavorites() {
+  // Initialize from localStorage
+  const [favorites, setFavorites] = useState<Favorite[]>(() => {
+    if (typeof window === 'undefined') return []
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setFavorites(Array.isArray(parsed) ? parsed : []);
-      }
-    } catch (error) {
-      console.warn('Failed to load favorites from localStorage:', error);
-      setFavorites([]);
+      const stored = localStorage.getItem(STORAGE_KEY)
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
     }
-  }, []);
+  })
 
-  // Sync to localStorage on every change
+  // Sync to localStorage whenever favorites change
   useEffect(() => {
-    if (!isClient) return;
-    
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
-    } catch (error) {
-      console.warn('Failed to save favorites to localStorage:', error);
+    if (typeof window === 'undefined') return
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites))
+  }, [favorites])
+
+  const isFavorited = (gameId: string) => {
+    return favorites.some(fav => fav.game_id === gameId)
+  }
+
+  const addFavorite = (gameId: string, gameName: string) => {
+    setFavorites(prev => {
+      // Don't add duplicates
+      if (prev.some(fav => fav.game_id === gameId)) return prev
+      
+      return [...prev, {
+        game_id: gameId,
+        game_name: gameName,
+        added_at: Date.now()
+      }]
+    })
+  }
+
+  const removeFavorite = (gameId: string) => {
+    setFavorites(prev => prev.filter(fav => fav.game_id !== gameId))
+  }
+
+  const toggleFavorite = (gameId: string, gameName: string) => {
+    if (isFavorited(gameId)) {
+      removeFavorite(gameId)
+    } else {
+      addFavorite(gameId, gameName)
     }
-  }, [favorites, isClient]);
+  }
 
-  const isFavorited = useCallback(
-    (gameId: string): boolean => {
-      return favorites.some(f => f.game_id === gameId);
-    },
-    [favorites]
-  );
-
-  const addFavorite = useCallback(
-    (gameId: string, gameName: string) => {
-      setFavorites(prev => {
-        // Prevent duplicates
-        if (prev.some(f => f.game_id === gameId)) {
-          return prev;
-        }
-        return [...prev, { game_id: gameId, game_name: gameName, added_at: Date.now() }];
-      });
-    },
-    []
-  );
-
-  const removeFavorite = useCallback(
-    (gameId: string) => {
-      setFavorites(prev => prev.filter(f => f.game_id !== gameId));
-    },
-    []
-  );
-
-  const toggleFavorite = useCallback(
-    (gameId: string, gameName: string) => {
-      if (isFavorited(gameId)) {
-        removeFavorite(gameId);
-      } else {
-        addFavorite(gameId, gameName);
-      }
-    },
-    [isFavorited, addFavorite, removeFavorite]
-  );
-
-  const clearAllFavorites = useCallback(() => {
-    setFavorites([]);
-  }, []);
+  const clearAllFavorites = () => {
+    setFavorites([])
+  }
 
   return {
     favorites,
@@ -97,6 +65,6 @@ export function useFavorites(): UseFavoritesReturn {
     addFavorite,
     removeFavorite,
     toggleFavorite,
-    clearAllFavorites,
-  };
+    clearAllFavorites
+  }
 }
