@@ -148,21 +148,7 @@ export function UpdatedKinguinButton({ gameName, onClick }: { gameName: string; 
 }
 
 /** Favorite button - heart icon toggle */
-export function FavoriteButton({ isFavorited, onClick }: { isFavorited: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`text-xl transition-all ${
-        isFavorited 
-          ? 'text-red-500 scale-110' 
-          : 'text-gray-500 hover:text-red-400 hover:scale-110'
-      }`}
-      aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-    >
-      {isFavorited ? '❤️' : '🤍'}
-    </button>
-  )
-}
+export function FavoriteButton({ isFavorited, onClick }: { isFavorited: boolean; onClick: (e: React.MouseEvent) => void }) {
 
 /** Sky blue share button */
 export function ShareButton({ href, onClick, children }: ButtonProps) {
