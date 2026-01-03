@@ -68,6 +68,66 @@ export function EpicButton({ href, onClick, children }: ButtonProps) {
   )
 }
 
+/** BattleNet blue button */
+export function BattleNetButton({ href, onClick, children }: ButtonProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#148eff] hover:bg-[#1a9fff] text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
+      onClick={onClick}
+    >
+      <span className="text-sm">⚔️</span> {children}
+    </a>
+  )
+}
+
+/** Riot red button */
+export function RiotButton({ href, onClick, children }: ButtonProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-[#d13639] hover:bg-[#e04447] text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
+      onClick={onClick}
+    >
+      <span className="text-sm">🔥</span> {children}
+    </a>
+  )
+}
+
+/** IGDB gray info button */
+export function IGDBButton({ href, onClick, children }: ButtonProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+      onClick={onClick}
+    >
+      <span className="text-sm">🎮</span> {children}
+    </a>
+  )
+}
+
+/** Wikipedia gray info button */
+export function WikipediaButton({ href, onClick, children }: ButtonProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-colors border border-gray-700"
+      onClick={onClick}
+    >
+      <span className="text-sm">📖</span> {children}
+    </a>
+  )
+}
+
 /** Sky blue share button */
 export function ShareButton({ href, onClick, children }: ButtonProps) {
   return (
@@ -358,6 +418,98 @@ export function MomentumBadge({ momentum, viewerGrowth, channelGrowth }: Momentu
 }
 
 // =============================================================================
+// MODALS - Kinguin and Alternatives
+// =============================================================================
+
+interface KinguinConfirmModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  gameName: string
+}
+
+/** Kinguin affiliate confirmation modal */
+export function KinguinConfirmModal({ isOpen, onClose, onConfirm, gameName }: KinguinConfirmModalProps) {
+  if (!isOpen) return null
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-bg-elevated border border-border rounded-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-xl font-bold text-text-primary mb-4">Buy {gameName}?</h3>
+        <p className="text-text-secondary mb-6">
+          You'll be redirected to Kinguin to purchase this game. StreamScout earns a small commission from sales (at no extra cost to you) which helps keep the site free.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-3 bg-brand-primary hover:bg-brand-primary/90 text-black font-semibold rounded-lg transition-colors"
+          >
+            Continue to Kinguin
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 bg-transparent border border-border hover:border-brand-primary text-text-secondary hover:text-text-primary rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface AlternativesModalProps {
+  isOpen: boolean
+  onClose: () => void
+  currentGame: string
+  alternatives: Array<{ name: string; score: number }>
+}
+
+/** Find alternatives modal */
+export function AlternativesModal({ isOpen, onClose, currentGame, alternatives }: AlternativesModalProps) {
+  if (!isOpen) return null
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-bg-elevated border border-border rounded-lg max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-text-primary">Alternatives to {currentGame}</h3>
+          <button
+            onClick={onClose}
+            className="text-text-tertiary hover:text-text-primary transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+        
+        {alternatives.length === 0 ? (
+          <p className="text-text-secondary text-center py-8">
+            No alternatives found. Try searching for similar games!
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {alternatives.map((alt, idx) => (
+              <div key={idx} className="p-4 bg-bg-primary border border-border rounded-lg flex items-center justify-between hover:border-brand-primary/30 transition-colors">
+                <div>
+                  <h4 className="font-semibold text-text-primary">{alt.name}</h4>
+                  <p className="text-sm text-text-tertiary">Score: {alt.score}/10</p>
+                </div>
+                <a
+                  href={`#${alt.name}`}
+                  className="px-4 py-2 bg-brand-primary/10 border border-brand-primary/30 text-brand-primary hover:bg-brand-primary/20 rounded-lg transition-colors text-sm font-medium"
+                >
+                  View
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// =============================================================================
 // UTILITY - Score colors, URL helpers
 // =============================================================================
 
@@ -379,6 +531,12 @@ export const urls = {
   
   epic: (gameName: string) => 
     `https://store.epicgames.com/en-US/browse?q=${gameName.replace(' ', '%20')}`,
+  
+  battlenet: (gameName: string) =>
+    `https://www.blizzard.com/en-us/search?q=${encodeURIComponent(gameName)}`,
+  
+  riot: (gameName: string) =>
+    `https://www.riotgames.com/en/search?q=${encodeURIComponent(gameName)}`,
   
   igdb: (gameName: string) => 
     `https://www.igdb.com/search?type=1&q=${encodeURIComponent(gameName)}`,
@@ -415,13 +573,17 @@ export const METRIC_DESCRIPTIONS = {
 // =============================================================================
 /*
 Buttons:
-  - TwitchButton     (purple)
-  - SteamButton      (steam blue)
-  - EpicButton       (dark gray + border)
-  - ShareButton      (sky blue)
-  - InfoButton       (gray)
-  - YouTubeButton    (red)
-  - MatrixButton     (green CTA)
+  - TwitchButton      (purple)
+  - SteamButton       (steam blue)
+  - EpicButton        (dark gray + border)
+  - BattleNetButton   (battle.net blue)
+  - RiotButton        (riot red)
+  - ShareButton       (sky blue)
+  - InfoButton        (gray)
+  - IGDBButton        (gray info)
+  - WikipediaButton   (gray info)
+  - YouTubeButton     (red)
+  - MatrixButton      (green CTA)
 
 Favorites:
   - FavoritesFilter       (All Games / My Favorites toggle)
@@ -432,6 +594,10 @@ Favorites:
 Badges:
   - MomentumBadge    (Rising/Falling/Stable/Hidden Gem)
   - MatrixBadge      (header stat badges)
+
+Modals:
+  - KinguinConfirmModal   (affiliate purchase confirmation)
+  - AlternativesModal     (find similar games)
 
 Tooltips:
   - InfoTooltip      (? icon with hover content)
@@ -463,5 +629,12 @@ Usage Example:
     momentum="rising"
     viewerGrowth={15.5}
     channelGrowth={8.2}
+  />
+  
+  <KinguinConfirmModal
+    isOpen={showModal}
+    onClose={() => setShowModal(false)}
+    onConfirm={handlePurchase}
+    gameName="The Bazaar"
   />
 */
