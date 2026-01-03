@@ -206,7 +206,7 @@ export function GameCard({ game }: GameCardProps) {
   const fetchAnalytics = async () => {
     setLoadingAnalytics(true)
     try {
-      const response = await axios.get(`${API_URL}/api/v1/game-analytics/${game.game_id}`)
+      const response = await axios.get(`${API_URL}/api/v1/analytics/${game.game_id}`)
       setAnalytics(response.data)
     } catch (error) {
       console.error(`Failed to fetch analytics for ${game.game_id}:`, error)
