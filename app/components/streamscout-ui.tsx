@@ -128,15 +128,11 @@ export function WikipediaButton({ href, onClick, children }: ButtonProps) {
   )
 }
 
-/** Kinguin affiliate button with discount badge - FIXED with proper affiliate URL */
+/** Kinguin affiliate button with discount badge - Opens modal first, modal handles navigation */
 export function UpdatedKinguinButton({ gameName, onClick }: { gameName: string; onClick?: (e: React.MouseEvent) => void }) {
-  const kinguinUrl = `https://www.kinguin.net/listing?production_products_bestsellers_desc[query]=${encodeURIComponent(gameName)}&r=6930867eb1a6f`
-  
   return (
-    <a
-      href={kinguinUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
       className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
       onClick={onClick}
     >
@@ -145,7 +141,7 @@ export function UpdatedKinguinButton({ gameName, onClick }: { gameName: string; 
       <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
         5% OFF
       </span>
-    </a>
+    </button>
   )
 }
 
@@ -466,7 +462,7 @@ interface KinguinConfirmModalProps {
   gameName: string
 }
 
-/** Kinguin affiliate confirmation modal - FIXED with proper affiliate URL */
+/** Kinguin affiliate confirmation modal - with STREAMSCOUT discount code */
 export function KinguinConfirmModal({ isOpen, onClose, onConfirm, gameName }: KinguinConfirmModalProps) {
   if (!isOpen) return null
   
@@ -477,12 +473,33 @@ export function KinguinConfirmModal({ isOpen, onClose, onConfirm, gameName }: Ki
     onClose()
   }
   
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText('STREAMSCOUT')
+  }
+  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-bg-elevated border border-border rounded-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-xl font-bold text-text-primary mb-4">Buy {gameName}?</h3>
-        <p className="text-text-secondary mb-6">
-          You'll be redirected to Kinguin to purchase this game. StreamScout earns a small commission from sales (at no extra cost to you) which helps keep the site free.
+        
+        {/* Discount Code Box */}
+        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+          <p className="text-green-400 font-semibold text-sm mb-2">💰 Save 5% with code:</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 bg-black/30 px-3 py-2 rounded text-green-400 font-mono text-lg tracking-wider">
+              STREAMSCOUT
+            </code>
+            <button
+              onClick={handleCopyCode}
+              className="px-3 py-2 bg-green-500 hover:bg-green-400 text-black font-semibold rounded transition-colors text-sm"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+        
+        <p className="text-text-secondary text-sm mb-6">
+          You'll be redirected to Kinguin to purchase this game. StreamScout earns a small commission (at no extra cost to you) which helps keep the site free.
         </p>
         <div className="flex gap-3">
           <button
