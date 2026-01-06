@@ -378,9 +378,22 @@ export function GameCard({ game }: GameCardProps) {
                 )}
               </div>
               
-              <div className="text-right flex-shrink-0 ml-2">
-                <div className={`text-display font-bold leading-none ${game.is_filtered ? 'text-brand-danger' : getScoreColor(game.overall_score)}`}>
-                  {game.is_filtered && game.discoverability_rating !== undefined ? `${game.discoverability_rating}/10` : `${(game.overall_score * 10).toFixed(1)}/10`}
+              <div className="text-right flex-shrink-0 ml-2 relative group/score">
+                <div className="flex items-start justify-end gap-1">
+                  <span className="w-4 h-4 rounded-full bg-brand-primary/50 group-hover/score:bg-brand-primary text-black flex items-center justify-center text-[10px] font-bold cursor-help transition-colors mt-1">?</span>
+                  <div className={`text-display font-bold leading-none ${game.is_filtered ? 'text-brand-danger' : getScoreColor(game.overall_score)}`}>
+                    {game.is_filtered && game.discoverability_rating !== undefined ? `${game.discoverability_rating}/10` : `${(game.overall_score * 10).toFixed(1)}/10`}
+                  </div>
+                </div>
+                {/* Main Score Tooltip */}
+                <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                  <p className="text-xs text-white leading-relaxed mb-2"><strong className="text-brand-primary">Overall Score</strong> combines three factors:</p>
+                  <ul className="text-xs text-white/80 space-y-1">
+                    <li>• <strong>Discoverability (45%)</strong> - Can viewers find you?</li>
+                    <li>• <strong>Viability (35%)</strong> - Is there an audience?</li>
+                    <li>• <strong>Engagement (20%)</strong> - Are they watching?</li>
+                  </ul>
+                  <p className="text-xs text-white/60 mt-2">Click card for detailed breakdown.</p>
                 </div>
                 <div className="text-xs text-text-tertiary mt-1">{game.is_filtered ? 'POOR' : (game.trend ? game.trend.toUpperCase() : '')}</div>
                 <div className={`text-xs font-semibold ${game.is_filtered ? 'text-brand-danger' : 'text-brand-warning'}`}>
@@ -448,21 +461,49 @@ export function GameCard({ game }: GameCardProps) {
         {isExpanded && (
           <div className="mt-4 pt-4 border-t border-text-tertiary/20">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-bg-primary rounded-lg p-3 text-center">
-                <div className="text-text-tertiary text-xs mb-1">DISCOVERABILITY</div>
+              <div className="bg-bg-primary rounded-lg p-3 text-center relative group/disc">
+                <div className="text-text-tertiary text-xs mb-1 flex items-center justify-center gap-1">
+                  DISCOVERABILITY
+                  <span className="w-4 h-4 rounded-full bg-brand-primary/50 group-hover/disc:bg-brand-primary text-black flex items-center justify-center text-[10px] font-bold cursor-help transition-colors">?</span>
+                </div>
                 <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>{(game.discoverability_score * 10).toFixed(1)}/10</div>
+                {/* Tooltip */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                  <p className="text-xs text-white leading-relaxed">Can viewers find you? Fewer streamers = you appear higher in the browse list. Weighted 45% because visibility is everything.</p>
+                </div>
               </div>
-              <div className="bg-bg-primary rounded-lg p-3 text-center">
-                <div className="text-text-tertiary text-xs mb-1">VIABILITY</div>
+              <div className="bg-bg-primary rounded-lg p-3 text-center relative group/viab">
+                <div className="text-text-tertiary text-xs mb-1 flex items-center justify-center gap-1">
+                  VIABILITY
+                  <span className="w-4 h-4 rounded-full bg-brand-primary/50 group-hover/viab:bg-brand-primary text-black flex items-center justify-center text-[10px] font-bold cursor-help transition-colors">?</span>
+                </div>
                 <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>{(game.viability_score * 10).toFixed(1)}/10</div>
+                {/* Tooltip */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                  <p className="text-xs text-white leading-relaxed">Is there actually an audience? Sweet spot: enough viewers to matter, not so many that giants dominate. Weighted 35%.</p>
+                </div>
               </div>
-              <div className="bg-bg-primary rounded-lg p-3 text-center">
-                <div className="text-text-tertiary text-xs mb-1">ENGAGEMENT</div>
+              <div className="bg-bg-primary rounded-lg p-3 text-center relative group/eng">
+                <div className="text-text-tertiary text-xs mb-1 flex items-center justify-center gap-1">
+                  ENGAGEMENT
+                  <span className="w-4 h-4 rounded-full bg-brand-primary/50 group-hover/eng:bg-brand-primary text-black flex items-center justify-center text-[10px] font-bold cursor-help transition-colors">?</span>
+                </div>
                 <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>{(game.engagement_score * 10).toFixed(1)}/10</div>
+                {/* Tooltip */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                  <p className="text-xs text-white leading-relaxed">Are people really watching? Higher avg viewers/channel = engaged community, not just background noise. Weighted 20%.</p>
+                </div>
               </div>
-              <div className="bg-bg-primary rounded-lg p-3 text-center">
-                <div className="text-text-tertiary text-xs mb-1">AVG VIEWERS/CH</div>
+              <div className="bg-bg-primary rounded-lg p-3 text-center relative group/avg">
+                <div className="text-text-tertiary text-xs mb-1 flex items-center justify-center gap-1">
+                  AVG VIEWERS/CH
+                  <span className="w-4 h-4 rounded-full bg-brand-primary/50 group-hover/avg:bg-brand-primary text-black flex items-center justify-center text-[10px] font-bold cursor-help transition-colors">?</span>
+                </div>
                 <div className="text-2xl font-bold text-brand-primary">{game.avg_viewers_per_channel.toFixed(1)}</div>
+                {/* Tooltip */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
+                  <p className="text-xs text-white leading-relaxed">Total viewers ÷ total streamers. Higher = more eyeballs per streamer. Below 10 is rough, above 50 is healthy.</p>
+                </div>
               </div>
             </div>
             
