@@ -128,11 +128,13 @@ export function WikipediaButton({ href, onClick, children }: ButtonProps) {
   )
 }
 
-/** Kinguin affiliate button with discount badge */
+/** Kinguin affiliate button with discount badge - FIXED with proper affiliate URL */
 export function UpdatedKinguinButton({ gameName, onClick }: { gameName: string; onClick?: (e: React.MouseEvent) => void }) {
+  const kinguinUrl = `https://www.kinguin.net/listing?production_products_bestsellers_desc[query]=${encodeURIComponent(gameName)}&r=6930867eb1a6f`
+  
   return (
     <a
-      href={`https://www.kinguin.net/`}
+      href={kinguinUrl}
       target="_blank"
       rel="noopener noreferrer"
       className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white text-xs sm:text-sm font-semibold transition-colors leading-none"
@@ -464,9 +466,16 @@ interface KinguinConfirmModalProps {
   gameName: string
 }
 
-/** Kinguin affiliate confirmation modal */
+/** Kinguin affiliate confirmation modal - FIXED with proper affiliate URL */
 export function KinguinConfirmModal({ isOpen, onClose, onConfirm, gameName }: KinguinConfirmModalProps) {
   if (!isOpen) return null
+  
+  const kinguinUrl = `https://www.kinguin.net/listing?production_products_bestsellers_desc[query]=${encodeURIComponent(gameName)}&r=6930867eb1a6f`
+  
+  const handleConfirm = () => {
+    window.open(kinguinUrl, '_blank')
+    onClose()
+  }
   
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -477,7 +486,7 @@ export function KinguinConfirmModal({ isOpen, onClose, onConfirm, gameName }: Ki
         </p>
         <div className="flex gap-3">
           <button
-            onClick={onConfirm}
+            onClick={handleConfirm}
             className="flex-1 px-4 py-3 bg-brand-primary hover:bg-brand-primary/90 text-black font-semibold rounded-lg transition-colors"
           >
             Continue to Kinguin
@@ -557,7 +566,12 @@ export function getScoreColorClass(score: number): string {
   return 'score-poor'
 }
 
-/** URL Helpers */
+// =============================================================================
+// URL HELPERS - CRITICAL: Kinguin affiliate ID required for commission!
+// =============================================================================
+
+const KINGUIN_AFFILIATE_ID = '6930867eb1a6f'
+
 export const urls = {
   twitch: (gameName: string) => 
     `https://www.twitch.tv/search?term=${encodeURIComponent(gameName)}`,
@@ -582,6 +596,11 @@ export const urls = {
   
   wikipedia: (gameName: string) => 
     `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(gameName + ' video game')}`,
+  
+  // KINGUIN - CRITICAL: Must include r= param for affiliate tracking!
+  // Without r=6930867eb1a6f = NO commission
+  kinguin: (gameName: string) =>
+    `https://www.kinguin.net/listing?production_products_bestsellers_desc[query]=${encodeURIComponent(gameName)}&r=${KINGUIN_AFFILIATE_ID}`,
   
   twitterShare: (gameName: string, score: number, channels: number, viewers: number) => {
     const text = `${gameName} scores ${score}/10 for discoverability
@@ -651,8 +670,9 @@ Text:
 
 Utilities:
   - getScoreColorClass(score)
-  - urls.twitch(), urls.steam(), etc.
+  - urls.twitch(), urls.steam(), urls.kinguin(), etc.
   - METRIC_DESCRIPTIONS
+  - KINGUIN_AFFILIATE_ID
 
 Usage Example:
   <TwitchButton href={urls.twitch(game.game_name)} onClick={handleClick}>
