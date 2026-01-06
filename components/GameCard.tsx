@@ -86,6 +86,47 @@ const getLocalizedBlockLabel = (pstBlock: string): string => {
   return localHour.toLowerCase().replace(' ', '')
 }
 
+/** Format Best Time range to local timezone with 12hr format + TZ label
+ *  Input: "20-24" (PST 24hr)
+ *  Output: "8pm-12am PST" or "11pm-3am EST" (localized)
+ */
+const formatBestTimeLocal = (pstRange: string): string => {
+  if (!pstRange || !pstRange.includes('-')) return pstRange
+  
+  const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const pstTz = 'America/Los_Angeles'
+  const [startHr, endHr] = pstRange.split('-').map(h => parseInt(h))
+  
+  // Create base date in PST
+  const date = new Date()
+  const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
+  
+  // Convert start hour
+  const startDate = new Date(pstDateStr)
+  startDate.setHours(startHr, 0, 0, 0)
+  const startLocal = new Intl.DateTimeFormat('en-US', { 
+    hour: 'numeric', 
+    timeZone: userTz 
+  }).format(startDate).toLowerCase().replace(' ', '')
+  
+  // Convert end hour (handle midnight as 24 -> 0)
+  const endDate = new Date(pstDateStr)
+  endDate.setHours(endHr === 24 ? 0 : endHr, 0, 0, 0)
+  if (endHr === 24) endDate.setDate(endDate.getDate() + 1)
+  const endLocal = new Intl.DateTimeFormat('en-US', { 
+    hour: 'numeric', 
+    timeZone: userTz 
+  }).format(endDate).toLowerCase().replace(' ', '')
+  
+  // Get timezone abbreviation (PST, EST, IST, etc.)
+  const tzAbbr = new Intl.DateTimeFormat('en-US', {
+    timeZone: userTz,
+    timeZoneName: 'short'
+  }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || ''
+  
+  return `${startLocal}-${endLocal} ${tzAbbr}`
+}
+
 const TimeBlocks: React.FC<TimeBlocksProps> = ({ blocks, bestBlock }) => {
   const blockOrder = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24']
   const blockLabels = blockOrder.map(block => getLocalizedBlockLabel(block))
@@ -329,10 +370,10 @@ export function GameCard({ game }: GameCardProps) {
                   </div>
                 )}
                 
-                {/* FEATURE 3: Best Time */}
+                {/* FEATURE 3: Best Time - Now localized with 12hr format + timezone */}
                 {game.bestTime && (
                   <div className="mt-2 text-xs text-text-tertiary">
-                    <span className="font-semibold text-text-secondary">BEST TIME:</span> {game.bestTime}
+                    <span className="font-semibold text-text-secondary">BEST TIME:</span> {formatBestTimeLocal(game.bestTime)}
                   </div>
                 )}
               </div>
