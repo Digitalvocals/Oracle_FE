@@ -1,9 +1,11 @@
 // US-073: GameList Client Component
 // Single-select genre filter - CORRECT STYLING (Oracle's spec)
+// Fuzzy search v4: Fuse.js + normalization + alias expansion
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import Fuse from 'fuse.js'
 import { GameCard } from './GameCard'
 import { LoadMoreSkeleton } from './Skeletons'
 import { 
@@ -49,31 +51,83 @@ const GENRE_OPTIONS = [
   'RPG', 'Racing', 'Sandbox', 'Simulation', 'Sports', 'Strategy', 'Survival'
 ]
 
+// ============================================================================
+// SEARCH UTILITIES (outside component)
+// ============================================================================
+
 /**
- * Normalizes a string for fuzzy search comparison.
- * Apply to BOTH search input AND game names.
+ * Common abbreviations/aliases for game names
  */
-function normalizeForSearch(str: string): string {
+const SEARCH_ALIASES: Record<string, string> = {
+  'gta': 'grand theft auto',
+  'cod': 'call of duty',
+  'lol': 'league of legends',
+  'csgo': 'counter strike',
+  'cs2': 'counter strike',
+  'pubg': 'playerunknown battlegrounds',
+  'ow': 'overwatch',
+  'ow2': 'overwatch',
+  'rl': 'rocket league',
+  'bg3': 'baldurs gate',
+  'ff14': 'final fantasy 14',
+  'ffxiv': 'final fantasy 14',
+  'ff16': 'final fantasy 16',
+  'ffxvi': 'final fantasy 16',
+  'poe': 'path of exile',
+  'poe2': 'path of exile',
+  'eft': 'escape from tarkov',
+  'tarkov': 'escape from tarkov',
+  'dbd': 'dead by daylight',
+  'rs': 'runescape',
+  'osrs': 'runescape',
+  'wow': 'world of warcraft',
+  'eso': 'elder scrolls online',
+  'ds': 'dark souls',
+  'ds3': 'dark souls 3',
+  'er': 'elden ring',
+  'botw': 'breath of the wild',
+  'totk': 'tears of the kingdom',
+  'r6': 'rainbow six',
+  'apex': 'apex legends',
+  'fifa': 'ea sports fc',
+  'hsr': 'honkai star rail',
+  'zzz': 'zenless zone zero',
+}
+
+/**
+ * Preprocesses a string for fuzzy search comparison.
+ * Normalizes accents, roman numerals, punctuation, spacing.
+ */
+function preprocessForSearch(str: string): string {
   return str
     // Lowercase
     .toLowerCase()
-    // Trim leading/trailing whitespace
-    .trim()
-    // Remove punctuation (periods, colons, dashes, apostrophes, quotes, etc.)
-    .replace(/[.:\-'\"!?(),]/g, '')
-    // Collapse multiple spaces into single space
-    .replace(/\s+/g, ' ')
-    // Normalize roman numerals to digits (common in game titles)
+    // Normalize accented characters (é → e, ü → u, etc.)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    // Remove punctuation
+    .replace(/[.:\-'\"!?(),&]/g, '')
+    // Roman numerals → digits (ORDER MATTERS - longest first)
     .replace(/\bviii\b/g, '8')
     .replace(/\bvii\b/g, '7')
     .replace(/\bvi\b/g, '6')
     .replace(/\biv\b/g, '4')
     .replace(/\biii\b/g, '3')
     .replace(/\bii\b/g, '2')
-    .replace(/\bv\b/g, '5')  // Must come AFTER viii, vii, vi, iv
-    .replace(/\bi\b/g, '1')  // Must come AFTER iii, ii
-    // Final trim in case normalization created edge whitespace
-    .trim();
+    .replace(/\bv\b/g, '5')
+    .replace(/\bi\b/g, '1')
+    // Remove all spaces (handles "fo rtnite" and "darksouls")
+    .replace(/\s+/g, '')
+    .trim()
+}
+
+/**
+ * Expands search aliases (gta → grand theft auto)
+ * Returns original term if no alias found
+ */
+function expandAlias(term: string): string {
+  const cleaned = term.toLowerCase().trim()
+  return SEARCH_ALIASES[cleaned] || cleaned
 }
 
 export default function GameList({ initialGames, hasError }: GameListProps) {
@@ -130,27 +184,71 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     }, 300)
   }
   
-  // Filter logic - Single genre + fuzzy search
-  const filteredGames = allGames.filter(game => {
-    // Fuzzy search filter with normalization
-    if (searchQuery) {
-      const normalizedSearch = normalizeForSearch(searchQuery)
-      // Skip filter if normalized search is empty (e.g., user typed only spaces)
-      if (!normalizedSearch) return true
-      
-      const normalizedGameName = normalizeForSearch(game.game_name)
-      if (!normalizedGameName.includes(normalizedSearch)) {
-        return false
-      }
-    }
+  // ============================================================================
+  // FUZZY SEARCH WITH FUSE.JS
+  // ============================================================================
+  
+  // Preprocessed games for search
+  const searchableGames = useMemo(() => {
+    return allGames.map(game => ({
+      ...game,
+      _searchName: preprocessForSearch(game.game_name)
+    }))
+  }, [allGames])
+  
+  // Fuse instance
+  const fuse = useMemo(() => {
+    return new Fuse(searchableGames, {
+      keys: ['_searchName'],
+      threshold: 0.4,          // 0=exact, 1=match anything. 0.4 allows typos
+      distance: 100,           // How far into string to search
+      includeScore: true,      // Better relevance sorting
+      ignoreLocation: true,    // Match anywhere in string
+      minMatchCharLength: 2,   // Skip single-char searches
+    })
+  }, [searchableGames])
+  
+  // Search logic with fuzzy matching + alias expansion
+  const searchedGames = useMemo(() => {
+    const trimmedSearch = searchQuery.trim()
+    
+    // No search = return all games
+    if (!trimmedSearch) return allGames
+    
+    // Expand aliases (gta → grand theft auto)
+    const expandedSearch = expandAlias(trimmedSearch)
+    
+    // Preprocess the search term
+    const processedSearch = preprocessForSearch(expandedSearch)
+    
+    // Skip if preprocessing resulted in empty string
+    if (!processedSearch) return allGames
+    
+    // Run Fuse fuzzy search
+    const results = fuse.search(processedSearch)
+    
+    // Extract original game objects (preserve references for React keys)
+    return results.map(result => {
+      const originalGame = allGames.find(g => g.game_id === result.item.game_id)
+      return originalGame || result.item
+    })
+  }, [searchQuery, fuse, allGames])
+  
+  // ============================================================================
+  // REMAINING FILTERS (genre, favorites)
+  // ============================================================================
+  
+  // Apply genre filter to searched results
+  const filteredGames = useMemo(() => {
+    let result = searchedGames
     
     // Genre filter (single select)
-    if (selectedGenre && !game.genres?.includes(selectedGenre)) {
-      return false
+    if (selectedGenre) {
+      result = result.filter(game => game.genres?.includes(selectedGenre))
     }
     
-    return true
-  })
+    return result
+  }, [searchedGames, selectedGenre])
   
   // Apply favorites filter
   const finalFilteredGames = showFavoritesOnly
@@ -347,7 +445,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
             >
               Load More Games
             </button>
-            )}
+          )}
         </div>
       )}
     </div>
