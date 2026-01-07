@@ -6,6 +6,13 @@
 import { useState, useEffect } from 'react'
 import { GameCard } from './GameCard'
 import { LoadMoreSkeleton } from './Skeletons'
+import { 
+  FavoritesFilter,
+  EmptyFavoritesState,
+  ClearFavoritesButton,
+  UntrackedFavoriteCard
+} from '@/app/components/streamscout-ui'
+import { useFavorites } from '@/app/hooks/useFavorites'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-bcd88.up.railway.app'
 
@@ -49,9 +56,13 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   const [isLoadingAll, setIsLoadingAll] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   
+  // Favorites hook
+  const { favorites, isFavorited, removeFavorite, clearAllFavorites } = useFavorites()
+  
   // Filters - Single-select genre
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
   
   // ALWAYS load full game list in background
   useEffect(() => {
@@ -85,10 +96,10 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     
     setTimeout(() => {
       const currentCount = displayedGames.length
-      const nextBatch = filteredGames.slice(currentCount, currentCount + 100)
+      const nextBatch = finalFilteredGames.slice(currentCount, currentCount + 100)
       setDisplayedGames([...displayedGames, ...nextBatch])
       setIsLoadingMore(false)
-      setHasMore(currentCount + 100 < filteredGames.length)
+      setHasMore(currentCount + 100 < finalFilteredGames.length)
     }, 300)
   }
   
@@ -107,11 +118,21 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     return true
   })
   
+  // Apply favorites filter
+  const finalFilteredGames = showFavoritesOnly
+    ? filteredGames.filter(game => isFavorited(game.game_id))
+    : filteredGames
+  
+  // Untracked favorites (favorited games not in top 2000)
+  const untrackedFavorites = favorites.filter(fav => 
+    !allGames.some(game => game.game_id === fav.game_id)
+  )
+  
   // Update displayed games when filters change
   useEffect(() => {
-    setDisplayedGames(filteredGames.slice(0, 100))
-    setHasMore(filteredGames.length > 100)
-  }, [selectedGenre, searchQuery, allGames])
+    setDisplayedGames(finalFilteredGames.slice(0, 100))
+    setHasMore(finalFilteredGames.length > 100)
+  }, [selectedGenre, searchQuery, allGames, showFavoritesOnly, finalFilteredGames])
   
   function selectGenre(genre: string) {
     setSelectedGenre(genre)
@@ -119,6 +140,27 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   
   function clearGenre() {
     setSelectedGenre(null)
+  }
+  
+  const handleViewFavorites = () => {
+    setShowFavoritesOnly(!showFavoritesOnly)
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'view_favorites', {
+        showing_favorites: !showFavoritesOnly
+      })
+      console.log(`[TRACK] view_favorites: ${!showFavoritesOnly}`)
+    }
+  }
+  
+  const handleClearAllFavorites = () => {
+    if (confirm(`Clear all ${favorites.length} favorites?`)) {
+      clearAllFavorites()
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'clear_all_favorites', {
+          count: favorites.length
+        })
+      }
+    }
   }
   
   // Error state
@@ -191,14 +233,59 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
         {/* Search results indicator */}
         {searchQuery && (
           <div className="text-text-tertiary text-sm">
-            Search results for "{searchQuery}": {filteredGames.length} games
+            Search results for "{searchQuery}": {finalFilteredGames.length} games
           </div>
         )}
       </div>
       
+      {/* Favorites Filter */}
+      <FavoritesFilter 
+        showFavoritesOnly={showFavoritesOnly}
+        favoriteCount={favorites.length}
+        onToggle={handleViewFavorites}
+      />
+
+      {/* Clear All Button (shows when viewing favorites) */}
+      {showFavoritesOnly && favorites.length > 0 && (
+        <ClearFavoritesButton 
+          onClick={handleClearAllFavorites}
+        />
+      )}
+
+      {/* Empty State (shows when viewing favorites but have none) */}
+      {showFavoritesOnly && favorites.length === 0 ? (
+        <EmptyFavoritesState />
+      ) : showFavoritesOnly && displayedGames.length === 0 && untrackedFavorites.length === 0 ? (
+        <div className="text-center py-12 text-text-tertiary">
+          None of your favorites match the current filters
+        </div>
+      ) : null}
+
+      {/* Untracked Favorites (favorited games not in top 2000) */}
+      {showFavoritesOnly && untrackedFavorites.length > 0 && (
+        <div className="space-y-4 mb-6">
+          {untrackedFavorites.map(fav => (
+            <UntrackedFavoriteCard 
+              key={fav.game_id}
+              gameName={fav.game_name}
+              onRemove={() => {
+                removeFavorite(fav.game_id)
+                if (typeof window !== 'undefined' && (window as any).gtag) {
+                  (window as any).gtag('event', 'remove_favorite', {
+                    game_name: fav.game_name,
+                    game_id: fav.game_id,
+                    source: 'untracked_card'
+                  })
+                }
+              }}
+            />
+          ))}
+        </div>
+      )}
+      
       {/* Game grid */}
       <div className="grid gap-3">
-        {filteredGames.length === 0 ? (
+        {finalFilteredGames.length === 0 ? (
           <div className="text-center py-12 text-text-secondary">
             {searchQuery
               ? `No games found matching "${searchQuery}". Try a different search.`
@@ -215,7 +302,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
       </div>
       
       {/* Load more button */}
-      {hasMore && filteredGames.length > displayedGames.length && (
+      {hasMore && finalFilteredGames.length > displayedGames.length && (
         <div className="mt-6 text-center">
           {isLoadingMore ? (
             <LoadMoreSkeleton />
