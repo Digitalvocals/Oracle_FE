@@ -49,6 +49,33 @@ const GENRE_OPTIONS = [
   'RPG', 'Racing', 'Sandbox', 'Simulation', 'Sports', 'Strategy', 'Survival'
 ]
 
+/**
+ * Normalizes a string for fuzzy search comparison.
+ * Apply to BOTH search input AND game names.
+ */
+function normalizeForSearch(str: string): string {
+  return str
+    // Lowercase
+    .toLowerCase()
+    // Trim leading/trailing whitespace
+    .trim()
+    // Remove punctuation (periods, colons, dashes, apostrophes, quotes, etc.)
+    .replace(/[.:\-'\"!?(),]/g, '')
+    // Collapse multiple spaces into single space
+    .replace(/\s+/g, ' ')
+    // Normalize roman numerals to digits (common in game titles)
+    .replace(/\bviii\b/g, '8')
+    .replace(/\bvii\b/g, '7')
+    .replace(/\bvi\b/g, '6')
+    .replace(/\biv\b/g, '4')
+    .replace(/\biii\b/g, '3')
+    .replace(/\bii\b/g, '2')
+    .replace(/\bv\b/g, '5')  // Must come AFTER viii, vii, vi, iv
+    .replace(/\bi\b/g, '1')  // Must come AFTER iii, ii
+    // Final trim in case normalization created edge whitespace
+    .trim();
+}
+
 export default function GameList({ initialGames, hasError }: GameListProps) {
   const [allGames, setAllGames] = useState<GameOpportunity[]>(initialGames)
   const [displayedGames, setDisplayedGames] = useState<GameOpportunity[]>(initialGames.slice(0, 100))
@@ -103,11 +130,18 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
     }, 300)
   }
   
-  // Filter logic - Single genre + search
+  // Filter logic - Single genre + fuzzy search
   const filteredGames = allGames.filter(game => {
-    // Search filter
-    if (searchQuery && !game.game_name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false
+    // Fuzzy search filter with normalization
+    if (searchQuery) {
+      const normalizedSearch = normalizeForSearch(searchQuery)
+      // Skip filter if normalized search is empty (e.g., user typed only spaces)
+      if (!normalizedSearch) return true
+      
+      const normalizedGameName = normalizeForSearch(game.game_name)
+      if (!normalizedGameName.includes(normalizedSearch)) {
+        return false
+      }
     }
     
     // Genre filter (single select)
@@ -313,7 +347,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
             >
               Load More Games
             </button>
-          )}
+            )}
         </div>
       )}
     </div>
