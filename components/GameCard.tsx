@@ -428,7 +428,7 @@ export function GameCard({ game }: GameCardProps) {
             </div>
             
             <div className="flex gap-2 mt-2 flex-wrap">
-              <TwitchButton href={urls.twitch(game.game_name)} onClick={(e) => trackExternalClick('twitch')}>
+              <TwitchButton href={urls.twitch(game.game_name)} onClick={() => trackExternalClick('twitch')}>
                 Twitch
               </TwitchButton>
               
@@ -443,22 +443,22 @@ export function GameCard({ game }: GameCardProps) {
               )}
               
               {hasSteam && (
-                <SteamButton href={urls.steam(game.game_name)} onClick={(e) => trackExternalClick('steam')}>
+                <SteamButton href={urls.steam(game.game_name)} onClick={() => trackExternalClick('steam')}>
                   Steam
                 </SteamButton>
               )}
               {hasEpic && (
-                <EpicButton href={urls.epic(game.game_name)} onClick={(e) => trackExternalClick('epic')}>
+                <EpicButton href={urls.epic(game.game_name)} onClick={() => trackExternalClick('epic')}>
                   Epic
                 </EpicButton>
               )}
               {hasBattleNet && (
-                <BattleNetButton href={urls.battlenet(game.game_name)} onClick={(e) => trackExternalClick('battlenet')}>
+                <BattleNetButton href={urls.battlenet(game.game_name)} onClick={() => trackExternalClick('battlenet')}>
                   Battle.net
                 </BattleNetButton>
               )}
               {hasRiot && (
-                <RiotButton href={urls.riot(game.game_name)} onClick={(e) => trackExternalClick('riot')}>
+                <RiotButton href={urls.riot(game.game_name)} onClick={() => trackExternalClick('riot')}>
                   Riot
                 </RiotButton>
               )}
@@ -470,7 +470,7 @@ export function GameCard({ game }: GameCardProps) {
                   game.channels,
                   game.total_viewers
                 )} 
-                onClick={(e) => trackExternalClick('share')}
+                onClick={() => trackExternalClick('share')}
               >
                 Share
               </ShareButton>
@@ -569,13 +569,13 @@ export function GameCard({ game }: GameCardProps) {
             <div className="mt-4 pt-4 border-t border-text-tertiary/20">
               <div className="text-text-tertiary text-xs mb-2">LEARN ABOUT THIS GAME</div>
               <div className="flex flex-wrap gap-2">
-                <IGDBButton href={urls.igdb(game.game_name)} onClick={(e) => trackExternalClick('igdb')}>
+                <IGDBButton href={urls.igdb(game.game_name)} onClick={() => trackExternalClick('igdb')}>
                   IGDB
                 </IGDBButton>
-                <YouTubeButton href={urls.youtube(game.game_name)} onClick={(e) => trackExternalClick('youtube')}>
+                <YouTubeButton href={urls.youtube(game.game_name)} onClick={() => trackExternalClick('youtube')}>
                   YouTube
                 </YouTubeButton>
-                <WikipediaButton href={urls.wikipedia(game.game_name)} onClick={(e) => trackExternalClick('wikipedia')}>
+                <WikipediaButton href={urls.wikipedia(game.game_name)} onClick={() => trackExternalClick('wikipedia')}>
                   Wikipedia
                 </WikipediaButton>
               </div>
