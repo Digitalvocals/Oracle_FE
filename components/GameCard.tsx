@@ -409,7 +409,7 @@ export function GameCard({ game }: GameCardProps) {
                   className="flex flex-col items-stretch bg-orange-500 rounded-lg rounded overflow-hidden transition-transform hover:scale-105"
                 >
                   {/* Top: Orange discount badge */}
-                  <div className="bg-orange-500 px-2 py-0.5 flex items-center justify-center gap-1">
+                  <div className="bg-orange-500 px-1.5 py-px flex items-center justify-center gap-1">
                     <span className="text-xs">🛒</span>
                     <span className="text-white text-[10px] font-bold">5% OFF</span>
                   </div>
