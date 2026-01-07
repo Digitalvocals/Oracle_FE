@@ -428,9 +428,7 @@ export function GameCard({ game }: GameCardProps) {
             </div>
             
             <div className="flex gap-2 mt-2 flex-wrap">
-              <TwitchButton href={urls.twitch(game.game_name)} onClick={() => trackExternalClick('twitch')}>
-                Twitch
-              </TwitchButton>
+              <TwitchButton gameName={game.game_name} onClick={() => trackExternalClick('twitch')} />
               
               {/* FEATURE 5: UpdatedKinguinButton - Now zero-friction */}
               {game.purchase_links && !game.purchase_links.free && (
@@ -443,37 +441,25 @@ export function GameCard({ game }: GameCardProps) {
               )}
               
               {hasSteam && (
-                <SteamButton href={urls.steam(game.game_name)} onClick={() => trackExternalClick('steam')}>
-                  Steam
-                </SteamButton>
+                <SteamButton gameName={game.game_name} onClick={() => trackExternalClick('steam')} />
               )}
               {hasEpic && (
-                <EpicButton href={urls.epic(game.game_name)} onClick={() => trackExternalClick('epic')}>
-                  Epic
-                </EpicButton>
+                <EpicButton gameName={game.game_name} onClick={() => trackExternalClick('epic')} />
               )}
               {hasBattleNet && (
-                <BattleNetButton href={urls.battlenet(game.game_name)} onClick={() => trackExternalClick('battlenet')}>
-                  Battle.net
-                </BattleNetButton>
+                <BattleNetButton gameName={game.game_name} url={getBattleNetUrl()} onClick={() => trackExternalClick('battlenet')} />
               )}
               {hasRiot && (
-                <RiotButton href={urls.riot(game.game_name)} onClick={() => trackExternalClick('riot')}>
-                  Riot
-                </RiotButton>
+                <RiotButton gameName={game.game_name} url={getRiotUrl()} onClick={() => trackExternalClick('riot')} />
               )}
               
               <ShareButton 
-                href={urls.twitterShare(
-                  game.game_name, 
-                  game.discoverability_rating !== undefined ? game.discoverability_rating : game.overall_score * 10,
-                  game.channels,
-                  game.total_viewers
-                )} 
+                gameName={game.game_name}
+                score={game.discoverability_rating !== undefined ? game.discoverability_rating : game.overall_score * 10}
+                channels={game.channels}
+                viewers={game.total_viewers}
                 onClick={() => trackExternalClick('share')}
-              >
-                Share
-              </ShareButton>
+              />
               
               {/* FEATURE 4: Find Alternatives */}
               <button onClick={handleFindAlternatives} className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-bg-primary text-sm font-semibold rounded-lg transition-colors">
@@ -569,15 +555,9 @@ export function GameCard({ game }: GameCardProps) {
             <div className="mt-4 pt-4 border-t border-text-tertiary/20">
               <div className="text-text-tertiary text-xs mb-2">LEARN ABOUT THIS GAME</div>
               <div className="flex flex-wrap gap-2">
-                <IGDBButton href={urls.igdb(game.game_name)} onClick={() => trackExternalClick('igdb')}>
-                  IGDB
-                </IGDBButton>
-                <YouTubeButton href={urls.youtube(game.game_name)} onClick={() => trackExternalClick('youtube')}>
-                  YouTube
-                </YouTubeButton>
-                <WikipediaButton href={urls.wikipedia(game.game_name)} onClick={() => trackExternalClick('wikipedia')}>
-                  Wikipedia
-                </WikipediaButton>
+                <IGDBButton gameName={game.game_name} onClick={() => trackExternalClick('igdb')} />
+                <YouTubeButton gameName={game.game_name} onClick={() => trackExternalClick('youtube')} />
+                <WikipediaButton gameName={game.game_name} onClick={() => trackExternalClick('wikipedia')} />
               </div>
             </div>
             
