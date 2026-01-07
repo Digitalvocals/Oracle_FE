@@ -568,10 +568,9 @@ export function GameCard({ game }: GameCardProps) {
       
       {showAlternativesModal && (
         <AlternativesModal 
-          isOpen={showAlternativesModal}
+          sourceGameName={game.game_name}
+          sourceGameId={game.game_id}
           onClose={() => setShowAlternativesModal(false)}
-          currentGame={game.game_name}
-          alternatives={[]}
         />
       )}
     </>
