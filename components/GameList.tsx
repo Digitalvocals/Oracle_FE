@@ -61,9 +61,8 @@ function normalizeForSearch(str: string): string {
     .trim()
     // Remove punctuation (periods, colons, dashes, apostrophes, quotes, etc.)
     .replace(/[.:\-'\"!?(),]/g, '')
-    // Collapse multiple spaces into single space
-    .replace(/\s+/g, ' ')
     // Normalize roman numerals to digits (common in game titles)
+    // IMPORTANT: Must happen BEFORE space removal (needs word boundaries)
     .replace(/\bviii\b/g, '8')
     .replace(/\bvii\b/g, '7')
     .replace(/\bvi\b/g, '6')
@@ -72,8 +71,11 @@ function normalizeForSearch(str: string): string {
     .replace(/\bii\b/g, '2')
     .replace(/\bv\b/g, '5')  // Must come AFTER viii, vii, vi, iv
     .replace(/\bi\b/g, '1')  // Must come AFTER iii, ii
+    // Remove ALL spaces (handles mid-word typos like "fo rtnite")
+    .replace(/\s+/g, '')
     // Final trim in case normalization created edge whitespace
     .trim();
+}
 }
 
 export default function GameList({ initialGames, hasError }: GameListProps) {
