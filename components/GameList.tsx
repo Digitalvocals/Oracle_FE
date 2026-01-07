@@ -76,7 +76,6 @@ function normalizeForSearch(str: string): string {
     // Final trim in case normalization created edge whitespace
     .trim();
 }
-}
 
 export default function GameList({ initialGames, hasError }: GameListProps) {
   const [allGames, setAllGames] = useState<GameOpportunity[]>(initialGames)
