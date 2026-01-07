@@ -414,7 +414,7 @@ export function GameCard({ game }: GameCardProps) {
                     <span className="text-white text-[10px] font-bold">5% OFF</span>
                   </div>
                   {/* Bottom: Green buy button */}
-                  <div className="bg-green-600 hover:bg-green-500 px-3 py-1.5 rounded-lg m-px flex items-center justify-center gap-1">
+                  <div className="bg-green-600 hover:bg-green-500 px-3 py-1.5 rounded-lg mt-px flex items-center justify-center gap-1">
                     <span className="text-sm">🎮</span>
                     <span className="text-white text-xs sm:text-sm font-semibold">buy</span>
                   </div>
