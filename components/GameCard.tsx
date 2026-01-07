@@ -415,7 +415,7 @@ export function GameCard({ game }: GameCardProps) {
                   </div>
                   {/* Bottom: Green buy button */}
                   <div className="bg-green-600 hover:bg-green-500 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
-                    <span className="text-sm">🎮</span>
+                    <img src="https://www.google.com/s2/favicons?domain=kinguin.net&sz=32" alt="" className="w-4 h-4" />
                     <span className="text-white text-xs sm:text-sm font-semibold">buy</span>
                   </div>
                 </button>
