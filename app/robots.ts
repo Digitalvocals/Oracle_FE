@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://streamscout.gg/sitemap.xml',
+    sitemap: 'https://www.streamscout.gg/sitemap.xml',
   }
 }
