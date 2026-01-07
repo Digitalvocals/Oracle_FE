@@ -1,6 +1,6 @@
-// US-073: GameCard - ALL 8 MISSING FEATURES RESTORED
-// 1. Favorite Button, 2. Momentum Badge, 3. Best Time, 4. Find Alternatives
-// 5. UpdatedKinguinButton (discounts), 6. Sparkline, 7. TimeBlocks, 8. Analytics API
+// US-079: GameCard with Zero-Friction Kinguin Flow
+// Single click: copies code + opens Kinguin + shows toast
+// Removed: KinguinConfirmModal (no more friction)
 
 'use client'
 
@@ -18,14 +18,13 @@ import {
   YouTubeButton,
   WikipediaButton,
   FavoriteButton,
-  UpdatedKinguinButton,
-  KinguinConfirmModal,
   AlternativesModal,
   urls
 } from '@/app/components/streamscout-ui'
 import { useFavorites } from '@/app/hooks/useFavorites'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-bcd88.up.railway.app'
+const KINGUIN_AFFILIATE_ID = '6930867eb1a6f'
 
 interface GameAnalytics {
   viewerSparkline: number[]
@@ -86,10 +85,6 @@ const getLocalizedBlockLabel = (pstBlock: string): string => {
   return localHour.toLowerCase().replace(' ', '')
 }
 
-/** Format Best Time range to local timezone with 12hr format + TZ label
- *  Input: "20-24" (PST 24hr)
- *  Output: "8pm-12am PST" or "11pm-3am EST" (localized)
- */
 const formatBestTimeLocal = (pstRange: string): string => {
   if (!pstRange || !pstRange.includes('-')) return pstRange
   
@@ -97,11 +92,9 @@ const formatBestTimeLocal = (pstRange: string): string => {
   const pstTz = 'America/Los_Angeles'
   const [startHr, endHr] = pstRange.split('-').map(h => parseInt(h))
   
-  // Create base date in PST
   const date = new Date()
   const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
   
-  // Convert start hour
   const startDate = new Date(pstDateStr)
   startDate.setHours(startHr, 0, 0, 0)
   const startLocal = new Intl.DateTimeFormat('en-US', { 
@@ -109,7 +102,6 @@ const formatBestTimeLocal = (pstRange: string): string => {
     timeZone: userTz 
   }).format(startDate).toLowerCase().replace(' ', '')
   
-  // Convert end hour (handle midnight as 24 -> 0)
   const endDate = new Date(pstDateStr)
   endDate.setHours(endHr === 24 ? 0 : endHr, 0, 0, 0)
   if (endHr === 24) endDate.setDate(endDate.getDate() + 1)
@@ -118,7 +110,6 @@ const formatBestTimeLocal = (pstRange: string): string => {
     timeZone: userTz 
   }).format(endDate).toLowerCase().replace(' ', '')
   
-  // Get timezone abbreviation (PST, EST, IST, etc.)
   const tzAbbr = new Intl.DateTimeFormat('en-US', {
     timeZone: userTz,
     timeZoneName: 'short'
@@ -212,12 +203,19 @@ export function GameCard({ game }: GameCardProps) {
   const [analytics, setAnalytics] = useState<GameAnalytics | null>(null)
   const [loadingAnalytics, setLoadingAnalytics] = useState(false)
   const [failedAnalytics, setFailedAnalytics] = useState(false)
-  const [showKinguinModal, setShowKinguinModal] = useState(false)
-  const [kinguinGameName, setKinguinGameName] = useState('')
   const [showAlternativesModal, setShowAlternativesModal] = useState(false)
+  const [showToast, setShowToast] = useState(false)
   
   // Favorites hook
   const { isFavorited, toggleFavorite } = useFavorites()
+  
+  // Auto-hide toast after 4 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => setShowToast(false), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [showToast])
   
   const handleFavoriteToggle = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -229,7 +227,6 @@ export function GameCard({ game }: GameCardProps) {
         game_name: game.game_name,
         game_id: game.game_id
       })
-      console.log(`[TRACK] ${wasFavorited ? 'remove_favorite' : 'add_favorite'}: ${game.game_name}`)
     }
   }
   
@@ -248,22 +245,27 @@ export function GameCard({ game }: GameCardProps) {
         'event_category': linkType === 'share' ? 'share' : 'external_link',
         'event_label': game.game_name
       });
-
-      console.log(`[TRACK] ${linkType}_click: ${game.game_name} (${score.toFixed(1)}/10)`);
     }
   }
   
-  const handleKinguinClick = () => {
-    setKinguinGameName(game.game_name)
-    setShowKinguinModal(true)
-    trackExternalClick('kinguin')
+  // Zero-friction Kinguin handler: copy code + open in one click
+  const handleKinguinClick = async (e: React.MouseEvent) => {
+    e.stopPropagation()
     
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'kinguin_click', {
-        game_name: game.game_name,
-        game_id: game.game_id
-      })
+    // 1. Copy discount code to clipboard
+    try {
+      await navigator.clipboard.writeText('STREAMSCOUT')
+      setShowToast(true)
+    } catch (err) {
+      console.error('Failed to copy code:', err)
     }
+    
+    // 2. Open Kinguin in new tab
+    const kinguinUrl = `https://www.kinguin.net/listing?production_products_bestsellers_desc[query]=${encodeURIComponent(game.game_name)}&r=${KINGUIN_AFFILIATE_ID}`
+    window.open(kinguinUrl, '_blank')
+    
+    // 3. Track in GA
+    trackExternalClick('kinguin')
   }
   
   useEffect(() => {
@@ -305,7 +307,6 @@ export function GameCard({ game }: GameCardProps) {
         game_name: game.game_name,
         game_id: game.game_id
       })
-      console.log(`[TRACK] alternatives_button_click: ${game.game_name}`)
     }
   }
   
@@ -314,11 +315,6 @@ export function GameCard({ game }: GameCardProps) {
   const hasEpic = platforms.some(p => p.id === 'epic')
   const hasBattleNet = platforms.some(p => p.id === 'battlenet')
   const hasRiot = platforms.some(p => p.id === 'riot')
-  
-  const getSteamUrl = () => platforms.find(p => p.id === 'steam')?.url || urls.steam(game.game_name)
-  const getEpicUrl = () => platforms.find(p => p.id === 'epic')?.url || urls.epic(game.game_name)
-  const getBattleNetUrl = () => platforms.find(p => p.id === 'battlenet')?.url || urls.battlenet(game.game_name)
-  const getRiotUrl = () => platforms.find(p => p.id === 'riot')?.url || urls.riot(game.game_name)
   
   return (
     <>
@@ -370,7 +366,6 @@ export function GameCard({ game }: GameCardProps) {
                   </div>
                 )}
                 
-                {/* FEATURE 3: Best Time - Now localized with 12hr format + timezone */}
                 {game.bestTime && (
                   <div className="mt-2 text-xs text-text-tertiary">
                     <span className="font-semibold text-text-secondary">BEST TIME:</span> {formatBestTimeLocal(game.bestTime)}
@@ -385,7 +380,6 @@ export function GameCard({ game }: GameCardProps) {
                     {game.is_filtered && game.discoverability_rating !== undefined ? `${game.discoverability_rating}/10` : `${(game.overall_score * 10).toFixed(1)}/10`}
                   </div>
                 </div>
-                {/* Main Score Tooltip */}
                 <div className="absolute right-0 top-full mt-2 w-80 p-4 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all duration-200 z-50 text-left pointer-events-none">
                   <p className="text-sm text-white leading-relaxed mb-3"><strong className="text-brand-primary">Overall Score</strong> combines three factors:</p>
                   <ul className="text-sm text-white/90 space-y-2">
@@ -402,38 +396,48 @@ export function GameCard({ game }: GameCardProps) {
               </div>
             </div>
             
-            <div className="flex gap-2 mt-2 flex-wrap">
-              <TwitchButton href={urls.twitch(game.game_name)} onClick={(e) => trackExternalClick('twitch')}>
+            <div className="flex gap-2 mt-2 flex-wrap items-end">
+              <TwitchButton href={urls.twitch(game.game_name)} onClick={() => trackExternalClick('twitch')}>
                 Twitch
               </TwitchButton>
               
-              {/* FEATURE 5: UpdatedKinguinButton */}
+              {/* Kinguin Zero-Friction Button: Orange badge + Green buy, stacked */}
               {game.purchase_links && !game.purchase_links.free && (
-                <div onClick={(e) => e.stopPropagation()}>
-                  <UpdatedKinguinButton 
-                    gameName={game.game_name}
-                    onClick={handleKinguinClick}
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={handleKinguinClick}
+                  className="flex flex-col bg-orange-500 rounded-lg rounded overflow-hidden transition-transform hover:scale-105"
+                >
+                  {/* Top: Orange discount badge */}
+                  <div className="bg-orange-500 px-1 py-px flex items-center justify-center gap-1">
+                    <span className="text-xs">🛒</span>
+                    <span className="text-white text-[10px] font-bold">5% OFF</span>
+                  </div>
+                  {/* Bottom: Green buy button */}
+                  <div className="bg-green-600 hover:bg-green-500 px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                    <span className="text-sm">🎮</span>
+                    <span className="text-white text-xs sm:text-sm font-semibold">buy</span>
+                  </div>
+                </button>
               )}
               
               {hasSteam && (
-                <SteamButton href={urls.steam(game.game_name)} onClick={(e) => trackExternalClick('steam')}>
+                <SteamButton href={urls.steam(game.game_name)} onClick={() => trackExternalClick('steam')}>
                   Steam
                 </SteamButton>
               )}
               {hasEpic && (
-                <EpicButton href={urls.epic(game.game_name)} onClick={(e) => trackExternalClick('epic')}>
+                <EpicButton href={urls.epic(game.game_name)} onClick={() => trackExternalClick('epic')}>
                   Epic
                 </EpicButton>
               )}
               {hasBattleNet && (
-                <BattleNetButton href={urls.battlenet(game.game_name)} onClick={(e) => trackExternalClick('battlenet')}>
+                <BattleNetButton href={urls.battlenet(game.game_name)} onClick={() => trackExternalClick('battlenet')}>
                   Battle.net
                 </BattleNetButton>
               )}
               {hasRiot && (
-                <RiotButton href={urls.riot(game.game_name)} onClick={(e) => trackExternalClick('riot')}>
+                <RiotButton href={urls.riot(game.game_name)} onClick={() => trackExternalClick('riot')}>
                   Riot
                 </RiotButton>
               )}
@@ -445,12 +449,11 @@ export function GameCard({ game }: GameCardProps) {
                   game.channels,
                   game.total_viewers
                 )} 
-                onClick={(e) => trackExternalClick('share')}
+                onClick={() => trackExternalClick('share')}
               >
                 Share
               </ShareButton>
               
-              {/* FEATURE 4: Find Alternatives */}
               <button onClick={handleFindAlternatives} className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-bg-primary text-sm font-semibold rounded-lg transition-colors">
                 Find Alternatives
               </button>
@@ -467,7 +470,6 @@ export function GameCard({ game }: GameCardProps) {
                   <span className="w-5 h-5 rounded-full bg-brand-primary/50 group-hover/disc:bg-brand-primary text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
                 </div>
                 <div className={`text-2xl font-bold ${getScoreColor(game.discoverability_score)}`}>{(game.discoverability_score * 10).toFixed(1)}/10</div>
-                {/* Tooltip */}
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 p-4 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/disc:opacity-100 group-hover/disc:visible transition-all duration-200 z-50 text-left pointer-events-none">
                   <p className="text-sm text-white leading-relaxed">Can viewers find you? Fewer streamers = you appear higher in the browse list. Weighted <strong className="text-brand-primary">45%</strong> because visibility is everything.</p>
                 </div>
@@ -478,7 +480,6 @@ export function GameCard({ game }: GameCardProps) {
                   <span className="w-5 h-5 rounded-full bg-brand-primary/50 group-hover/viab:bg-brand-primary text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
                 </div>
                 <div className={`text-2xl font-bold ${getScoreColor(game.viability_score)}`}>{(game.viability_score * 10).toFixed(1)}/10</div>
-                {/* Tooltip */}
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 p-4 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/viab:opacity-100 group-hover/viab:visible transition-all duration-200 z-50 text-left pointer-events-none">
                   <p className="text-sm text-white leading-relaxed">Is there actually an audience? Sweet spot: enough viewers to matter, not so many that giants dominate. Weighted <strong className="text-brand-primary">35%</strong>.</p>
                 </div>
@@ -489,7 +490,6 @@ export function GameCard({ game }: GameCardProps) {
                   <span className="w-5 h-5 rounded-full bg-brand-primary/50 group-hover/eng:bg-brand-primary text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
                 </div>
                 <div className={`text-2xl font-bold ${getScoreColor(game.engagement_score)}`}>{(game.engagement_score * 10).toFixed(1)}/10</div>
-                {/* Tooltip */}
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 p-4 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/eng:opacity-100 group-hover/eng:visible transition-all duration-200 z-50 text-left pointer-events-none">
                   <p className="text-sm text-white leading-relaxed">Are people really watching? Higher avg viewers/channel = engaged community, not just background noise. Weighted <strong className="text-brand-primary">20%</strong>.</p>
                 </div>
@@ -500,14 +500,12 @@ export function GameCard({ game }: GameCardProps) {
                   <span className="w-5 h-5 rounded-full bg-brand-primary/50 group-hover/avg:bg-brand-primary text-black flex items-center justify-center text-xs font-bold cursor-help transition-colors">?</span>
                 </div>
                 <div className="text-2xl font-bold text-brand-primary">{game.avg_viewers_per_channel.toFixed(1)}</div>
-                {/* Tooltip */}
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 p-4 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/avg:opacity-100 group-hover/avg:visible transition-all duration-200 z-50 text-left pointer-events-none">
                   <p className="text-sm text-white leading-relaxed">Total viewers ÷ total streamers. Higher = more eyeballs per streamer. <strong className="text-red-400">Below 10</strong> is rough, <strong className="text-green-400">above 50</strong> is healthy.</p>
                 </div>
               </div>
             </div>
             
-            {/* FEATURES 6, 7, 8: Analytics */}
             {(() => {
               if (loadingAnalytics) return <div className="mt-4 pt-4 border-t border-text-tertiary/20 text-center text-text-tertiary text-sm">Loading trend data...</div>
               if (analytics && analytics.viewerSparkline && analytics.viewerSparkline.length >= 2) {
@@ -544,13 +542,13 @@ export function GameCard({ game }: GameCardProps) {
             <div className="mt-4 pt-4 border-t border-text-tertiary/20">
               <div className="text-text-tertiary text-xs mb-2">LEARN ABOUT THIS GAME</div>
               <div className="flex flex-wrap gap-2">
-                <IGDBButton href={urls.igdb(game.game_name)} onClick={(e) => trackExternalClick('igdb')}>
+                <IGDBButton href={urls.igdb(game.game_name)} onClick={() => trackExternalClick('igdb')}>
                   IGDB
                 </IGDBButton>
-                <YouTubeButton href={urls.youtube(game.game_name)} onClick={(e) => trackExternalClick('youtube')}>
+                <YouTubeButton href={urls.youtube(game.game_name)} onClick={() => trackExternalClick('youtube')}>
                   YouTube
                 </YouTubeButton>
-                <WikipediaButton href={urls.wikipedia(game.game_name)} onClick={(e) => trackExternalClick('wikipedia')}>
+                <WikipediaButton href={urls.wikipedia(game.game_name)} onClick={() => trackExternalClick('wikipedia')}>
                   Wikipedia
                 </WikipediaButton>
               </div>
@@ -561,17 +559,16 @@ export function GameCard({ game }: GameCardProps) {
         )}
       </div>
       
-      {showKinguinModal && (
-        <KinguinConfirmModal 
-          isOpen={showKinguinModal}
-          onClose={() => setShowKinguinModal(false)}
-          onConfirm={() => {
-            window.open('https://www.kinguin.net/', '_blank')
-            setShowKinguinModal(false)
-          }}
-          gameName={kinguinGameName}
-        />
+      {/* Toast notification for Kinguin code copy */}
+      {showToast && (
+        <div className="fixed bottom-4 right-4 z-50 animate-pulse">
+          <div className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2">
+            <span>✓</span>
+            <span>Code "STREAMSCOUT" copied! Paste at checkout for 5% off.</span>
+          </div>
+        </div>
       )}
+      
       {showAlternativesModal && (
         <AlternativesModal 
           isOpen={showAlternativesModal}
