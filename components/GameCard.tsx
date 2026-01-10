@@ -367,8 +367,8 @@ export function GameCard({ game }: GameCardProps) {
                 )}
                 
                 {game.bestTime && (
-                  <div className="mt-2 text-xs text-text-tertiary">
-                    <span className="font-semibold text-text-secondary">BEST TIME:</span> {formatBestTimeLocal(game.bestTime)}
+                  <div className="mt-2 text-xs text-text-tertiary whitespace-nowrap">
+                    <span className="font-semibold text-text-secondary">BEST:</span> {formatBestTimeLocal(game.bestTime)}
                   </div>
                 )}
               </div>
@@ -421,42 +421,45 @@ export function GameCard({ game }: GameCardProps) {
                 </button>
               )}
               
-              {hasSteam && (
-                <SteamButton href={urls.steam(game.game_name)} onClick={() => trackExternalClick('steam')}>
-                  Steam
-                </SteamButton>
-              )}
-              {hasEpic && (
-                <EpicButton href={urls.epic(game.game_name)} onClick={() => trackExternalClick('epic')}>
-                  Epic
-                </EpicButton>
-              )}
-              {hasBattleNet && (
-                <BattleNetButton href={urls.battlenet(game.game_name)} onClick={() => trackExternalClick('battlenet')}>
-                  Battle.net
-                </BattleNetButton>
-              )}
-              {hasRiot && (
-                <RiotButton href={urls.riot(game.game_name)} onClick={() => trackExternalClick('riot')}>
-                  Riot
-                </RiotButton>
-              )}
-              
-              <ShareButton 
-                href={urls.twitterShare(
-                  game.game_name, 
-                  game.discoverability_rating !== undefined ? game.discoverability_rating : game.overall_score * 10,
-                  game.channels,
-                  game.total_viewers
-                )} 
-                onClick={() => trackExternalClick('share')}
-              >
-                Share
-              </ShareButton>
-              
-              <button onClick={handleFindAlternatives} className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-bg-primary text-sm font-semibold rounded-lg transition-colors">
-                Find Alternatives
-              </button>
+              {/* Secondary buttons: Hidden on mobile when collapsed */}
+              <div className={`flex gap-2 flex-wrap ${isExpanded ? '' : 'hidden sm:flex'}`}>
+                {hasSteam && (
+                  <SteamButton href={urls.steam(game.game_name)} onClick={() => trackExternalClick('steam')}>
+                    Steam
+                  </SteamButton>
+                )}
+                {hasEpic && (
+                  <EpicButton href={urls.epic(game.game_name)} onClick={() => trackExternalClick('epic')}>
+                    Epic
+                  </EpicButton>
+                )}
+                {hasBattleNet && (
+                  <BattleNetButton href={urls.battlenet(game.game_name)} onClick={() => trackExternalClick('battlenet')}>
+                    Battle.net
+                  </BattleNetButton>
+                )}
+                {hasRiot && (
+                  <RiotButton href={urls.riot(game.game_name)} onClick={() => trackExternalClick('riot')}>
+                    Riot
+                  </RiotButton>
+                )}
+                
+                <ShareButton 
+                  href={urls.twitterShare(
+                    game.game_name, 
+                    game.discoverability_rating !== undefined ? game.discoverability_rating : game.overall_score * 10,
+                    game.channels,
+                    game.total_viewers
+                  )} 
+                  onClick={() => trackExternalClick('share')}
+                >
+                  Share
+                </ShareButton>
+                
+                <button onClick={handleFindAlternatives} className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-bg-primary text-sm font-semibold rounded-lg transition-colors">
+                  Find Alternatives
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -144,6 +144,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
+  const [genresExpanded, setGenresExpanded] = useState<boolean>(false)
   
   // ALWAYS load full game list in background
   useEffect(() => {
@@ -335,9 +336,11 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
           </span>
         </div>
         
-        {/* Genre buttons - CORRECT: Active=green, Inactive=gray */}
+        {/* Genre buttons - Collapsible on mobile */}
         <div className="flex flex-wrap gap-2">
-          {GENRE_OPTIONS.map(genre => (
+          {GENRE_OPTIONS
+            .slice(0, genresExpanded ? undefined : 6)
+            .map(genre => (
             <button
               key={genre}
               onClick={() => selectGenre(genre)}
@@ -350,14 +353,33 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
               {genre}
             </button>
           ))}
-          
-          {/* Clear All - only shows when filter active */}
+
+          {/* Show more/less toggle */}
+          {!genresExpanded && GENRE_OPTIONS.length > 6 && (
+            <button
+              onClick={() => setGenresExpanded(true)}
+              className="px-4 py-2 rounded-full bg-transparent text-brand-primary border border-brand-primary/50 hover:bg-brand-primary/10 transition-colors"
+            >
+              +{GENRE_OPTIONS.length - 6} more
+            </button>
+          )}
+
+          {genresExpanded && (
+            <button
+              onClick={() => setGenresExpanded(false)}
+              className="px-4 py-2 rounded-full bg-transparent text-text-tertiary border border-text-tertiary/30 hover:text-text-primary transition-colors"
+            >
+              Show less
+            </button>
+          )}
+
+          {/* Clear filter - only shows when filter active */}
           {selectedGenre && (
             <button
               onClick={clearGenre}
               className="px-4 py-2 rounded-full bg-transparent text-brand-danger border border-brand-danger/50 hover:bg-brand-danger/10 transition-colors"
             >
-              Clear All
+              Clear
             </button>
           )}
         </div>
