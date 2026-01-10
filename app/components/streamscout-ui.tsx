@@ -430,24 +430,63 @@ interface MomentumBadgeProps {
   channelGrowth?: number
 }
 
-/** Rising/Falling/Stable/Hidden Gem badge */
+/** Rising/Declining/Stable/Hidden Gem badge with tooltips */
 export function MomentumBadge({ momentum, viewerGrowth, channelGrowth }: MomentumBadgeProps) {
   if (!momentum || momentum === 'insufficient_data') return null
-  
+
   const badges = {
-    rising: { text: '📈 Rising', color: 'text-green-400 border-green-400/50 bg-green-400/10' },
-    falling: { text: '📉 Falling', color: 'text-red-400 border-red-400/50 bg-red-400/10' },
-    stable: { text: '➡️ Stable', color: 'text-blue-400 border-blue-400/50 bg-blue-400/10' },
-    hidden_gem: { text: '💎 Hidden Gem', color: 'text-purple-400 border-purple-400/50 bg-purple-400/10' }
+    rising: {
+      text: '📈 Rising',
+      color: 'text-green-400 border-green-400/50 bg-green-400/10',
+      tooltip: 'Viewers and streamers both increasing. Game is gaining popularity fast.'
+    },
+    declining: {
+      text: '📉 Declining',
+      color: 'text-red-400 border-red-400/50 bg-red-400/10',
+      tooltip: 'Viewers dropping while streamer count stays steady. Interest is cooling off.'
+    },
+    stable: {
+      text: '➡️ Stable',
+      color: 'text-blue-400 border-blue-400/50 bg-blue-400/10',
+      tooltip: 'Viewers and streamers holding steady. Consistent audience over time.'
+    },
+    hidden_gem: {
+      text: '💎 Hidden Gem',
+      color: 'text-purple-400 border-purple-400/50 bg-purple-400/10',
+      tooltip: 'Viewers growing but streamer count stable. Great discoverability opportunity.'
+    },
+    crowding: {
+      text: '⚠️ Crowding',
+      color: 'text-yellow-400 border-yellow-400/50 bg-yellow-400/10',
+      tooltip: 'Streamers flooding in while viewer count stays flat. Getting harder to stand out.'
+    },
+    dying: {
+      text: '💀 Dying',
+      color: 'text-gray-400 border-gray-400/50 bg-gray-400/10',
+      tooltip: 'Both viewers and streamers dropping. Game losing momentum rapidly.'
+    }
   }
-  
+
   const badge = badges[momentum as keyof typeof badges]
   if (!badge) return null
-  
+
   return (
-    <span className={`px-2 py-1 rounded text-xs font-semibold border ${badge.color} whitespace-nowrap`}>
-      {badge.text}
-    </span>
+    <div className="relative group/momentum inline-block">
+      <span className={`px-2 py-1 rounded text-xs font-semibold border ${badge.color} whitespace-nowrap cursor-help`}>
+        {badge.text}
+      </span>
+
+      {/* Tooltip */}
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/momentum:opacity-100 group-hover/momentum:visible transition-all duration-200 z-50 text-left pointer-events-none">
+        <p className="text-sm text-white leading-relaxed">{badge.tooltip}</p>
+        {viewerGrowth !== undefined && (
+          <p className="text-xs text-gray-400 mt-2">
+            Viewers: {viewerGrowth > 0 ? '+' : ''}{viewerGrowth.toFixed(1)}%
+            {channelGrowth !== undefined && ` | Streamers: ${channelGrowth > 0 ? '+' : ''}${channelGrowth.toFixed(1)}%`}
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 
