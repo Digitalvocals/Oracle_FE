@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
   MomentumBadge,
   TwitchButton,
@@ -359,7 +360,7 @@ export function GameCard({ game }: GameCardProps) {
                 </div>
                 
                 {game.genres && game.genres.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
+                  <div className={`flex flex-wrap gap-1 mt-1 ${isExpanded ? '' : 'hidden sm:flex'}`}>
                     {game.genres.slice(0, 3).map(genre => (
                       <span key={genre} className="px-2 py-0.5 text-xs rounded bg-brand-primary/10 text-brand-primary/70 border border-brand-primary/20">{genre}</span>
                     ))}
@@ -464,6 +465,15 @@ export function GameCard({ game }: GameCardProps) {
           </div>
         </div>
         
+        {/* Expand/collapse indicator */}
+        <div className="flex justify-center mt-3 text-text-tertiary">
+          {isExpanded ? (
+            <ChevronUp className="w-5 h-5 animate-pulse" />
+          ) : (
+            <ChevronDown className="w-5 h-5" />
+          )}
+        </div>
+
         {isExpanded && (
           <div className="mt-4 pt-4 border-t border-text-tertiary/20">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -557,7 +567,6 @@ export function GameCard({ game }: GameCardProps) {
               </div>
             </div>
             
-            <div className="mt-4 text-sm text-text-tertiary text-center">Click card again to collapse</div>
           </div>
         )}
       </div>

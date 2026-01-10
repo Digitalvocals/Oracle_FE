@@ -358,7 +358,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
           {!genresExpanded && GENRE_OPTIONS.length > 6 && (
             <button
               onClick={() => setGenresExpanded(true)}
-              className="px-4 py-2 rounded-full bg-transparent text-brand-primary border border-brand-primary/50 hover:bg-brand-primary/10 transition-colors"
+              className="px-4 py-2 rounded-full bg-transparent text-text-tertiary border border-text-tertiary/30 hover:text-text-primary hover:border-text-secondary transition-colors"
             >
               +{GENRE_OPTIONS.length - 6} more
             </button>
