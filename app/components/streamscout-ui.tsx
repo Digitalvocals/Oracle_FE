@@ -432,6 +432,8 @@ interface MomentumBadgeProps {
 
 /** Rising/Declining/Stable/Hidden Gem badge with tooltips */
 export function MomentumBadge({ momentum, viewerGrowth, channelGrowth }: MomentumBadgeProps) {
+  const [showModal, setShowModal] = React.useState(false)
+
   if (!momentum || momentum === 'insufficient_data') return null
 
   const badges = {
@@ -471,22 +473,75 @@ export function MomentumBadge({ momentum, viewerGrowth, channelGrowth }: Momentu
   if (!badge) return null
 
   return (
-    <div className="relative group/momentum inline-block">
-      <span className={`px-2 py-1 rounded text-xs font-semibold border ${badge.color} whitespace-nowrap cursor-help`}>
-        {badge.text}
-      </span>
+    <>
+      <div className="relative group/momentum inline-block">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowModal(true)
+          }}
+          className={`px-2 py-1 rounded text-xs font-semibold border ${badge.color} whitespace-nowrap cursor-help`}
+        >
+          {badge.text}
+        </button>
 
-      {/* Tooltip */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/momentum:opacity-100 group-hover/momentum:visible transition-all duration-200 z-50 text-left pointer-events-none">
-        <p className="text-sm text-white leading-relaxed">{badge.tooltip}</p>
-        {viewerGrowth !== undefined && (
-          <p className="text-xs text-gray-400 mt-2">
-            Viewers: {viewerGrowth > 0 ? '+' : ''}{viewerGrowth.toFixed(1)}%
-            {channelGrowth !== undefined && ` | Streamers: ${channelGrowth > 0 ? '+' : ''}${channelGrowth.toFixed(1)}%`}
-          </p>
-        )}
+        {/* Desktop tooltip - hidden on mobile */}
+        <div className="hidden sm:block absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-gray-900 border border-brand-primary/50 rounded-lg shadow-lg opacity-0 invisible group-hover/momentum:opacity-100 group-hover/momentum:visible transition-all duration-200 z-50 text-left pointer-events-none">
+          <p className="text-sm text-white leading-relaxed">{badge.tooltip}</p>
+          {viewerGrowth !== undefined && (
+            <p className="text-xs text-gray-400 mt-2">
+              Viewers: {viewerGrowth > 0 ? '+' : ''}{viewerGrowth.toFixed(1)}%
+              {channelGrowth !== undefined && ` | Streamers: ${channelGrowth > 0 ? '+' : ''}${channelGrowth.toFixed(1)}%`}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Mobile modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] px-4"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-gray-900 border-2 border-brand-primary rounded-lg p-6 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span className={`px-3 py-1.5 rounded text-sm font-semibold border ${badge.color}`}>
+                {badge.text}
+              </span>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-text-tertiary hover:text-text-primary text-2xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-white text-base leading-relaxed mb-4">
+              {badge.tooltip}
+            </p>
+
+            {viewerGrowth !== undefined && (
+              <div className="text-sm text-gray-400 bg-gray-800/50 rounded p-3">
+                <div>Viewers: {viewerGrowth > 0 ? '+' : ''}{viewerGrowth.toFixed(1)}%</div>
+                {channelGrowth !== undefined && (
+                  <div>Streamers: {channelGrowth > 0 ? '+' : ''}{channelGrowth.toFixed(1)}%</div>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowModal(false)}
+              className="mt-4 w-full px-4 py-2 bg-brand-primary text-black font-semibold rounded-lg hover:bg-brand-primary/90 transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
