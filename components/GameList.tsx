@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Fuse from 'fuse.js'
 import { GameCard } from './GameCard'
 import { LoadMoreSkeleton } from './Skeletons'
@@ -144,7 +144,6 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
-  const [showHiddenGemsOnly, setShowHiddenGemsOnly] = useState<boolean>(false)
   const [genresExpanded, setGenresExpanded] = useState<boolean>(false)
   
   // ALWAYS load full game list in background
@@ -253,14 +252,9 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   }, [searchedGames, selectedGenre])
   
   // Apply favorites filter
-  const favoritesFiltered = showFavoritesOnly
+  const finalFilteredGames = showFavoritesOnly
     ? filteredGames.filter(game => isFavorited(game.game_id))
     : filteredGames
-  
-  // Apply hidden gems filter
-  const finalFilteredGames = showHiddenGemsOnly
-    ? favoritesFiltered.filter(game => game.momentum === 'hidden_gem')
-    : favoritesFiltered
   
   // Untracked favorites (favorited games not in top 2000)
   const untrackedFavorites = favorites.filter(fav => 
@@ -271,33 +265,7 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   useEffect(() => {
     setDisplayedGames(finalFilteredGames.slice(0, 100))
     setHasMore(finalFilteredGames.length > 100)
-  }, [selectedGenre, searchQuery, allGames, showFavoritesOnly, showHiddenGemsOnly, finalFilteredGames])
-
-  // Track search queries with debounce (300ms)
-  const searchTrackingRef = useRef<NodeJS.Timeout | null>(null)
-  useEffect(() => {
-    if (searchTrackingRef.current) {
-      clearTimeout(searchTrackingRef.current)
-    }
-    
-    if (searchQuery.trim()) {
-      searchTrackingRef.current = setTimeout(() => {
-        if (typeof window !== 'undefined' && (window as any).gtag) {
-          (window as any).gtag('event', 'search_query', {
-            query: searchQuery.trim(),
-            results_count: finalFilteredGames.length
-          })
-        }
-      }, 300)
-    }
-    
-    return () => {
-      if (searchTrackingRef.current) {
-        clearTimeout(searchTrackingRef.current)
-      }
-    }
-  }, [searchQuery, finalFilteredGames.length])
-
+  }, [selectedGenre, searchQuery, allGames, showFavoritesOnly, finalFilteredGames])
   
   function selectGenre(genre: string) {
     setSelectedGenre(genre)
@@ -354,28 +322,6 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
           className="w-full px-4 py-3 bg-bg-elevated border border-text-tertiary/30 rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/30"
         />
       </div>
-      
-      {/* How It Works - Tell the story */}
-      <details className="mb-4 bg-bg-elevated border border-brand-primary/30 rounded-lg">
-        <summary className="px-4 py-3 cursor-pointer text-brand-primary font-semibold hover:bg-brand-primary/5 transition-colors flex items-center gap-2">
-          <span>How StreamScout Works</span>
-          <span className="text-xs text-text-tertiary">(click to expand)</span>
-        </summary>
-        <div className="px-4 pb-4 text-sm text-text-secondary space-y-3">
-          <p>
-            <strong className="text-brand-primary">The Problem:</strong> On Twitch, popular games have thousands of streamers. New streamers get buried and never discovered.
-          </p>
-          <p>
-            <strong className="text-brand-primary">Our Solution:</strong> We analyze every game on Twitch and find where you can actually be seen. Games with viewers but fewer streamers = you appear higher in browse.
-          </p>
-          <p>
-            <strong className="text-brand-primary">The Score:</strong> We weight Discoverability (45%), Viability (35%), and Engagement (20%). High score = better chance to grow.
-          </p>
-          <p>
-            <strong className="text-yellow-400">Pro Tip:</strong> Look for "Hidden Gems" - games where viewers are growing but streamer count is stable. Prime opportunity to get in early.
-          </p>
-        </div>
-      </details>
       
       {/* Genre filters - ORACLE'S CORRECT STYLING */}
       <div className="mb-6 space-y-2">
@@ -446,35 +392,12 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
         )}
       </div>
       
-      {/* Filter Buttons */}
-      <div className="flex gap-2 flex-wrap">
-        <FavoritesFilter 
-          showFavoritesOnly={showFavoritesOnly}
-          favoriteCount={favorites.length}
-          onToggle={handleViewFavorites}
-        />
-        
-        {/* Hidden Gems Filter - the real value */}
-        <button
-          onClick={() => {
-            setShowHiddenGemsOnly(!showHiddenGemsOnly)
-            if (typeof window !== 'undefined' && (window as any).gtag) {
-              (window as any).gtag('event', 'hidden_gems_filter', {
-                showing_gems: !showHiddenGemsOnly
-              })
-            }
-          }}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-            showHiddenGemsOnly 
-              ? 'bg-yellow-500 text-black' 
-              : 'bg-bg-elevated border border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10'
-          }`}
-        >
-          <span>💎</span>
-          Hidden Gems
-          {showHiddenGemsOnly && <span className="text-xs">({finalFilteredGames.length})</span>}
-        </button>
-      </div>
+      {/* Favorites Filter */}
+      <FavoritesFilter 
+        showFavoritesOnly={showFavoritesOnly}
+        favoriteCount={favorites.length}
+        onToggle={handleViewFavorites}
+      />
 
       {/* Clear All Button (shows when viewing favorites) */}
       {showFavoritesOnly && favorites.length > 0 && (
