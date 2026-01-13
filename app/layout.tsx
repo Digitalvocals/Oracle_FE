@@ -29,7 +29,7 @@ export const metadata: Metadata = {
         url: 'https://streamscout.gg/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'StreamScout - Find Your Audience. Grow Your Channel.',
+        alt: 'StreamScout - Stop competing. Start getting discovered.',
       },
     ],
   },

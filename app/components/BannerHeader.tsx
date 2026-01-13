@@ -49,7 +49,7 @@ export function BannerHeader() {
             WebkitTextStroke: '1px rgba(0,0,0,0.4)'
           }}
         >
-          Find Your Audience. Grow Your Channel.
+          Stop competing. Start getting discovered.
         </p>
       </div>
     </div>

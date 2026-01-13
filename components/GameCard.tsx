@@ -205,6 +205,8 @@ export function GameCard({ game }: GameCardProps) {
   const [loadingAnalytics, setLoadingAnalytics] = useState(false)
   const [failedAnalytics, setFailedAnalytics] = useState(false)
   const [showAlternativesModal, setShowAlternativesModal] = useState(false)
+  const [alternatives, setAlternatives] = useState<Array<{ name: string; score: number }>>([])
+  const [loadingAlternatives, setLoadingAlternatives] = useState(false)
   const [showToast, setShowToast] = useState(false)
   
   // Favorites hook
@@ -287,6 +289,26 @@ export function GameCard({ game }: GameCardProps) {
       setLoadingAnalytics(false)
     }
   }
+
+  // Fetch alternatives from backend API
+  const fetchAlternatives = async () => {
+    setLoadingAlternatives(true)
+    try {
+      const response = await axios.get(`${API_URL}/api/v1/alternatives/${game.game_id}`)
+      // Transform backend response to modal's expected format
+      const alts = response.data.alternatives || []
+      const transformed = alts.map((alt: any) => ({
+        name: alt.game_name,
+        score: alt.discoverability_rating || (alt.match_score / 10)
+      }))
+      setAlternatives(transformed)
+    } catch (error) {
+      console.error(`Failed to fetch alternatives for ${game.game_id}:`, error)
+      setAlternatives([])
+    } finally {
+      setLoadingAlternatives(false)
+    }
+  }
   
   const getScoreColor = (score: number) => {
     if (score >= 0.80) return 'text-success'
@@ -302,6 +324,11 @@ export function GameCard({ game }: GameCardProps) {
   const handleFindAlternatives = (e: React.MouseEvent) => {
     e.stopPropagation()
     setShowAlternativesModal(true)
+    
+    // Fetch alternatives when modal opens
+    if (alternatives.length === 0 && !loadingAlternatives) {
+      fetchAlternatives()
+    }
     
     if (typeof window !== 'undefined' && (window as any).gtag) {
       (window as any).gtag('event', 'alternatives_button_click', {
@@ -458,7 +485,7 @@ export function GameCard({ game }: GameCardProps) {
                 </ShareButton>
                 
                 <button onClick={handleFindAlternatives} className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-bg-primary text-sm font-semibold rounded-lg transition-colors">
-                  Find Alternatives
+                  {loadingAlternatives ? "Loading..." : "Find Alternatives"}
                 </button>
               </div>
             </div>
@@ -586,7 +613,7 @@ export function GameCard({ game }: GameCardProps) {
           isOpen={showAlternativesModal}
           onClose={() => setShowAlternativesModal(false)}
           currentGame={game.game_name}
-          alternatives={[]}
+          alternatives={alternatives}
         />
       )}
     </>
