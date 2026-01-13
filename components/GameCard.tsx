@@ -299,6 +299,48 @@ export function GameCard({ game }: GameCardProps) {
     return rating.replace(/^\[.*?\]\s*/, '')
   }
   
+  // Generate "Why This Ranks High" explanation - tell the story
+  const getWhyItRanks = (): string | null => {
+    if (game.is_filtered) return null
+    if (game.rank > 20) return null // Only show for top 20
+    
+    const parts: string[] = []
+    
+    // Discoverability story
+    if (game.channels < 50) {
+      parts.push(`Only ${game.channels} streamers`)
+    } else if (game.channels < 200) {
+      parts.push(`Moderate competition (${game.channels} streamers)`)
+    }
+    
+    // Viability story  
+    if (game.total_viewers > 5000) {
+      parts.push(`${(game.total_viewers / 1000).toFixed(1)}k viewers watching`)
+    } else if (game.total_viewers > 1000) {
+      parts.push(`${(game.total_viewers / 1000).toFixed(1)}k active viewers`)
+    }
+    
+    // Engagement story
+    if (game.avg_viewers_per_channel > 100) {
+      parts.push("high engagement")
+    } else if (game.avg_viewers_per_channel > 50) {
+      parts.push("solid engagement")
+    }
+    
+    // Momentum story
+    if (game.momentum === 'hidden_gem') {
+      return "Hidden Gem: Viewers growing, streamer count stable. Prime opportunity."
+    } else if (game.momentum === 'rising') {
+      return "Rising: Both viewers and streamers growing. Get in early."
+    }
+    
+    if (parts.length >= 2) {
+      return parts.slice(0, 2).join(" + ") + ". You can stand out here."
+    }
+    
+    return null
+  }
+  
   const handleFindAlternatives = (e: React.MouseEvent) => {
     e.stopPropagation()
     setShowAlternativesModal(true)
@@ -319,7 +361,7 @@ export function GameCard({ game }: GameCardProps) {
   
   return (
     <>
-      <div className={`bg-bg-elevated border-2 rounded-lg p-6 cursor-pointer transition-all hover:border-brand-primary hover:shadow-lg hover:shadow-brand-primary/20 relative ${game.is_filtered ? 'border-brand-danger/50 bg-brand-danger/5' : 'border-bg-hover'}`} onClick={() => setIsExpanded(!isExpanded)}>
+      <div className={`bg-bg-elevated border-2 rounded-lg p-6 cursor-pointer transition-all hover:border-brand-primary hover:shadow-lg hover:shadow-brand-primary/20 relative ${game.is_filtered ? 'border-brand-danger/50 bg-brand-danger/5' : 'border-bg-hover'}`} onClick={() => { const newExpanded = !isExpanded; setIsExpanded(newExpanded); if (typeof window !== 'undefined' && (window as any).gtag) { (window as any).gtag('event', 'card_expand', { game_name: game.game_name, game_id: game.game_id, game_rank: game.rank, is_expanding: newExpanded }); } }}>
         
         {game.is_filtered && game.warning_text && (
           <div className="bg-brand-danger/20 border border-brand-danger/40 rounded px-3 py-2 mb-3 flex items-center gap-2">
@@ -370,6 +412,13 @@ export function GameCard({ game }: GameCardProps) {
                 {game.bestTime && (
                   <div className="mt-2 text-xs text-text-tertiary whitespace-nowrap">
                     <span className="font-semibold text-text-secondary">BEST:</span> {formatBestTimeLocal(game.bestTime)}
+                  </div>
+                )}
+                
+                {/* Why This Ranks High - tell the story */}
+                {getWhyItRanks() && (
+                  <div className="mt-2 px-2 py-1 bg-brand-primary/10 border border-brand-primary/30 rounded text-xs text-brand-primary">
+                    {getWhyItRanks()}
                   </div>
                 )}
               </div>
