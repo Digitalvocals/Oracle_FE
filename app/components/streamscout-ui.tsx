@@ -619,12 +619,13 @@ interface AlternativesModalProps {
   onClose: () => void
   currentGame: string
   alternatives: Array<{ name: string; score: number }>
+  loading?: boolean
 }
 
 /** Find alternatives modal */
-export function AlternativesModal({ isOpen, onClose, currentGame, alternatives }: AlternativesModalProps) {
+export function AlternativesModal({ isOpen, onClose, currentGame, alternatives, loading = false }: AlternativesModalProps) {
   if (!isOpen) return null
-  
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-bg-elevated border border-border rounded-lg max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -634,11 +635,15 @@ export function AlternativesModal({ isOpen, onClose, currentGame, alternatives }
             onClick={onClose}
             className="text-text-tertiary hover:text-text-primary transition-colors"
           >
-            ✕
+            x
           </button>
         </div>
-        
-        {alternatives.length === 0 ? (
+
+        {loading ? (
+          <p className="text-text-secondary text-center py-8">
+            Finding similar games...
+          </p>
+        ) : alternatives.length === 0 ? (
           <p className="text-text-secondary text-center py-8">
             No alternatives found. Try searching for similar games!
           </p>
