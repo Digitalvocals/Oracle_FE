@@ -6,7 +6,7 @@ import { BannerHeader } from '@/app/components/BannerHeader'
 
 export const revalidate = 600 // ISR: Regenerate every 10 minutes
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-bcd88.up.railway.app'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-90f4a9.up.railway.app'
 
 async function getInitialGames() {
   try {
@@ -46,6 +46,9 @@ export default async function Home() {
           </p>
           <p className="text-caption text-text-tertiary">
             Our algorithm weighs <span className="text-brand-primary font-semibold">discoverability</span> (45%), <span className="text-brand-primary font-semibold">viability</span> (35%), and <span className="text-brand-primary font-semibold">engagement</span> (20%) to find opportunities most streamers miss.
+          </p>
+          <p className="text-caption text-text-tertiary mt-2">
+            Scores <span className="text-brand-primary font-semibold">7+</span> are strong picks. Look for <span className="text-brand-primary font-semibold">Hidden Gem</span> badges - high-potential games most streamers overlook.
           </p>
         </div>
         

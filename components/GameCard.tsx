@@ -24,7 +24,7 @@ import {
 } from '@/app/components/streamscout-ui'
 import { useFavorites } from '@/app/hooks/useFavorites'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-bcd88.up.railway.app'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-90f4a9.up.railway.app'
 const KINGUIN_AFFILIATE_ID = '6930867eb1a6f'
 
 interface GameAnalytics {
