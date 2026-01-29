@@ -1,5 +1,5 @@
 // US-073: GameList Client Component
-// Single-select genre filter - CORRECT STYLING (Oracle's spec)
+// US-033: Multi-select genre filter with AND/OR toggle (Oracle's spec)
 // Fuzzy search v4: Fuse.js + normalization + alias expansion
 
 'use client'
@@ -140,8 +140,9 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   // Favorites hook
   const { favorites, isFavorited, removeFavorite, clearAllFavorites } = useFavorites()
   
-  // Filters - Single-select genre
-  const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
+  // Filters - Multi-select genre (US-033)
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  const [genreMode, setGenreMode] = useState<'AND' | 'OR'>('AND')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false)
   const [genresExpanded, setGenresExpanded] = useState<boolean>(false)
@@ -238,18 +239,30 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   // ============================================================================
   // REMAINING FILTERS (genre, favorites)
   // ============================================================================
-  
-  // Apply genre filter to searched results
+
+  // Apply genre filter to searched results (US-033: multi-select with AND/OR)
   const filteredGames = useMemo(() => {
     let result = searchedGames
-    
-    // Genre filter (single select)
-    if (selectedGenre) {
-      result = result.filter(game => game.genres?.includes(selectedGenre))
+
+    if (selectedGenres.length === 0) {
+      return result
     }
-    
-    return result
-  }, [searchedGames, selectedGenre])
+
+    if (selectedGenres.length === 1) {
+      return result.filter(game => game.genres?.includes(selectedGenres[0]))
+    }
+
+    // Multi-select: AND or OR mode
+    if (genreMode === 'AND') {
+      return result.filter(game =>
+        selectedGenres.every(genre => game.genres?.includes(genre))
+      )
+    } else {
+      return result.filter(game =>
+        selectedGenres.some(genre => game.genres?.includes(genre))
+      )
+    }
+  }, [searchedGames, selectedGenres, genreMode])
   
   // Apply favorites filter
   const finalFilteredGames = showFavoritesOnly
@@ -265,14 +278,28 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
   useEffect(() => {
     setDisplayedGames(finalFilteredGames.slice(0, 100))
     setHasMore(finalFilteredGames.length > 100)
-  }, [selectedGenre, searchQuery, allGames, showFavoritesOnly, finalFilteredGames])
-  
-  function selectGenre(genre: string) {
-    setSelectedGenre(genre)
+  }, [selectedGenres, genreMode, searchQuery, allGames, showFavoritesOnly, finalFilteredGames])
+
+  // Toggle genre selection (US-033)
+  function toggleGenre(genre: string) {
+    setSelectedGenres(prev =>
+      prev.includes(genre)
+        ? prev.filter(g => g !== genre)  // Deselect
+        : [...prev, genre]                // Add
+    )
+    // Track multi-genre filter usage
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'multi_genre_filter', {
+        genre: genre,
+        action: selectedGenres.includes(genre) ? 'remove' : 'add',
+        total_selected: selectedGenres.includes(genre) ? selectedGenres.length - 1 : selectedGenres.length + 1
+      })
+    }
   }
-  
-  function clearGenre() {
-    setSelectedGenre(null)
+
+  function clearGenres() {
+    setSelectedGenres([])
+    setGenreMode('AND')  // Reset to default per spec
   }
   
   const handleViewFavorites = () => {
@@ -323,19 +350,50 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
         />
       </div>
       
-      {/* Genre filters - ORACLE'S CORRECT STYLING */}
+      {/* Genre filters - US-033: Multi-select with AND/OR toggle */}
       <div className="mb-6 space-y-2">
-        {/* Header with count */}
+        {/* Header with count and AND/OR toggle */}
         <div className="flex items-center justify-between">
-          <span className="text-text-secondary text-sm">Filter by genre:</span>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary text-sm">Filter by genre:</span>
+            {/* AND/OR toggle - only visible when 2+ genres selected */}
+            {selectedGenres.length >= 2 && (
+              <div className="flex rounded-full border border-text-tertiary/30 overflow-hidden">
+                <button
+                  onClick={() => setGenreMode('AND')}
+                  className={
+                    genreMode === 'AND'
+                      ? 'px-3 py-1 text-xs font-semibold bg-brand-primary text-bg-primary'
+                      : 'px-3 py-1 text-xs text-text-secondary hover:text-text-primary'
+                  }
+                >
+                  AND
+                </button>
+                <button
+                  onClick={() => setGenreMode('OR')}
+                  className={
+                    genreMode === 'OR'
+                      ? 'px-3 py-1 text-xs font-semibold bg-brand-primary text-bg-primary'
+                      : 'px-3 py-1 text-xs text-text-secondary hover:text-text-primary'
+                  }
+                >
+                  OR
+                </button>
+              </div>
+            )}
+          </div>
           <span className="text-text-tertiary text-xs">
-            {selectedGenre 
-              ? `${filteredGames.length} ${selectedGenre} games`
-              : `${allGames.length} games total`
+            {selectedGenres.length === 0
+              ? `${allGames.length} games total`
+              : selectedGenres.length === 1
+                ? `${filteredGames.length} ${selectedGenres[0]} games`
+                : genreMode === 'AND'
+                  ? `${filteredGames.length} ${selectedGenres.join(' + ')} games`
+                  : `${filteredGames.length} ${selectedGenres.join(' or ')} games`
             }
           </span>
         </div>
-        
+
         {/* Genre buttons - Collapsible on mobile */}
         <div className="flex flex-wrap gap-2">
           {GENRE_OPTIONS
@@ -343,9 +401,9 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
             .map(genre => (
             <button
               key={genre}
-              onClick={() => selectGenre(genre)}
+              onClick={() => toggleGenre(genre)}
               className={
-                selectedGenre === genre
+                selectedGenres.includes(genre)
                   ? 'px-4 py-2 rounded-full bg-brand-primary text-bg-primary font-semibold border border-brand-primary transition-colors'
                   : 'px-4 py-2 rounded-full bg-transparent text-text-secondary border border-text-tertiary/30 hover:border-brand-primary hover:text-text-primary transition-colors'
               }
@@ -374,9 +432,9 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
           )}
 
           {/* Clear filter - only shows when filter active */}
-          {selectedGenre && (
+          {selectedGenres.length > 0 && (
             <button
-              onClick={clearGenre}
+              onClick={clearGenres}
               className="px-4 py-2 rounded-full bg-transparent text-brand-danger border border-brand-danger/50 hover:bg-brand-danger/10 transition-colors"
             >
               Clear
@@ -441,12 +499,41 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
       <div className="grid gap-3">
         {finalFilteredGames.length === 0 ? (
           <div className="text-center py-12 text-text-secondary">
-            {searchQuery
-              ? `No games found matching "${searchQuery}". Try a different search.`
-              : selectedGenre
-              ? `No ${selectedGenre} games found. Try a different genre.`
-              : 'No games found.'
-            }
+            {searchQuery ? (
+              <div className="space-y-4">
+                <p>"{searchQuery}" isn't in our database.</p>
+                <div className="flex justify-center gap-4">
+                  <a
+                    href={`https://www.twitch.tv/search?term=${encodeURIComponent(searchQuery)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    Search on Twitch
+                  </a>
+                  <a
+                    href={`mailto:gary@streamscout.co?subject=Game%20Request:%20${encodeURIComponent(searchQuery)}`}
+                    className="text-accent hover:underline"
+                  >
+                    Let us know about this game
+                  </a>
+                </div>
+              </div>
+            ) : selectedGenres.length >= 2 && genreMode === 'AND' ? (
+              <div className="space-y-4">
+                <p>No games match all selected genres.</p>
+                <button
+                  onClick={() => setGenreMode('OR')}
+                  className="px-4 py-2 bg-brand-primary text-bg-primary font-semibold rounded-lg hover:bg-brand-primary/90 transition-colors"
+                >
+                  Try OR mode instead
+                </button>
+              </div>
+            ) : selectedGenres.length > 0 ? (
+              `No ${selectedGenres.join(' or ')} games found. Try different genres.`
+            ) : (
+              'No games found.'
+            )}
           </div>
         ) : (
           displayedGames.map((game) => (
