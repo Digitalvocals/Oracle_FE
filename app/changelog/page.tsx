@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { BannerHeader } from '../components/BannerHeader'
 
 interface ChangelogEntry {
   version: string
@@ -46,11 +47,11 @@ const changelog: ChangelogEntry[] = [
       "Tap-to-toggle tooltips - Mobile users can now tap the \"?\" icons to see score explanations",
       "\"More options\" accordion on mobile - Secondary buttons (Steam, Epic, Share) now tucked into expandable menu",
       "Best Time always visible - No need to expand cards to see optimal streaming windows",
-      "Mobile close buttons - Easy \"✕\" to dismiss tooltips on touch devices"
+      "Mobile close buttons - Easy \"x\" to dismiss tooltips on touch devices"
     ],
     changed: [
       "Larger box art on mobile (96x128px) - Games are easier to recognize at a glance",
-      "Icon-based stats (👁 📺) - Faster scanning, less clutter on small screens",
+      "Icon-based stats - Faster scanning, less clutter on small screens",
       "Single-column metrics on mobile - Expanded card data no longer cramped",
       "Responsive header - Logo scales down on mobile, status badges scroll horizontally",
       "Improved touch targets - Genre filter buttons now meet 40px+ accessibility standards",
@@ -198,17 +199,19 @@ const changelog: ChangelogEntry[] = [
 
 export default function ChangelogPage() {
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <main className="min-h-screen bg-bg-primary p-4 md:p-8">
+      <BannerHeader />
+
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <header className="mb-8">
-          <Link href="/" className="text-matrix-green hover:text-matrix-green-bright transition-colors mb-4 inline-block">
+          <Link href="/" className="text-brand-primary hover:text-brand-primary/80 transition-colors mb-4 inline-block">
             &larr; Back to StreamScout
           </Link>
-          <h1 className="text-3xl sm:text-4xl font-bold text-matrix-green-bright mb-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-text-primary mb-2">
             Changelog
           </h1>
-          <p className="text-gray-400">
+          <p className="text-text-tertiary">
             What's new with StreamScout - updates, features, and improvements.
           </p>
         </header>
@@ -216,26 +219,26 @@ export default function ChangelogPage() {
         {/* Changelog Entries */}
         <div className="space-y-8">
           {changelog.map((entry, index) => (
-            <article 
+            <article
               key={entry.version}
-              className="matrix-card"
+              className="bg-bg-elevated border border-bg-hover rounded-lg p-6"
             >
               {/* Version Header */}
               <div className="flex flex-wrap items-baseline gap-3 mb-4">
-                <span className="text-xl font-bold text-matrix-green-bright">
+                <span className="text-xl font-bold text-brand-primary">
                   v{entry.version}
                 </span>
-                <span className="text-gray-500 text-sm">
+                <span className="text-text-tertiary text-sm">
                   {entry.date}
                 </span>
                 {index === 0 && (
-                  <span className="px-2 py-0.5 bg-matrix-green/20 text-matrix-green text-xs rounded-full border border-matrix-green/30">
+                  <span className="px-2 py-0.5 bg-brand-primary/20 text-brand-primary text-xs rounded-full border border-brand-primary/30">
                     Latest
                   </span>
                 )}
               </div>
-              
-              <h2 className="text-lg font-semibold text-white mb-4">
+
+              <h2 className="text-lg font-semibold text-text-primary mb-4">
                 {entry.title}
               </h2>
 
@@ -246,9 +249,9 @@ export default function ChangelogPage() {
                     <span className="w-2 h-2 bg-green-400 rounded-full"></span>
                     Added
                   </h3>
-                  <ul className="space-y-1 text-gray-300 text-sm">
+                  <ul className="space-y-1 text-text-secondary text-sm">
                     {entry.added.map((item, i) => (
-                      <li key={i} className="pl-4">&bull; {item}</li>
+                      <li key={i} className="pl-4">- {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -261,9 +264,9 @@ export default function ChangelogPage() {
                     <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
                     Changed
                   </h3>
-                  <ul className="space-y-1 text-gray-300 text-sm">
+                  <ul className="space-y-1 text-text-secondary text-sm">
                     {entry.changed.map((item, i) => (
-                      <li key={i} className="pl-4">&bull; {item}</li>
+                      <li key={i} className="pl-4">- {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -276,9 +279,9 @@ export default function ChangelogPage() {
                     <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
                     Fixed
                   </h3>
-                  <ul className="space-y-1 text-gray-300 text-sm">
+                  <ul className="space-y-1 text-text-secondary text-sm">
                     {entry.fixed.map((item, i) => (
-                      <li key={i} className="pl-4">&bull; {item}</li>
+                      <li key={i} className="pl-4">- {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -288,20 +291,20 @@ export default function ChangelogPage() {
         </div>
 
         {/* Footer */}
-        <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
+        <footer className="mt-12 pt-8 border-t border-bg-hover text-center text-sm text-text-tertiary">
           <p>
             Have feedback or feature requests?{' '}
-            <a href="mailto:digitalvocalstv@gmail.com" className="text-matrix-green hover:underline">
+            <a href="mailto:digitalvocalstv@gmail.com" className="text-brand-primary hover:underline">
               Get in touch
             </a>
           </p>
           <div className="mt-4">
-            <Link href="/" className="text-matrix-green hover:text-matrix-green-bright transition-colors">
+            <Link href="/" className="text-brand-primary hover:text-brand-primary/80 transition-colors">
               &larr; Back to StreamScout
             </Link>
           </div>
         </footer>
       </div>
-    </div>
+    </main>
   )
 }
