@@ -620,11 +620,24 @@ interface AlternativesModalProps {
   currentGame: string
   alternatives: Array<{ name: string; score: number }>
   loading?: boolean
+  onViewGame?: (gameName: string) => void
 }
 
 /** Find alternatives modal */
-export function AlternativesModal({ isOpen, onClose, currentGame, alternatives, loading = false }: AlternativesModalProps) {
+export function AlternativesModal({ isOpen, onClose, currentGame, alternatives, loading = false, onViewGame }: AlternativesModalProps) {
   if (!isOpen) return null
+
+  const handleViewGame = (gameName: string) => {
+    // Update URL hash for shareability
+    if (typeof window !== 'undefined') {
+      window.location.hash = encodeURIComponent(gameName)
+    }
+    // Trigger the callback if provided
+    if (onViewGame) {
+      onViewGame(gameName)
+    }
+    onClose()
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -655,12 +668,12 @@ export function AlternativesModal({ isOpen, onClose, currentGame, alternatives, 
                   <h4 className="font-semibold text-text-primary">{alt.name}</h4>
                   <p className="text-sm text-text-tertiary">Score: {alt.score}/10</p>
                 </div>
-                <a
-                  href={`#${alt.name}`}
+                <button
+                  onClick={() => handleViewGame(alt.name)}
                   className="px-4 py-2 bg-brand-primary/10 border border-brand-primary/30 text-brand-primary hover:bg-brand-primary/20 rounded-lg transition-colors text-sm font-medium"
                 >
                   View
-                </a>
+                </button>
               </div>
             ))}
           </div>

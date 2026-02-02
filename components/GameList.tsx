@@ -153,7 +153,26 @@ export default function GameList({ initialGames, hasError }: GameListProps) {
       loadAllGames()
     }
   }, [])
-  
+
+  // Read URL hash on mount and on hash change to support direct links
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const hashValue = decodeURIComponent(window.location.hash.slice(1))
+        if (hashValue) {
+          setSearchQuery(hashValue)
+        }
+      }
+    }
+
+    // Check hash on mount
+    handleHashChange()
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
   async function loadAllGames() {
     if (isLoadingAll) return
     
