@@ -74,48 +74,71 @@ interface TimeBlocksProps {
   bestBlock: string
 }
 
+// Convert a PST hour to a Date object that can be formatted in any timezone
+const pstHourToLocalDate = (pstHour: number): Date | null => {
+  const now = new Date()
+  const utcDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0))
+
+  const pstFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: 'numeric',
+    hour12: false
+  })
+
+  // Search for the UTC time that corresponds to our target PST hour
+  for (let utcHour = 0; utcHour < 48; utcHour++) {
+    const testDate = new Date(utcDate.getTime() + utcHour * 3600000)
+    const pstHourStr = pstFormatter.format(testDate)
+    const foundPstHour = parseInt(pstHourStr) % 24
+    if (foundPstHour === pstHour % 24) {
+      return testDate
+    }
+  }
+  return null
+}
+
+// Convert a PST hour to user's local timezone label
 const getLocalizedBlockLabel = (pstBlock: string): string => {
   const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
   const pstStart = parseInt(pstBlock.split('-')[0])
-  const pstTz = 'America/Los_Angeles'
-  const date = new Date()
-  const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
-  const localDate = new Date(pstDateStr)
-  localDate.setHours(pstStart, 0, 0, 0)
-  const localHour = new Intl.DateTimeFormat('en-US', { hour: 'numeric', timeZone: userTz }).format(localDate)
+
+  const localDate = pstHourToLocalDate(pstStart)
+  if (!localDate) return `${pstStart}:00`
+
+  const localHour = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    timeZone: userTz
+  }).format(localDate)
+
   return localHour.toLowerCase().replace(' ', '')
 }
 
 const formatBestTimeLocal = (pstRange: string): string => {
   if (!pstRange || !pstRange.includes('-')) return pstRange
-  
+
   const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const pstTz = 'America/Los_Angeles'
   const [startHr, endHr] = pstRange.split('-').map(h => parseInt(h))
-  
-  const date = new Date()
-  const pstDateStr = date.toLocaleDateString('en-US', { timeZone: pstTz })
-  
-  const startDate = new Date(pstDateStr)
-  startDate.setHours(startHr, 0, 0, 0)
-  const startLocal = new Intl.DateTimeFormat('en-US', { 
-    hour: 'numeric', 
-    timeZone: userTz 
+
+  const startDate = pstHourToLocalDate(startHr)
+  const endDate = pstHourToLocalDate(endHr === 24 ? 0 : endHr)
+
+  if (!startDate || !endDate) return pstRange
+
+  const startLocal = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    timeZone: userTz
   }).format(startDate).toLowerCase().replace(' ', '')
-  
-  const endDate = new Date(pstDateStr)
-  endDate.setHours(endHr === 24 ? 0 : endHr, 0, 0, 0)
-  if (endHr === 24) endDate.setDate(endDate.getDate() + 1)
-  const endLocal = new Intl.DateTimeFormat('en-US', { 
-    hour: 'numeric', 
-    timeZone: userTz 
+
+  const endLocal = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    timeZone: userTz
   }).format(endDate).toLowerCase().replace(' ', '')
-  
+
   const tzAbbr = new Intl.DateTimeFormat('en-US', {
     timeZone: userTz,
     timeZoneName: 'short'
-  }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || ''
-  
+  }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || ''
+
   return `${startLocal}-${endLocal} ${tzAbbr}`
 }
 
